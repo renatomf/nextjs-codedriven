@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { connectGitHubAccount } from "@/lib/actions/github";
 import { auth } from "@/lib/auth";
 import { GitHubError, listGitHubRepos } from "@/lib/github";
+import { storageConfig } from "@/lib/storage/neon-storage";
 import { getGitHubConnection } from "@/modules/identity/server";
 
 export default async function NewProjectPage() {
@@ -106,7 +107,8 @@ export default async function NewProjectPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ZipUploadForm />
+              {/* Direct upload to object storage when configured (ADR-011). */}
+              <ZipUploadForm direct={storageConfig() !== null} />
             </CardContent>
           </Card>
         </div>

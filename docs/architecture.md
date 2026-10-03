@@ -92,11 +92,19 @@ vinha antes da cota); arquivo sem nada para analisar continua cobrado. A
 reanálise de um projeto GitHub usa o mesmo step; nome do repositório e
 conexão são checados antes da cota.
 
-**ZIP (ainda na request, TD-10):** server action → `importArchive`
-(projects): `withQuota` cria o projeto → extração segura → arquivos
-gravados → projeto `queued` → a página de progresso dispara a análise.
-Arquivo inválido é erro do usuário e continua cobrado; falha nossa devolve
-a análise (ADR-003, TD-12).
+**ZIP com object storage (ADR-011, até 100 MB):** `prepareZipUpload`
+(sessão, nome, tamanho, duplicado, rate limit; sem cota) assina um POST para
+`uploads/<userId>/<uuid>.zip` no bucket do Neon → o navegador envia direto
+ao bucket (a Vercel limita o corpo da request a 4,5 MB) → `startZipUpload`
+confere que a chave é do usuário e o objeto existe dentro do limite, cria o
+projeto sob a cota e dispara o workflow com `uploadKey` → o step
+`fetchUploadedZipStage` lê, extrai, grava e apaga o upload. Arquivo inválido
+continua cobrado; falha nossa devolve a análise (ADR-003). O reaper apaga
+uploads abandonados. Configuração: [runbook](runbooks/object-storage.md).
+
+**ZIP sem object storage (dev local, CI):** server action → `importArchive`
+na request, limitado a 4 MB (TD-45) → projeto `queued` → a página de
+progresso dispara a análise.
 
 ### Análise
 

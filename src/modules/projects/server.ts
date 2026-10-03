@@ -25,8 +25,10 @@ export {
   ArchiveError,
   assertGitHubSourceReady,
   fetchGitHubSourcesStage,
+  fetchUploadedZipStage,
   importArchive,
   startGitHubImport,
+  startUploadImport,
 } from "./infrastructure/import-archive";
 export {
   createReportShare,

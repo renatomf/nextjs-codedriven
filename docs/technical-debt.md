@@ -372,6 +372,12 @@ maintainability) · **Low** (cleanup).
   request and would have to be stored somewhere first (a step only takes
   ids, Workflow caps payloads at 50 MB): a decision for an ADR (Postgres vs
   object storage, see TD-13).
+- **Done (Phase 5, ADR-011):** ZIP uploads too, where object storage is
+  configured: the browser sends the ZIP to a Neon bucket by a signed POST,
+  the request only checks the upload and starts the run, and a workflow
+  step reads, extracts, stores and deletes it. Without object storage (local
+  dev, CI) the in-request path stays, limited to 4 MB (TD-45). Setup per
+  environment: [runbook](runbooks/object-storage.md).
 
 ### TD-11 — Projects can get stuck in `processing` · Medium
 - **Where:** [actions/github.ts:149-157](../src/lib/actions/github.ts#L149-L157)
@@ -493,6 +499,10 @@ maintainability) · **Low** (cleanup).
   the job downloads up to 100 MB. `serverActions.bodySizeLimit` is 5 MB.
   Still open: ZIPs over 4 MB, through Neon Object Storage (ADR-011, after a
   spike).
+- **Done (ADR-011):** with object storage configured, ZIPs up to 100 MB go
+  from the browser straight to the bucket (signed POST, size enforced by the
+  policy and checked again by the server) and the workflow imports them.
+  The 4 MB in-request path remains only where storage is not configured.
 
 ---
 

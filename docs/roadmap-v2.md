@@ -497,9 +497,10 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       (TD-43).
       Progresso: análise em steps idempotentes (PR #95); revisão do LLM
       reaproveitada por hash (TD-43); importação e reanálise do **GitHub**
-      no workflow (step que baixa, extrai e grava, com retry). Falta: o
-      **upload de ZIP** no job (precisa guardar o arquivo antes: ADR) e o
-      `content_hash` dos chunks (TD-03). Outbox: o próprio projeto
+      no workflow (step que baixa, extrai e grava, com retry); **upload de
+      ZIP** no workflow pelo Neon Object Storage (ADR-011: navegador → bucket
+      por POST assinado, step lê, extrai, grava e apaga; até 100 MB).
+      Falta: o `content_hash` dos chunks (TD-03). Outbox: o próprio projeto
       (ADR-005).
 - [ ] Progresso vindo do job; sai a lógica de claim/stale da rota `analyze`;
       reaper para projetos travados (TD-10, TD-11).

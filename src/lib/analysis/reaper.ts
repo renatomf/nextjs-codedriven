@@ -2,6 +2,8 @@ import "server-only";
 
 import { STUCK_AFTER_SECONDS, stuckProjectMessage } from "@/modules/projects";
 import { failStuckProject, findStuckProjects } from "@/modules/projects/server";
+import { deleteObject, staleObjects, storageConfig } from "@/lib/storage/neon-storage";
+import { UPLOADS_PREFIX } from "@/lib/storage/upload-keys";
 import { logger } from "@/shared/logger";
 
 import { analysisRunStatus } from "./analysis-job";
@@ -9,7 +11,22 @@ import { analysisRunStatus } from "./analysis-job";
 /** Bounds one daily run; the rest waits for the next day. */
 const REAP_LIMIT = 100;
 
-export type ReapResult = { checked: number; failed: number; alive: number };
+export type ReapResult = { checked: number; failed: number; alive: number; uploadsDeleted: number };
+
+/**
+ * ZIPs sent to object storage but never imported (the tab closed between the
+ * upload and the start, a start that failed). Neon does not run lifecycle
+ * rules (ADR-011), so the reaper deletes uploads older than an import could
+ * still need them.
+ */
+async function deleteAbandonedUploads(): Promise<number> {
+  const config = storageConfig();
+  if (!config) return 0;
+  const olderThan = new Date(Date.now() - STUCK_AFTER_SECONDS * 1000);
+  const keys = await staleObjects(config, UPLOADS_PREFIX, olderThan, REAP_LIMIT);
+  for (const key of keys) await deleteObject(config, key);
+  return keys.length;
+}
 
 /**
  * Fails projects stuck in "processing" that nobody reopened (TD-11). A
@@ -36,7 +53,9 @@ export async function reapStuckProjects(): Promise<ReapResult> {
     }
   }
 
-  const result = { checked: stuck.length, failed, alive };
+  const uploadsDeleted = await deleteAbandonedUploads();
+
+  const result = { checked: stuck.length, failed, alive, uploadsDeleted };
   logger.info("projects.reaped", result);
   return result;
 }

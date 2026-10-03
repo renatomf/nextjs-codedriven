@@ -47,6 +47,21 @@ async function fetchGitHubSourcesStep(
 }
 fetchGitHubSourcesStep.maxRetries = STEP_MAX_RETRIES;
 
+/** A ZIP uploaded to object storage: read, extract and store it first (ADR-011). */
+async function fetchUploadedZipStep(
+  userId: string,
+  projectId: string,
+  key: string,
+  importUsageId: string | undefined,
+): Promise<void> {
+  "use step";
+  await stage("upload", userId, projectId, async (finalAttempt) => {
+    const { fetchUploadedZipStage } = await import("@/modules/projects/server");
+    await fetchUploadedZipStage(userId, projectId, { key, importUsageId, finalAttempt });
+  });
+}
+fetchUploadedZipStep.maxRetries = STEP_MAX_RETRIES;
+
 async function buildKnowledgeStep(userId: string, projectId: string): Promise<void> {
   "use step";
   await stage("knowledge", userId, projectId, async (finalAttempt) => {
@@ -83,11 +98,13 @@ async function markFailedStep(userId: string, projectId: string): Promise<void> 
 
 /**
  * Options of a run (stored with it by Workflow: flags and ids only).
- * `importUsageId`: the quota record of a new GitHub import, given back if
- * GitHub fails.
+ * `importUsageId`: the quota record of a new import, given back on a
+ * failure on our side. `uploadKey`: the object-storage key of an uploaded
+ * ZIP (a key, never the bytes).
  */
 export type AnalysisRunOptions = {
   fetchFromGitHub?: boolean;
+  uploadKey?: string;
   importUsageId?: string;
 };
 
@@ -100,6 +117,9 @@ export async function analysisWorkflow(
   try {
     if (options.fetchFromGitHub) {
       await fetchGitHubSourcesStep(userId, projectId, options.importUsageId);
+    }
+    if (options.uploadKey) {
+      await fetchUploadedZipStep(userId, projectId, options.uploadKey, options.importUsageId);
     }
     await buildKnowledgeStep(userId, projectId);
     await generateReportStep(userId, projectId);

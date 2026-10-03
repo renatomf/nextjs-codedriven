@@ -9,6 +9,11 @@ import { EMBEDDING_DIMENSIONS } from "../domain/knowledge";
 const pipeline = vi.hoisted(() => vi.fn());
 
 vi.mock("@huggingface/transformers", () => ({ env: {}, pipeline }));
+// Not under test, and heavy (Sentry): each test reloads the module, which was
+// slow enough under the full parallel suite to time out.
+vi.mock("@/shared/tracing", () => ({
+  traced: (_name: string, _attributes: unknown, run: () => unknown) => run(),
+}));
 
 const vector = Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.1);
 const extractor = async () => ({ data: vector });

@@ -10,10 +10,20 @@ import { createUser, deleteUsers } from "@/test/integration/factories";
 // The daily reaper (TD-11) against a real Postgres. Only the Workflow run
 // status is replaced.
 
-const mocks = vi.hoisted(() => ({ analysisRunStatus: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  analysisRunStatus: vi.fn(),
+  storageConfig: vi.fn(),
+  staleObjects: vi.fn(),
+  deleteObject: vi.fn(),
+}));
 
 vi.mock("@/lib/analysis/analysis-job", () => ({
   analysisRunStatus: mocks.analysisRunStatus,
+}));
+vi.mock("@/lib/storage/neon-storage", () => ({
+  storageConfig: mocks.storageConfig,
+  staleObjects: mocks.staleObjects,
+  deleteObject: mocks.deleteObject,
 }));
 
 import { reapStuckProjects } from "@/lib/analysis/reaper";
@@ -34,6 +44,10 @@ afterAll(async () => {
 
 beforeEach(() => {
   mocks.analysisRunStatus.mockReset().mockResolvedValue(null);
+  // No object storage unless a test says so (as in local dev and CI).
+  mocks.storageConfig.mockReset().mockReturnValue(null);
+  mocks.staleObjects.mockReset().mockResolvedValue([]);
+  mocks.deleteObject.mockReset().mockResolvedValue(undefined);
 });
 
 const secondsAgo = (s: number) => new Date(Date.now() - s * 1000);
@@ -112,6 +126,33 @@ describe("reapStuckProjects", () => {
     await reapStuckProjects();
 
     expect((await state(id)).status).toBe(values.status);
+  });
+});
+
+describe("abandoned uploads (ADR-011)", () => {
+  it("deletes ZIPs left in object storage for over an hour", async () => {
+    const config = { bucket: "uploads" };
+    mocks.storageConfig.mockReturnValue(config);
+    mocks.staleObjects.mockResolvedValue(["uploads/u/a.zip", "uploads/u/b.zip"]);
+
+    const result = await reapStuckProjects();
+
+    const [, prefix, olderThan, limit] = mocks.staleObjects.mock.calls[0];
+    expect(prefix).toBe("uploads/");
+    expect(Date.now() - olderThan.getTime()).toBeGreaterThanOrEqual(STUCK_AFTER_SECONDS * 1000);
+    expect(limit).toBe(100);
+    expect(mocks.deleteObject.mock.calls.map(([, key]) => key)).toEqual([
+      "uploads/u/a.zip",
+      "uploads/u/b.zip",
+    ]);
+    expect(result.uploadsDeleted).toBe(2);
+  });
+
+  it("skips the cleanup without object storage", async () => {
+    const result = await reapStuckProjects();
+
+    expect(mocks.staleObjects).not.toHaveBeenCalled();
+    expect(result.uploadsDeleted).toBe(0);
   });
 });
 

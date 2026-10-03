@@ -9,7 +9,15 @@ import { z } from "zod";
 import { startAnalysisRun } from "@/lib/analysis/analysis-job";
 import { auth, signIn } from "@/lib/auth";
 import { fullNameSchema, refSchema } from "@/lib/github";
-import { MAX_UPLOAD_BYTES, UPLOAD_TOO_BIG_MESSAGE } from "@/lib/limits";
+import { MAX_REPO_SIZE_BYTES, MAX_UPLOAD_BYTES, UPLOAD_TOO_BIG_MESSAGE } from "@/lib/limits";
+import { assertRateLimit } from "@/lib/rate-limit";
+import {
+  deleteObject,
+  objectSize,
+  presignedUpload,
+  storageConfig,
+} from "@/lib/storage/neon-storage";
+import { isOwnUploadKey, newUploadKey } from "@/lib/storage/upload-keys";
 import { BillingLimitError } from "@/modules/billing";
 import { getPlanCatalogWithPricing } from "@/modules/billing/server";
 import {
@@ -20,6 +28,7 @@ import {
   findExistingImport,
   importArchive,
   startGitHubImport,
+  startUploadImport,
 } from "@/modules/projects/server";
 
 export type ProjectActionState = {
@@ -50,6 +59,18 @@ async function limitNotice(error: BillingLimitError): Promise<LimitNotice> {
 }
 
 const MAX_PROJECT_NAME_LENGTH = 100;
+
+function projectNameFromFileName(fileName: string): string {
+  return (
+    fileName
+      .replace(/\.zip$/i, "")
+      .trim()
+      .slice(0, MAX_PROJECT_NAME_LENGTH) || "Uploaded project"
+  );
+}
+
+// Signed upload URLs are cheap but not free: per user, per hour.
+const UPLOAD_URLS_PER_HOUR = 20;
 
 const githubImportSchema = z.object({
   fullName: fullNameSchema,
@@ -164,11 +185,7 @@ export async function createProjectFromZip(
     return { error: "The uploaded ZIP is empty." };
   }
 
-  const name =
-    file.name
-      .replace(/\.zip$/i, "")
-      .trim()
-      .slice(0, MAX_PROJECT_NAME_LENGTH) || "Uploaded project";
+  const name = projectNameFromFileName(file.name);
 
   if (
     formData.get("confirmReanalyze") !== "1" &&
@@ -197,5 +214,120 @@ export async function createProjectFromZip(
     return {
       error: publicErrorMessage(error, "Failed to upload project."),
     };
+  }
+}
+
+export type ZipUploadPlan = {
+  error?: string;
+  duplicate?: { name: string };
+  /** Where the browser sends the file: a short-lived signed POST (ADR-011). */
+  upload?: { key: string; url: string; fields: Record<string, string> };
+};
+
+const uploadRequestSchema = z.object({
+  fileName: z.string().min(1).max(255),
+  size: z.coerce.number().int().nonnegative(),
+  confirmReanalyze: z.literal("1").optional(),
+});
+
+/**
+ * Step 1 of a direct ZIP upload (ADR-011): checks the session, the file the
+ * browser describes and duplicates, then signs a POST for the bucket. Nothing
+ * is charged yet: the quota is used when the import starts. The signed
+ * policy enforces the size again on the bucket side.
+ */
+export async function prepareZipUpload(formData: FormData): Promise<ZipUploadPlan> {
+  const user = await requireUser();
+  const config = storageConfig();
+  if (!config) return { error: "Direct uploads are not available here." };
+
+  const parsed = uploadRequestSchema.safeParse({
+    fileName: formData.get("fileName"),
+    size: formData.get("size"),
+    confirmReanalyze: formData.get("confirmReanalyze") ?? undefined,
+  });
+  if (!parsed.success) return { error: "Please choose a ZIP file to upload." };
+  const { fileName, size, confirmReanalyze } = parsed.data;
+
+  if (!fileName.toLowerCase().endsWith(".zip")) {
+    return { error: "Only .zip uploads are supported." };
+  }
+  if (size === 0) return { error: "The uploaded ZIP is empty." };
+  if (size > MAX_REPO_SIZE_BYTES) {
+    return { error: `ZIP exceeds the ${MAX_REPO_SIZE_BYTES / (1024 * 1024)} MB limit.` };
+  }
+
+  const name = projectNameFromFileName(fileName);
+  if (!confirmReanalyze && (await findExistingImport(user.id, { source: "upload", name }))) {
+    return { duplicate: { name } };
+  }
+
+  try {
+    await assertRateLimit(
+      `zip-upload:${user.id}`,
+      UPLOAD_URLS_PER_HOUR,
+      60 * 60 * 1000,
+      `Rate limit reached (${UPLOAD_URLS_PER_HOUR} uploads/hour). Try again later.`,
+    );
+    const key = newUploadKey(user.id);
+    const post = await presignedUpload(config, key, MAX_REPO_SIZE_BYTES);
+    return { upload: { key, url: post.url, fields: post.fields } };
+  } catch (error) {
+    return { error: publicErrorMessage(error, "Failed to prepare the upload.") };
+  }
+}
+
+const uploadStartSchema = z.object({
+  key: z.string().min(1).max(200),
+  fileName: z.string().min(1).max(255),
+});
+
+/**
+ * Step 2 of a direct ZIP upload: the file is in the bucket. Checks that the
+ * key is this user's and the object really exists within the limit (never
+ * the browser's word), creates the project under the quota and starts the
+ * analysis workflow, which reads, extracts and deletes the upload.
+ */
+export async function startZipUpload(formData: FormData): Promise<ProjectActionState> {
+  const user = await requireUser();
+  const config = storageConfig();
+  if (!config) return { error: "Direct uploads are not available here." };
+
+  const parsed = uploadStartSchema.safeParse({
+    key: formData.get("key"),
+    fileName: formData.get("fileName"),
+  });
+  if (!parsed.success || !isOwnUploadKey(user.id, parsed.data.key)) {
+    return { error: "Upload not found. Please try again." };
+  }
+  const { key, fileName } = parsed.data;
+  const discardUpload = () => deleteObject(config, key).catch(() => undefined);
+
+  try {
+    const size = await objectSize(config, key);
+    if (size === null) return { error: "Upload not found. Please try again." };
+    if (size === 0 || size > MAX_REPO_SIZE_BYTES) {
+      await discardUpload();
+      return { error: `ZIP exceeds the ${MAX_REPO_SIZE_BYTES / (1024 * 1024)} MB limit.` };
+    }
+
+    const { projectId, usageId } = await startUploadImport({
+      userId: user.id,
+      name: projectNameFromFileName(fileName),
+    });
+    if (!(await startAnalysisRun(user.id, projectId, { uploadKey: key, importUsageId: usageId }))) {
+      await discardUpload();
+      return { error: "Failed to upload project." };
+    }
+
+    revalidatePath("/dashboard");
+    redirect(`/projects/${projectId}/progress`);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    await discardUpload();
+    if (error instanceof BillingLimitError) {
+      return { limit: await limitNotice(error) };
+    }
+    return { error: publicErrorMessage(error, "Failed to upload project.") };
   }
 }

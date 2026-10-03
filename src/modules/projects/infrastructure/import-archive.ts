@@ -6,6 +6,8 @@ import { extractFromZipBuffer } from "@/lib/files/extract";
 import { isSourceFile, type ExtractedFile } from "@/lib/files/filters";
 import { detectFramework } from "@/lib/files/framework";
 import { deleteProjectFiles, persistProjectFiles } from "@/lib/files/storage";
+import { deleteObject, readObject, storageConfig } from "@/lib/storage/neon-storage";
+import { isOwnUploadKey } from "@/lib/storage/upload-keys";
 import { downloadGitHubZipball, GitHubError } from "@/lib/github";
 import { refundAnalysisUsage, withQuota } from "@/modules/billing/server";
 import { getGitHubConnection } from "@/modules/identity/server";
@@ -252,6 +254,90 @@ export async function startGitHubImport(options: {
     status: "processing",
   });
   return { projectId: project.id, usageId };
+}
+
+/**
+ * A ZIP the browser already sent to object storage (ADR-011): the project is
+ * created under the plan quota and left "processing" for the analysis
+ * workflow, which reads the upload. `usageId` lets the workflow give the
+ * analysis back on a failure on our side.
+ */
+export async function startUploadImport(options: {
+  userId: string;
+  name: string;
+}): Promise<{ projectId: string; usageId: string }> {
+  const { project, usageId } = await withQuota(options.userId, "project", async (tx, usage) => {
+    const created = await createImportingProject(tx, { ...options, source: "upload" });
+    return { consumed: true, value: { project: created, usageId: usage.id } };
+  });
+  return { projectId: project.id, usageId };
+}
+
+/**
+ * Workflow stage (ADR-011): reads the uploaded ZIP from object storage,
+ * extracts and stores its files, and deletes the upload. Writes its own
+ * failure; an invalid archive stays charged, a failure on our side gives the
+ * analysis back (ADR-003), as in the in-request import. The upload is
+ * deleted once nothing will read it again (success, user error, last try).
+ */
+export async function fetchUploadedZipStage(
+  userId: string,
+  projectId: string,
+  options: { key: string; importUsageId?: string; finalAttempt?: boolean },
+): Promise<void> {
+  const { key, importUsageId, finalAttempt = true } = options;
+  const config = storageConfig();
+  if (!config) throw new Error("Object storage is not configured.");
+  if (!isOwnUploadKey(userId, key)) throw new DomainError("Upload not found.");
+  const discardUpload = () =>
+    deleteObject(config, key).catch((error: unknown) =>
+      logger.warn("project.upload_delete_failed", { err: error, projectId }),
+    );
+
+  if (!(await findReanalysisTarget(userId, projectId))) {
+    await discardUpload();
+    throw new AnalysisCanceledError();
+  }
+
+  try {
+    await setProjectProgress(userId, projectId, {
+      step: "Reading files",
+      percent: 15,
+      status: "processing",
+    });
+    const extracted = await extractFromZipBuffer(await readObject(config, key));
+    if (!extracted.ok) throw new ArchiveError(extracted.error);
+
+    await setProjectProgress(userId, projectId, {
+      step: "Detecting framework",
+      percent: 22,
+      status: "processing",
+    });
+    await storeExtractedFiles(userId, projectId, extracted, "processing");
+    await discardUpload();
+  } catch (error) {
+    const isDomain = error instanceof DomainError;
+    if (!isDomain && !finalAttempt) {
+      logger.warn("project.upload_import_retrying", { err: error, userId, projectId });
+      throw error;
+    }
+    if (!isDomain) logger.error("project.upload_import_failed", { err: error, userId, projectId });
+
+    const stillExists = await setProjectProgress(userId, projectId, {
+      step: "Import failed",
+      percent: 15,
+      status: "failed",
+      errorMessage: publicErrorMessage(error, "Project ingestion failed."),
+    });
+    if (importUsageId && !(error instanceof ArchiveError)) {
+      await refundAnalysisUsage(userId, importUsageId).catch((refundError) => {
+        logger.error("billing.refund_failed", { err: refundError, projectId });
+      });
+    }
+    await discardUpload();
+    if (!stillExists) throw new AnalysisCanceledError();
+    throw error;
+  }
 }
 
 /**
