@@ -108,7 +108,12 @@ async function embedAll(texts: string[]): Promise<number[][]> {
   return results;
 }
 
-export const onnxEmbedder: Embedder = { embed: embedTexts };
+export const onnxEmbedder: Embedder = {
+  // Stored with each vector (TD-03): a different model, revision or dtype
+  // makes different vectors, so they are not reused across a change.
+  model: `${MODEL_ID}@${MODEL_REVISION}:${MODEL_DTYPE}`,
+  embed: embedTexts,
+};
 
 /** Embed a single query string for similarity search. */
 export async function embedQuery(text: string): Promise<number[]> {

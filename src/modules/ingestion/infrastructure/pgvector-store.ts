@@ -1,4 +1,4 @@
-import { and, cosineDistance, eq, exists, sql } from "drizzle-orm";
+import { and, cosineDistance, eq, exists, isNotNull, sql } from "drizzle-orm";
 
 import { codeChunks, projects } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -19,12 +19,39 @@ export type StoredChunk = {
 // never from the client) in addition to `projectId`.
 
 export const pgvectorStore: VectorStore = {
+  embeddingsByContent(userId, projectId, model) {
+    return traced("vector.read_existing", {}, () => existingEmbeddings(userId, projectId, model));
+  },
   replaceProjectChunks(userId, projectId, chunks) {
     return traced("vector.replace_chunks", { chunks: chunks.length }, () =>
       replaceChunks(userId, projectId, chunks),
     );
   },
 };
+
+async function existingEmbeddings(
+  userId: string,
+  projectId: string,
+  model: string,
+): Promise<Map<string, number[]>> {
+  const rows = await db
+    .select({ contentHash: codeChunks.contentHash, embedding: codeChunks.embedding })
+    .from(codeChunks)
+    .where(
+      and(
+        eq(codeChunks.projectId, projectId),
+        eq(codeChunks.embeddingModel, model),
+        isNotNull(codeChunks.contentHash),
+        exists(
+          db
+            .select({ id: projects.id })
+            .from(projects)
+            .where(and(eq(projects.id, projectId), eq(projects.userId, userId))),
+        ),
+      ),
+    );
+  return new Map(rows.map((row) => [row.contentHash!, row.embedding]));
+}
 
 async function replaceChunks(
   userId: string,
@@ -51,6 +78,8 @@ async function replaceChunks(
           startLine: chunk.startLine,
           endLine: chunk.endLine,
           embedding: chunk.embedding,
+          contentHash: chunk.contentHash,
+          embeddingModel: chunk.embeddingModel,
         })),
       );
     }

@@ -17,4 +17,13 @@ export type ChunkDraft = {
   endLine: number | null;
 };
 
-export type EmbeddedChunk = ChunkDraft & { embedding: number[] };
+/**
+ * A stored chunk: its vector, the model that made it and the hash of the
+ * content it was made from (TD-03). Same content and same model → same
+ * vector, so a rebuild reuses it instead of embedding again.
+ */
+export type EmbeddedChunk = ChunkDraft & {
+  embedding: number[];
+  contentHash: string;
+  embeddingModel: string;
+};

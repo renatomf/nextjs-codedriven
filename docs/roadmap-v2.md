@@ -489,7 +489,7 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       `analyze` 247,8 → 34,1 MiB); alertas de dependência do `workflow` —
       resolvidos com `overrides` na mesma major (`npm audit` limpo).
       **Aceito em 2026-10-03.**
-- [ ] Pipeline em steps idempotentes: `ImportRequested → Extract → Filter →
+- [x] Pipeline em steps idempotentes: `ImportRequested → Extract → Filter →
       Chunk → Embed → Index → ProjectIndexed`, com `content_hash` para não
       reprocessar (TD-03). Domain events gravados via outbox na mesma
       transação do estado. O mesmo hash reaproveita os achados do LLM quando
@@ -500,9 +500,12 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       no workflow (step que baixa, extrai e grava, com retry); **upload de
       ZIP** no workflow pelo Neon Object Storage (ADR-011: navegador → bucket
       por POST assinado, step lê, extrai, grava e apaga; até 100 MB).
-      Falta: o `content_hash` dos chunks (TD-03). Outbox: o próprio projeto
-      (ADR-005).
-- [ ] Progresso vindo do job; sai a lógica de claim/stale da rota `analyze`;
+      `content_hash` + `embedding_model` nos chunks (TD-03, migração 0008):
+      reconstrução reaproveita os vetores do conteúdo que não mudou;
+      reanalisar código igual não gera nenhum embedding. Outbox: o próprio
+      projeto (ADR-005), sem tabela de eventos enquanto o job é o único
+      consumidor.
+- [x] Progresso vindo do job; sai a lógica de claim/stale da rota `analyze`;
       reaper para projetos travados (TD-10, TD-11).
       Progresso: a **análise** roda como Vercel Workflow (PR #95): a rota
       só faz o claim e dispara o run, steps com retry e `FatalError`, run
@@ -513,8 +516,8 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       fica (protege contra duas abas); a janela fica só para projeto sem
       run (importação) ou run que o Workflow não acha mais. Reaper (TD-11):
       cron diário que marca como falha o projeto parado em `processing` há
-      mais de 1 h, exceto run vivo no Workflow. Falta: importação no job
-      (TD-10).
+      mais de 1 h, exceto run vivo no Workflow. Importação no job (TD-10):
+      GitHub (PR #106) e ZIP via object storage (ADR-011, PR #112).
 - [ ] Parsing fora da thread da request (TD-09); modelo de embeddings com
       retry e cache resolvidos (TD-01; TD-05 com ADR).
       Progresso: parsing da análise num step do workflow (TD-09 parcial,
