@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/modules/ingestion/infrastructure/onnx-embedder", () => ({
-  onnxEmbedder: { embed: vi.fn() },
+  onnxEmbedder: { model: "test-model@1:q8", embed: vi.fn() },
   embedTexts: vi.fn(),
   embedQuery: mocks.embedQuery,
 }));

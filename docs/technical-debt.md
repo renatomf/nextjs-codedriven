@@ -51,6 +51,14 @@ maintainability) · **Low** (cleanup).
 - **Direction:** add `embedding_model` (and a `content_hash` for idempotent
   re-indexing).
 - **Phase:** RAG 2.0.
+- **Done (Phase 5):** `code_chunks.content_hash` (SHA-256 of the chunk's
+  text, the only input of its vector) and `embedding_model` (model, pinned
+  revision and dtype), migration 0008. A rebuild reuses the stored vector of
+  any content it already has from the same model and embeds only the rest,
+  each distinct text once; a model change re-embeds everything. Re-analyzing
+  unchanged code embeds nothing (`ingestion.knowledge_stored` logs `chunks`
+  and `reused`). Chunks stored before 0008 have no hash and are embedded once
+  more.
 
 ### TD-04 — `EMBEDDING_DIMENSIONS` has three sources of truth · Medium
 - **Where:** [limits.ts:12](../src/lib/limits.ts#L12),

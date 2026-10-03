@@ -194,6 +194,11 @@ export const codeChunks = pgTable(
     startLine: integer("start_line"),
     endLine: integer("end_line"),
     embedding: vector("embedding", { dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+    // TD-03: what the vector was made from and by which model. A rebuild
+    // reuses vectors with the same hash and model; a model change re-embeds.
+    // Null for chunks stored before migration 0008 (embedded again once).
+    contentHash: text("content_hash"),
+    embeddingModel: text("embedding_model"),
   },
   (t) => [index("code_chunks_project_id_idx").on(t.projectId)],
 ).enableRLS();

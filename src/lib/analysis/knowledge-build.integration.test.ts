@@ -14,7 +14,7 @@ import { axisEmbedding, createUser, deleteUsers } from "@/test/integration/facto
 const mocks = vi.hoisted(() => ({ embedTexts: vi.fn() }));
 
 vi.mock("@/modules/ingestion/infrastructure/onnx-embedder", () => ({
-  onnxEmbedder: { embed: mocks.embedTexts },
+  onnxEmbedder: { model: "test-model@1:q8", embed: mocks.embedTexts },
   embedTexts: mocks.embedTexts,
   embedQuery: vi.fn(),
 }));
@@ -127,6 +127,24 @@ describe("buildProjectKnowledge", () => {
     expect((await chunksOf(projectId)).map((chunk) => chunk.filePath)).toEqual(["src/only.ts"]);
   });
 
+  // TD-03: the embedding is the costliest step of a re-analysis; unchanged
+  // content keeps its stored vector (same hash, same model).
+  it("embeds nothing again when a rebuild finds the same code", async () => {
+    const projectId = await projectWithFiles();
+    await buildProjectKnowledge(owner, projectId);
+    const before = await chunksOf(projectId);
+    mocks.embedTexts.mockClear();
+
+    await buildProjectKnowledge(owner, projectId);
+
+    expect(mocks.embedTexts).not.toHaveBeenCalled();
+    const after = await chunksOf(projectId);
+    expect(after.map((chunk) => chunk.content)).toEqual(before.map((chunk) => chunk.content));
+    // The reused vectors still answer the search as before.
+    const [best] = await searchProjectChunks(owner, projectId, axisEmbedding(0), 1);
+    expect(best.content).toBe(before[0].content);
+  });
+
   it("fails with a user-facing message when there is nothing to analyze", async () => {
     const projectId = await projectWithFiles([
       { relativePath: "README.md", content: "# docs only" },
@@ -145,6 +163,11 @@ describe("buildProjectKnowledge", () => {
     const projectId = await projectWithFiles();
     await buildProjectKnowledge(owner, projectId);
     const before = await chunksOf(projectId);
+    // New code, so the rebuild has something to embed (unchanged code would
+    // reuse its vectors and never call the model, TD-03).
+    await persistProjectFiles(owner, projectId, [
+      { relativePath: "src/changed.ts", content: "export const changed = () => 2;\n", sizeBytes: 32 },
+    ]);
     mocks.embedTexts.mockRejectedValue(new Error("model download failed: token=hunter2"));
 
     await expect(buildProjectKnowledge(owner, projectId)).rejects.toThrow();
