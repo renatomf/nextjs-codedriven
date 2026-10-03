@@ -958,6 +958,7 @@ Mudam o roadmap a partir da v2.2.
 | 008 | Retenção e exclusão de dados | 6 |
 | 009 | Estratégia de evals e gate no CI | 7 |
 | 010 | Fórmula do score (penalidade com teto) | 7 |
+| 011 | [Onde o ZIP enviado fica até o job processá-lo](decisions/011-zip-upload-storage.md) (TD-45) — proposta | 5 |
 
 Formato: contexto, problema, opções (inclusive as rejeitadas), decisão,
 trade-offs, consequências.

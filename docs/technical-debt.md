@@ -473,6 +473,20 @@ maintainability) · **Low** (cleanup).
   Vercel it is a build environment variable. Not an `.npmrc` key: npm warns
   that unknown project keys stop working in its next major version.
 
+### TD-45 — ZIP uploads over 4.5 MB fail in production · High
+- **Where:** [actions/github.ts](../src/lib/actions/github.ts)
+  (`createProjectFromZip`), [next.config.ts](../next.config.ts)
+  (`serverActions.bodySizeLimit: "110mb"`), the upload form (100 MB)
+- **Problem:** Vercel caps a function's request body at 4.5 MB and answers
+  `413 FUNCTION_PAYLOAD_TOO_LARGE` above it (docs "Functions Limits", read
+  2026-10-03). The Next.js body limit does not lift the platform's. The app
+  promises 100 MB; a ZIP between 4.5 and 100 MB fails before any of our code
+  runs, with no message we control. Found while planning the ZIP import job.
+- **Direction:** [ADR-011](decisions/011-zip-upload-storage.md): an honest
+  4 MB limit now (form and server), then direct upload from the browser to
+  object storage so the job reads the file.
+- **Phase:** Ingestion async (Phase 5).
+
 ---
 
 ## Auth & GitHub
