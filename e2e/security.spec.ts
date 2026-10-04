@@ -36,6 +36,24 @@ test.describe("content security policy", () => {
     });
   }
 
+  // On Vercel the render saw a `content-security-policy` request header with
+  // no script-src (2026-10-04, production): Next.js read the nonce from it
+  // first and no script got one. Same request here.
+  test("scripts keep the nonce when the request already carries a policy", async ({ page }) => {
+    await page.setExtraHTTPHeaders({ "content-security-policy": "frame-ancestors 'none'" });
+    const violations = await watchCspViolations(page);
+
+    const response = await page.goto("/login");
+    await page.waitForLoadState("networkidle");
+
+    const nonce = nonceOf(response?.headers()["content-security-policy-report-only"]);
+    const scripts = await page.locator("script").evaluateAll((nodes) =>
+      nodes.map((node) => (node as HTMLScriptElement).nonce),
+    );
+    expect(scripts.every((value) => value === nonce)).toBe(true);
+    expect(violations).toEqual([]);
+  });
+
   test("each request gets a new nonce", async ({ request }) => {
     const first = (await request.get("/login")).headers()["content-security-policy-report-only"];
     const second = (await request.get("/login")).headers()["content-security-policy-report-only"];
