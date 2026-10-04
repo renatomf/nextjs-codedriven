@@ -12,7 +12,7 @@
 ![Auth.js](https://img.shields.io/badge/Auth-Auth.js_v5-7C3AED)
 ![Stripe](https://img.shields.io/badge/Billing-Stripe-635BFF?logo=stripe)
 ![Tests](https://img.shields.io/badge/tests-730-success)
-![ADRs](https://img.shields.io/badge/ADRs-8-informational)
+![ADRs](https://img.shields.io/badge/ADRs-11-informational)
 
 **Relatório de demonstração** (sem cadastro): [um relatório real, por link público só de leitura](https://nextjs-codedriven.vercel.app/r/dEVSu6Ax3931oUeMuQ8aBd-maFvYFt0vE3-WX2yHRpw). Mostra só o relatório, nunca o código-fonte, com segredos redigidos.
 
@@ -22,7 +22,7 @@
 
 O projeto nasceu de um tutorial ([AI-Code-Analyzer](https://github.com/AliSadeghi-dev/AI-Code-Analyzer)), congelado na tag `v1-tutorial`. A **v2** é o que este repositório tenta demonstrar: transformar um protótipo num sistema de produção **medindo antes e depois** de cada mudança. Isso aparece em:
 
-- [8 ADRs](docs/decisions/) com as decisões e as alternativas recusadas;
+- [11 ADRs](docs/decisions/) com as decisões e as alternativas recusadas;
 - um [roadmap](docs/roadmap-v2.md) por fases, com escopo fechado e critérios de saída;
 - um [registro de dívida técnica](docs/technical-debt.md) que separa *resolvido*, *aceito* e *sei que existe*;
 - **evals** que impedem a análise de piorar sem ninguém perceber.
@@ -260,9 +260,12 @@ As decisões ficam em [`docs/decisions/`](docs/decisions/), cada uma com context
 | [001](docs/decisions/001-modular-monolith.md) | Monólito modular com Clean Architecture e DDD seletivos |
 | [002](docs/decisions/002-module-convention.md) | Convenção dos módulos e regras de arquitetura no CI |
 | [003](docs/decisions/003-quota.md) | Cota de uso do plano: lock, checagem e uso numa transação; falha nossa devolve |
+| [004](docs/decisions/004-llm-cost-limits.md) | Custo do LLM: orçamento diário de tokens por plano, teto por chamada, kill switch no banco |
 | [005](docs/decisions/005-job-runner.md) | Vercel Workflows como job runner da importação e da análise |
 | [006](docs/decisions/006-embeddings-runtime.md) | Embeddings em runtime serverless (ONNX em CPU, cache por hash) |
 | [007](docs/decisions/007-github-app.md) | GitHub App só de leitura no lugar do OAuth App com escopo `repo` |
+| [008](docs/decisions/008-data-retention.md) | Retenção de 90 dias para o código e exclusão de conta de ponta a ponta |
+| [009](docs/decisions/009-evals.md) | Evals em dois níveis: determinístico obrigatório e LLM real quando a análise muda |
 | [010](docs/decisions/010-score-formula.md) | Fórmula da nota: achados agrupados, penalidade decrescente, testes calibrados |
 | [011](docs/decisions/011-zip-upload-storage.md) | ZIP enviado direto ao object storage até o job processá-lo |
 
