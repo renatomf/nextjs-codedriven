@@ -522,7 +522,11 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       retry e cache resolvidos (TD-01; TD-05 com ADR).
       Progresso: parsing da análise num step do workflow (TD-09 parcial,
       PR #95); TD-01 feito (carga com retry e falha que não fica em cache).
-      Falta o ADR-006 (TD-05: embeddings em runtime serverless).
+      [ADR-006](decisions/006-embeddings-runtime.md) proposto com números
+      de produção: modelo local na CPU (cold start 1,2 s; embedding ~44 s
+      por análise; reanálise sem mudança reaproveita tudo, TD-03). Risco
+      restante: projeto perto de 1.000 arquivos estourar os 300 s de um step
+      (TD-46). Falta: aceitar o ADR-006.
 - [x] **Degradação graciosa:** com o LLM fora ou sem cota, o relatório sai só
       determinístico, sinalizado como tal. Feito: kill switch desligado,
       orçamento diário de tokens gasto ou provedor falhando na **última**
@@ -957,7 +961,7 @@ Mudam o roadmap a partir da v2.2.
 | 003 | [Regras da cota](decisions/003-quota.md), inclusive falha do sistema × erro do usuário (TD-12) — proposta | 3 |
 | 004 | Limites de custo do LLM e kill switch | 4 |
 | 005 | [Job runner da ingestão + outbox](decisions/005-job-runner.md) — aceita | 5 |
-| 006 | Embeddings em runtime serverless (TD-05) | 5 |
+| 006 | [Embeddings em runtime serverless](decisions/006-embeddings-runtime.md) (TD-05, TD-46) — proposta | 5 |
 | 007 | GitHub App no lugar do OAuth App (TD-15) | 6 |
 | 008 | Retenção e exclusão de dados | 6 |
 | 009 | Estratégia de evals e gate no CI | 7 |
