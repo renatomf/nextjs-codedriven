@@ -162,6 +162,7 @@ const stripeClient = () => import("./infrastructure/stripe/client");
 const stripeCheckout = () => import("./infrastructure/stripe/checkout");
 const stripeSync = () => import("./infrastructure/stripe/sync-checkout");
 const stripeWebhook = () => import("./infrastructure/stripe/webhook");
+const stripeCloseAccount = () => import("./infrastructure/stripe/close-account");
 
 /**
  * Same as getPlanCatalog(), but premium.priceLabel comes from Stripe
@@ -197,6 +198,14 @@ export async function syncCheckoutSessionForUser(userId: string, checkoutSession
 /** Recover the plan from Stripe by listing the customer's subscriptions. */
 export async function syncCustomerSubscriptionsForUser(userId: string) {
   return (await stripeSync()).syncCustomerSubscriptionsForUser(userId);
+}
+
+/**
+ * Account deletion: deletes the Stripe customer (subscriptions end at once).
+ * Throws when Stripe fails, so nothing else is deleted.
+ */
+export async function closeBillingAccount(userId: string) {
+  return (await stripeCloseAccount()).closeBillingAccount(userId);
 }
 
 /** The event, or null when the signature does not match the raw payload. */

@@ -18,3 +18,4 @@ export {
   recordSignIn,
   verifyCredentials,
 } from "./infrastructure/drizzle-accounts";
+export { deleteAccountData } from "./infrastructure/drizzle-account-deletion";

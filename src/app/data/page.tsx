@@ -226,7 +226,14 @@ export default function DataPage() {
                 </Link>{" "}
                 deletes the stored token.
               </li>
-              <li>Deleting the whole account is not self-service yet.</li>
+              <li>
+                Deleting your account in{" "}
+                <Link href="/settings" className="underline underline-offset-4">
+                  Settings
+                </Link>{" "}
+                removes all of the above at once and cancels your subscription.
+                Stripe keeps its own payment records, as the law requires.
+              </li>
             </ul>
           </section>
         </div>
