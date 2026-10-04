@@ -26,7 +26,13 @@ const PAUSE_MS = Number(process.env.LLM_EVAL_PAUSE_MS ?? 20_000);
 const ONLY = process.env.LLM_EVAL_CASES?.split(",").map((name) => name.trim());
 
 type Expected = { categories: IssueCategory[]; filePath: string; lines?: number[]; note?: string };
-type EvalCase = { name: string; files: { relativePath: string; content: string }[]; expected: Expected[] };
+type Forbidden = { filePath: string; pattern: RegExp; note: string };
+type EvalCase = {
+  name: string;
+  files: { relativePath: string; content: string }[];
+  expected: Expected[];
+  forbidden?: Forbidden[];
+};
 
 const key = (category: string, filePath: string | null) => `${category}:${filePath ?? "-"}`;
 
@@ -41,6 +47,7 @@ async function allCases(): Promise<EvalCase[]> {
     name: c.name,
     files: c.files,
     expected: c.expected.map((e) => ({ categories: [e.category], filePath: e.filePath })),
+    forbidden: c.forbidden,
   }));
   const repos = await Promise.all(
     REPO_CASES.filter((c) => !ONLY || ONLY.includes(c.name)).map(async (c) => ({ name: c.name, files: await loadRepo(c), expected: c.expected })),
@@ -72,6 +79,7 @@ it.skipIf(!enabled)(
         expected: Array<{ sent: boolean; found: boolean }>;
         expectedSent: number;
         issues: unknown[];
+        forbiddenFound: Array<{ note: string; title: string }>;
         recall: number;
         evidenceValidity: number;
         sentFiles: number;
@@ -109,13 +117,24 @@ it.skipIf(!enabled)(
                 )),
           );
         const isFound = (e: Expected) => e.categories.some((c) => found.has(key(c, e.filePath)));
+        // A case with nothing expected only checks what must not appear.
+        const share = (matching: number) =>
+          evalCase.expected.length === 0 ? 1 : matching / evalCase.expected.length;
+        const forbiddenFound = (evalCase.forbidden ?? []).flatMap((rule) =>
+          review.issues
+            .filter(
+              (issue) =>
+                issue.filePath === rule.filePath && rule.pattern.test(`${issue.title} ${issue.description}`),
+            )
+            .map((issue) => ({ note: rule.note, title: issue.title })),
+        );
 
         runs.push({
           latencyMs: Date.now() - started,
           usage: review.usage,
           droppedUnverified: review.droppedUnverified,
           expected: evalCase.expected.map((e) => ({ sent: sent(e), found: isFound(e) })),
-          expectedSent: evalCase.expected.filter(sent).length / evalCase.expected.length,
+          expectedSent: share(evalCase.expected.filter(sent).length),
           issues: review.issues.map(({ title, severity, category, filePath, evidence }) => ({
             title,
             severity,
@@ -123,7 +142,8 @@ it.skipIf(!enabled)(
             filePath,
             lines: evidence ? [evidence.startLine, evidence.endLine] : null,
           })),
-          recall: evalCase.expected.filter(isFound).length / evalCase.expected.length,
+          recall: share(evalCase.expected.filter(isFound).length),
+          forbiddenFound,
           // A cited file the model never saw is a hallucination.
           evidenceValidity:
             withFile.length === 0
@@ -157,6 +177,7 @@ it.skipIf(!enabled)(
         meanEvidenceValidity: mean(runs.map((r) => r.evidenceValidity)),
         stability: mean(pairs),
         meanFindings: mean(runs.map((r) => r.issues.length)),
+        maxForbiddenFound: runs.length === 0 ? null : Math.max(...runs.map((r) => r.forbiddenFound.length)),
         meanDroppedUnverified: mean(runs.map((r) => r.droppedUnverified)),
         meanLatencyMs: round(mean(runs.map((r) => r.latencyMs))),
         meanInputTokens: round(mean(runs.map((r) => r.usage.inputTokens ?? 0))),
@@ -197,7 +218,10 @@ it.skipIf(!enabled)(
           (c) =>
             `  ${c.name}: ${c.runs} ok, ${c.failedRuns} failed; sent ${fmt(c.meanExpectedSent)}, recall ${fmt(c.meanRecall)} (min ${fmt(c.minRecall)}), ` +
             `evidence ${fmt(c.meanEvidenceValidity)}, stability ${fmt(c.stability)}, ` +
-            `${fmt(c.meanFindings, 1)} findings (${fmt(c.meanDroppedUnverified, 1)} dropped), ${c.meanLatencyMs ?? "n/a"} ms, ${c.meanInputTokens ?? "n/a"}+${c.meanOutputTokens ?? "n/a"} tokens`,
+            `${fmt(c.meanFindings, 1)} findings (${fmt(c.meanDroppedUnverified, 1)} dropped), ${c.meanLatencyMs ?? "n/a"} ms, ${c.meanInputTokens ?? "n/a"}+${c.meanOutputTokens ?? "n/a"} tokens` +
+            (c.maxForbiddenFound ? `, FORBIDDEN ${c.maxForbiddenFound}` : "") +
+            // Why calls failed (masked; never the key), so a failure is diagnosable from the log.
+            (c.failures.length ? `; first failure: ${c.failures[0].error.slice(0, 300)}` : ""),
         ),
       ].join("\n"),
     );
@@ -227,6 +251,7 @@ it.skipIf(!enabled)(
     cases.forEach((c, i) => {
       expect(c.runs, `${c.name}: no successful run`).toBeGreaterThan(0);
       expect(c.meanEvidenceValidity, `${c.name}: cited a file it never received`).toBe(1);
+      expect(c.maxForbiddenFound, `${c.name}: reported a forbidden finding (a known false positive)`).toBe(0);
       const worst = Math.min(...foundPerRun(c.runDetails));
       expect(worst, `${c.name}: expected problems found`).toBeGreaterThanOrEqual(
         LLM_GATE.minFound[c.name] ?? evalCases[i].expected.length,

@@ -1,8 +1,8 @@
 {
   "review": {
-    "version": "9c8ef776",
-    "measuredBy": "evals/results/2026-09-30-d7c5284-llm.json",
-    "note": "Baseline with the real repositories (3 runs): synthetic cases all found, NodeGoat 6-7 of 9, Juice Shop 1-2 of 8."
+    "version": "4682f33b",
+    "measuredBy": "evals/results/2026-10-04-d565f70-llm.json",
+    "note": "TD-48: assumes the code compiles, no syntax findings. chunk-cut-mid-statement (this repo auth.ts) with no forbidden finding (before: \"stray character causing syntax error\"); synthetic cases all found, NodeGoat 7 of 9, Juice Shop 2 of 8 (1 run)."
   },
   "chat": {
     "version": "86e19fe0",

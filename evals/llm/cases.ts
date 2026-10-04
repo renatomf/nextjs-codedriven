@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import type { IssueCategory } from "@/modules/analysis";
 
 /**
@@ -11,7 +14,17 @@ export type LlmCase = {
   name: string;
   files: { relativePath: string; content: string }[];
   expected: { category: IssueCategory; filePath: string }[];
+  /** Issues that must not be reported: a false positive the gate rejects. */
+  forbidden?: { filePath: string; pattern: RegExp; note: string }[];
 };
+
+/**
+ * This repository's own NextAuth setup: the chunker splits it inside the
+ * config object, so a chunk ends at `async linkAccount(`. On 2026-10-04 the
+ * production review reported "a stray character … makes the file invalid"
+ * at its first line (TD-48): a chunk boundary taken for broken code.
+ */
+const authSetup = readFileSync(join(process.cwd(), "src", "lib", "auth.ts"), "utf8");
 
 const usersRoute = `import { db } from "../db";
 
@@ -176,5 +189,19 @@ export const LLM_CASES: LlmCase[] = [
       { relativePath: "src/utils/orders.ts", content: ordersService },
     ],
     expected: [{ category: "performance", filePath: "src/utils/orders.ts" }],
+  },
+  {
+    // Valid code split by the chunker mid-statement: nothing about syntax
+    // may be reported. Other findings in it are not judged here.
+    name: "chunk-cut-mid-statement",
+    files: [{ relativePath: "src/lib/auth.ts", content: authSetup }],
+    expected: [],
+    forbidden: [
+      {
+        filePath: "src/lib/auth.ts",
+        pattern: /syntax|stray|invalid (?:java|type)script|unclosed|unterminated|incomplete|truncat|parse error|fail to (?:compile|start)/i,
+        note: "a chunk boundary reported as broken code",
+      },
+    ],
   },
 ];

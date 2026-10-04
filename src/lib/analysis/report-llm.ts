@@ -70,10 +70,15 @@ function formatChunks(
         chunk.startLine && chunk.endLine
           ? `L${chunk.startLine}-L${chunk.endLine}`
           : "lines unknown";
+      // Chunks are cut by size, sometimes mid-statement (TD-48): say so, so a
+      // cut is not taken for broken code.
+      const cut = chunk.content.length > REVIEW_BUDGET.chunkChars;
       return dataBlock(
         boundary,
-        `Chunk ${index + 1}. File: ${chunk.filePath} (${lines})`,
-        chunk.content.slice(0, REVIEW_BUDGET.chunkChars),
+        `Chunk ${index + 1}. File: ${chunk.filePath} (${lines}, an excerpt: the file goes on before and after it)`,
+        cut
+          ? `${chunk.content.slice(0, REVIEW_BUDGET.chunkChars)}\n… [excerpt cut here]`
+          : chunk.content,
       );
     })
     .join("\n\n");

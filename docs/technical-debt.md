@@ -401,6 +401,30 @@ maintainability) · **Low** (cleanup).
   `REVIEW_PROMPT_VERSION` or the input hash changes anyway.
 - **Phase:** Security and data (Phase 6), if there is room; otherwise later.
 
+### TD-48 — The LLM review reported syntax errors in valid code · Medium
+- **Where:** [report-llm.ts](../src/lib/analysis/report-llm.ts) (how chunks
+  are sent), [review-prompt.ts](../src/modules/analysis/domain/review-prompt.ts)
+- **Problem:** found on this repository's production report (2026-10-04):
+  "a stray character … makes `src/lib/auth.ts` invalid", high severity. The
+  file is valid: the chunker splits its NextAuth config mid-statement (a
+  chunk ended at `async linkAccount(`), and the model also misreads dense
+  TypeScript (nested generics) as a typo.
+- **Direction:** the project builds and type-checks its code, so a syntax
+  finding is always a false positive: the prompt says to assume the code
+  compiles and never report syntax. Chunk headers also mark the excerpt, and
+  a chunk cut by the size budget ends with "… [excerpt cut here]". The LLM
+  eval gained forbidden findings and the case `chunk-cut-mid-statement`
+  (this repository's `auth.ts`).
+- **Done:** before, the old prompt reproduced it ("stray character causing
+  syntax error", `2026-10-04-b28cd52-llm.json`). A rule only about snippet
+  edges was not enough: the model flagged a line mid-chunk
+  (`2026-10-04-3dcf8eb-llm.json`). After, with the compile rule: no
+  forbidden finding, synthetic cases all found, NodeGoat 7 of 9 (was 6-7),
+  Juice Shop 2 of 8 (`2026-10-04-d565f70-llm.json`, 1 run). The same report
+  also had findings that are design choices, not defects (per-handler
+  session checks, CSP in Report-Only): out of scope here.
+- **Phase:** Evals + analysis quality (Phase 7 follow-up).
+
 ---
 
 ## Ingestion
