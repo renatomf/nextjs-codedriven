@@ -988,7 +988,7 @@ Mudam o roadmap a partir da v2.2.
 | 004 | Limites de custo do LLM e kill switch | 4 |
 | 005 | [Job runner da ingestão + outbox](decisions/005-job-runner.md) — aceita | 5 |
 | 006 | [Embeddings em runtime serverless](decisions/006-embeddings-runtime.md) (TD-05, TD-46) — aceita | 5 |
-| 007 | [GitHub App no lugar do OAuth App](decisions/007-github-app.md) (TD-15, TD-16) — proposta, spike pendente | 6 |
+| 007 | [GitHub App no lugar do OAuth App](decisions/007-github-app.md) (TD-15, TD-16) — proposta, spike aprovado | 6 |
 | 008 | Retenção e exclusão de dados | 6 |
 | 009 | Estratégia de evals e gate no CI | 7 |
 | 010 | Fórmula do score (penalidade com teto) | 7 |

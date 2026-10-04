@@ -1,6 +1,6 @@
 # ADR-007 — GitHub App no lugar do OAuth App para ler repositórios
 
-- **Status:** proposta (2026-10-04)
+- **Status:** proposta (2026-10-04); spike aprovado em todas as perguntas, aguardando aceite do autor
 - **Data:** 2026-10-04
 - **Fase do roadmap:** 6 — Segurança e dados (TD-15, TD-16)
 
@@ -80,6 +80,40 @@ prove, com um App de teste instalado em um repositório privado:
 | **Não consegue escrever** | `PUT /repos/{owner}/{repo}/contents/x` com o mesmo token → 403 |
 | `installation_id` forjado é recusado | callback com um id de outra conta → recusado (o token do usuário não lista essa instalação em `GET /user/installations`) |
 | O App se desinstala | `DELETE /app/installations/{id}` → 202 |
+
+### Resultado do spike (2026-10-04)
+
+Branch descartável `spike/gh-app` (PR #126, fechado sem merge), no preview:
+App de teste `codedriven-preview` (só na conta do autor, Contents e
+Metadata *Read-only*, sem webhook, autorização do usuário na instalação),
+variáveis `GITHUB_APP_*` só em Preview. JWT RS256 assinado com
+`node:crypto`, sem dependência nova. Rotas só no preview e só com sessão;
+a resposta trazia resultados, nunca tokens.
+
+| Pergunta | Resultado |
+|---|---|
+| `state` assinado + cookie, do mesmo usuário da sessão | ✅ |
+| A instalação é do usuário (`GET /user/installations` com o token dele) | ✅ |
+| `installation_id` forjado (outro número) | ✅ recusado: não está na lista do usuário |
+| Token de instalação gerado no servidor | ✅ `201`, expira em ~60 min, `contents: read` + `metadata: read` |
+| Lista só o repositório escolhido | ✅ `GET /installation/repositories`: 1 repositório privado |
+| Token limitado a 1 repositório | ✅ `201` |
+| Baixa o zipball privado | ✅ `302` → `codeload.github.com` → `200`, 4.515.845 bytes |
+| **Tentativa de escrita** (`PUT .../contents`) com o mesmo token | ✅ **`403`** |
+| O App se desinstala (`DELETE /app/installations/{id}`) | ✅ `204` |
+
+Achados para a implementação:
+
+- **Repositório vazio** dá `404` no download (o primeiro teste usou um
+  repositório sem commits: a API devolve o `302` e o `codeload` responde
+  `404`). A mensagem precisa dizer "repositório vazio", não "sem acesso".
+- **O GitHub só volta ao callback numa instalação nova.** Quando o App já
+  está instalado, a tela de configuração salva sem redirecionar: o app
+  precisa de um "atualizar repositórios" que não dependa do callback (o
+  token de instalação lista os repositórios na hora).
+- **Callback por domínio:** o App aceita até 10 URLs e os previews da Vercel
+  têm uma URL por branch. Testar a conexão num preview exige cadastrar a
+  URL daquela branch no App de preview (ou um domínio fixo para previews).
 
 ### Como fica
 
