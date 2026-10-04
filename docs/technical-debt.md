@@ -92,6 +92,12 @@ maintainability) · **Low** (cleanup).
 - **Direction:** ADR: bundle the model / set `env.cacheDir` to `/tmp` / move
   embeddings to a worker or an embeddings API behind an interface.
 - **Phase:** AI Gateway (ADR).
+- **Decided ([ADR-006](decisions/006-embeddings-runtime.md), proposed
+  2026-10-04):** keep the local model on the CPU. Measured in production:
+  model load (cold start) 1.2 s, embedding ~44 s per analysis (p50); the size
+  is solved (TD-41), a failed load retries (TD-01), unchanged code reuses its
+  vectors (TD-03), and no user code goes to an embeddings provider. What is
+  left is large projects against the 300 s step limit (TD-46).
 
 ### TD-35 — Embedding library pulls vulnerable, unmaintained dependencies · High
 - **Where:** [embeddings.ts](../src/lib/analysis/embeddings.ts),
@@ -511,6 +517,24 @@ maintainability) · **Low** (cleanup).
   from the browser straight to the bucket (signed POST, size enforced by the
   policy and checked again by the server) and the workflow imports them.
   The 4 MB in-request path remains only where storage is not configured.
+
+### TD-46 — A project near the import limit may outrun one workflow step · Medium
+- **Where:** [pipeline.ts](../src/lib/analysis/pipeline.ts)
+  (`buildProjectKnowledge` embeds every chunk in one step),
+  [limits.ts](../src/lib/limits.ts) (`MAX_FILE_COUNT` = 1,000)
+- **Problem:** on the Hobby CPU the embedding costs ~0.12 s per chunk
+  (production, 2026-10-04: p50 43.9 s for ~350–380 chunks). Real projects
+  reach 796 chunks (274 files); at that ratio 1,000 files give ~2,900
+  chunks, ~350 s — over the 300 s of a step, which would then fail its three
+  tries. Chunks measured with the production extractor and chunker
+  (2026-10-04): Juice Shop 633 files → 2,034 chunks (~245 s, 82% of the
+  limit); this repository 279 → 843. At ~3.1 chunks per file, 1,000 files
+  give ~3,100 chunks, ~370 s: projects between ~800 and 1,000 files would
+  fail. Re-analyses of unchanged code are not affected (TD-03).
+- **Direction:** [ADR-006](decisions/006-embeddings-runtime.md) (accepted):
+  embed in batches of ~1,000 chunks across steps, each idempotent by `content_hash`,
+  and swap the knowledge only at the end. Otherwise, alert above ~200 s.
+- **Phase:** Ingestion async (Phase 5) or right after.
 
 ---
 
