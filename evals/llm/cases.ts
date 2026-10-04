@@ -14,8 +14,11 @@ export type LlmCase = {
   name: string;
   files: { relativePath: string; content: string }[];
   expected: { category: IssueCategory; filePath: string }[];
-  /** Issues that must not be reported: a false positive the gate rejects. */
-  forbidden?: { filePath: string; pattern: RegExp; note: string }[];
+  /**
+   * Issues that must not be reported: a false positive the gate rejects.
+   * Without a filePath the rule applies to every issue, project-wide ones too.
+   */
+  forbidden?: { filePath?: string; pattern: RegExp; note: string }[];
 };
 
 /**
@@ -25,6 +28,22 @@ export type LlmCase = {
  * at its first line (TD-48): a chunk boundary taken for broken code.
  */
 const authSetup = readFileSync(join(process.cwd(), "src", "lib", "auth.ts"), "utf8");
+
+/**
+ * This repository's own API routes. The production review of 2026-10-04
+ * reported, on them, findings that are false or are design choices (TD-49):
+ * each is a forbidden finding below.
+ */
+const ownRoutes = [
+  "src/app/api/chat/route.ts",
+  "src/app/api/cron/reap-stuck-projects/route.ts",
+  "src/app/api/projects/[id]/analyze/route.ts",
+  "src/app/api/github/app/install/route.ts",
+  "src/app/api/explorer/file/route.ts",
+].map((relativePath) => ({
+  relativePath,
+  content: readFileSync(join(process.cwd(), ...relativePath.split("/")), "utf8"),
+}));
 
 const usersRoute = `import { db } from "../db";
 
@@ -201,6 +220,44 @@ export const LLM_CASES: LlmCase[] = [
         filePath: "src/lib/auth.ts",
         pattern: /syntax|stray|invalid (?:java|type)script|unclosed|unterminated|incomplete|truncat|parse error|fail to (?:compile|start)/i,
         note: "a chunk boundary reported as broken code",
+      },
+    ],
+  },
+  {
+    // Sound code whose patterns the review took for problems. Other findings
+    // in it are not judged here.
+    name: "design-choices-not-defects",
+    files: ownRoutes,
+    expected: [],
+    forbidden: [
+      {
+        pattern: /(?:repeat|duplicat)\w*.{0,60}(?:auth|session)|(?:auth|session).{0,80}(?:middleware|centrali[sz])/i,
+        note: "a session check in every handler is defense in depth, not duplication",
+      },
+      {
+        filePath: "src/app/api/cron/reap-stuck-projects/route.ts",
+        pattern: /timingSafeEqual|bearer|scheme/i,
+        note: "the whole `Bearer <secret>` is compared in constant time",
+      },
+      {
+        filePath: "src/app/api/chat/route.ts",
+        pattern: /request\.json|json pars|parse error|swallow/i,
+        note: "an unparsable body becomes null and zod answers 400",
+      },
+      {
+        filePath: "src/app/api/projects/[id]/analyze/route.ts",
+        pattern: /unnecessary|status check|extra (?:i\/o|latency)/i,
+        note: "the run status decides whether to start a new run",
+      },
+      {
+        filePath: "src/app/api/github/app/install/route.ts",
+        pattern: /secure flag|not (?:marked )?secure|\bsecure\b.{0,80}(?:development|non-production|NODE_ENV)/i,
+        note: "the cookie is secure in production; local development is http",
+      },
+      {
+        filePath: "src/app/api/explorer/file/route.ts",
+        pattern: /size limit|without (?:a |any )?limit|large files?|entire file/i,
+        note: "imported files are capped at 500 KB",
       },
     ],
   },

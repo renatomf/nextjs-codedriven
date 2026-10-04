@@ -26,7 +26,7 @@ const PAUSE_MS = Number(process.env.LLM_EVAL_PAUSE_MS ?? 20_000);
 const ONLY = process.env.LLM_EVAL_CASES?.split(",").map((name) => name.trim());
 
 type Expected = { categories: IssueCategory[]; filePath: string; lines?: number[]; note?: string };
-type Forbidden = { filePath: string; pattern: RegExp; note: string };
+type Forbidden = { filePath?: string; pattern: RegExp; note: string };
 type EvalCase = {
   name: string;
   files: { relativePath: string; content: string }[];
@@ -124,7 +124,8 @@ it.skipIf(!enabled)(
           review.issues
             .filter(
               (issue) =>
-                issue.filePath === rule.filePath && rule.pattern.test(`${issue.title} ${issue.description}`),
+                (rule.filePath === undefined || issue.filePath === rule.filePath) &&
+                rule.pattern.test(`${issue.title} ${issue.description}`),
             )
             .map((issue) => ({ note: rule.note, title: issue.title })),
         );
