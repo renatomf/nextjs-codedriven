@@ -122,7 +122,8 @@ revisão do LLM com o código em blocos de dados
 arquivo citado) → `groupFindings` + `diminishingPenaltyPolicy` (ADR-010) →
 `reports`. Cada step tem até 300 s (duração da função `flow`). Sem a
 revisão do LLM (kill switch, orçamento de tokens gasto, provedor falhando
-na última tentativa), o relatório sai só com métricas e regras e grava o
+na última tentativa ou recusando a chave — 401/403, sem retry), o
+relatório sai só com métricas e regras e grava o
 motivo (`aiReviewSkipped`); a página avisa "Automated checks only".
 
 O projeto guarda o run dono (`analysis_run_id`): a rota pergunta ao

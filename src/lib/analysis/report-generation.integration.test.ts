@@ -1,3 +1,4 @@
+import { APICallError } from "ai";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -202,6 +203,28 @@ describe("generateProjectReport (characterization)", () => {
     expect(second.aiReviewSkipped).toBeUndefined();
     expect((await storedReport(projectId)).categoryScores.aiReviewSkipped).toBeUndefined();
   });
+
+  // Seen in production (2026-10-03): an invalid key was retried three times.
+  it.each([401, 403])(
+    "does not retry a refused key (%i): deterministic report at once",
+    async (statusCode) => {
+      const projectId = await analyzedProject();
+      mocks.runLlmHealthReview.mockRejectedValueOnce(
+        new APICallError({
+          message: "Invalid API Key",
+          url: "https://api.groq.com/openai/v1/chat/completions",
+          requestBodyValues: {},
+          statusCode,
+          isRetryable: false,
+        }),
+      );
+
+      const report = await generateProjectReport(owner, projectId, { finalAttempt: false });
+
+      expect(report.aiReviewSkipped).toBe("unavailable");
+      expect(await projectState(projectId)).toEqual({ status: "completed", errorMessage: null });
+    },
+  );
 
   it("leaves an LLM failure unwritten while the workflow will retry", async () => {
     const projectId = await analyzedProject();
