@@ -838,9 +838,13 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 
 ## Encerramento da v2.0
 
-- [ ] Remover as classes `ca-*` sem uso do `globals.css`.
-- [ ] README como estudo de caso: problema, arquitetura (C4), antes × depois
-      medido, gráfico do dogfooding, links para as ADRs.
+- [x] Remover as classes `ca-*` sem uso do `globals.css`: medido em
+      2026-10-04, nenhuma sem uso (59 definidas, todas referenciadas em
+      `src/`).
+- [x] README como estudo de caso: problema, arquitetura (C4), antes × depois
+      medido, gráfico do dogfooding, links para as ADRs (2026-10-04, sem
+      lista de variáveis de ambiente: o `.env.example` e os runbooks
+      documentam).
 - [x] Relatório de demonstração publicado pelo **link público** (Fase 3) e
       linkado no README: quem avalia não precisa criar conta, conectar o
       GitHub nem esperar uma análise.
