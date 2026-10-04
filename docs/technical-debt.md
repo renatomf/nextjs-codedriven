@@ -371,14 +371,17 @@ maintainability) · **Low** (cleanup).
   [explain route](../src/app/api/explorer/explain/route.ts) (the file)
 - **Problem:** found while writing the data page (Phase 6, 2026-10-04): the
   code sent to Groq is not passed through a redactor. A hardcoded API key or
-  password in a user's project reaches a third party (Groq may keep request
-  data for up to 30 days for abuse monitoring). `redactForPublic` exists, but
-  only for public share links. The data page states this plainly.
+  password in a user's project reaches a third party. `redactForPublic`
+  exists, but only for public share links. The data page states this
+  plainly.
+- **Mitigated (2026-10-04):** Zero Data Retention turned on in the Groq
+  console (Global and Inference APIs, Data Controls): Groq no longer keeps
+  request data, not even the up to 30 days for abuse monitoring. The secret
+  still leaves the app, so the item stays open.
 - **Direction:** redact before sending, with the same patterns as the share
   links, and check that the review still finds hardcoded secrets (the
   heuristic rule runs on the stored code, not on what the LLM sees). Bump
-  `REVIEW_PROMPT_VERSION` or the input hash changes anyway. Also consider
-  turning on Groq's Zero Data Retention (Data Controls in the console).
+  `REVIEW_PROMPT_VERSION` or the input hash changes anyway.
 - **Phase:** Security and data (Phase 6), if there is room; otherwise later.
 
 ---
