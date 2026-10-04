@@ -6,6 +6,7 @@ import {
   RefreshBillingButton,
   UpgradeToPremiumButton,
 } from "@/components/billing/billing-buttons";
+import { DeleteAccountForm } from "@/components/settings/delete-account-form";
 import { DisconnectGitHubButton } from "@/components/settings/disconnect-github-button";
 import {
   SettingsToast,
@@ -258,6 +259,19 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               </Button>
             </div>
           </section>
+
+          {user?.email ? (
+            <section className="ca-panel mt-5 space-y-4 p-6">
+              <div>
+                <h2 className="ca-title text-2xl">Delete account</h2>
+                <p className="mt-1 text-sm text-(--ca-muted)">
+                  Permanently deletes your account and everything in it, and
+                  cancels your subscription at once.
+                </p>
+              </div>
+              <DeleteAccountForm email={user.email} />
+            </section>
+          ) : null}
 
           <p className="mt-6 text-sm text-(--ca-muted)">
             What is sent to the AI model and what is stored:{" "}

@@ -611,6 +611,14 @@ maintainability) · **Low** (cleanup).
 - **Direction:** ADR: DB sessions, or a `sessionVersion` on the user checked
   in the `jwt` callback.
 - **Phase:** Security.
+- **Also (Phase 6, account deletion):** deleting the account signs out only
+  the browser that did it. A JWT on another device stays valid until it
+  expires: it finds no data (every query is scoped by the deleted id) and
+  cannot create anything (quota, checkout and inserts need the user row),
+  but the app still shows it as signed in. One gap: `prepareZipUpload`
+  signs a bucket upload from the session alone, so such a JWT can still
+  upload a ZIP under its prefix; it is never imported (the start needs the
+  quota) and the daily reaper deletes it. Revocable sessions close both.
 
 ### TD-19 — No encryption key rotation · Low
 - **Where:** [encryption.ts:6](../src/lib/encryption.ts#L6)

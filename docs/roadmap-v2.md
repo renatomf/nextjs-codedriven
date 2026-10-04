@@ -566,8 +566,16 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       apaga arquivos, chunks e `embedding_cache`; o projeto e o relatório
       ficam (`code_removed_at`). GitHub volta com "Analyze again"; ZIP, com
       novo upload. Migração 0010 (`last_used_at`, `code_removed_at`).
-- [ ] Exclusão de conta de ponta a ponta: cascade + cancelamento no Stripe +
-      teste provando que nada sobra (LGPD).
+- [x] Exclusão de conta de ponta a ponta: cascade + cancelamento no Stripe +
+      teste provando que nada sobra (LGPD). Em Settings, digitando o email
+      (conferido no servidor). Ordem: apaga o customer no Stripe (assinatura
+      termina na hora; se falhar, nada é apagado) → uploads pendentes no
+      bucket → numa transação, `verification_tokens` do email e o usuário
+      (o resto em cascata). O teste procura o id, o email, o customer e o
+      projeto em **todas** as tabelas do schema e não acha nada. Rate limits
+      guardam só SHA-256 da chave. Fica: JWT em outros dispositivos até
+      expirar (TD-18): não vê dados e não cria nada (só um upload de ZIP
+      que nunca é importado e o reaper apaga).
 - [x] Página de dados: o que vai para o Groq, por quanto tempo e onde fica
       guardado. Pública em `/data` (link no rodapé e em Settings); os números
       vêm das mesmas constantes do código. Achado: o código vai ao Groq sem
