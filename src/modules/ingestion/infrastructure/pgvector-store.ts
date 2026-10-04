@@ -1,6 +1,6 @@
 import { and, cosineDistance, eq, exists, isNotNull, sql } from "drizzle-orm";
 
-import { codeChunks, projects } from "@/db/schema";
+import { codeChunks, embeddingCache, projects } from "@/db/schema";
 import { db } from "@/lib/db";
 import { traced } from "@/shared/tracing";
 
@@ -22,6 +22,11 @@ export const pgvectorStore: VectorStore = {
   embeddingsByContent(userId, projectId, model) {
     return traced("vector.read_existing", {}, () => existingEmbeddings(userId, projectId, model));
   },
+  keepEmbeddings(userId, projectId, model, vectors) {
+    return traced("vector.keep_batch", { vectors: vectors.length }, () =>
+      keepBatch(userId, projectId, model, vectors),
+    );
+  },
   replaceProjectChunks(userId, projectId, chunks) {
     return traced("vector.replace_chunks", { chunks: chunks.length }, () =>
       replaceChunks(userId, projectId, chunks),
@@ -29,28 +34,72 @@ export const pgvectorStore: VectorStore = {
   },
 };
 
+const ownedProject = (userId: string, projectId: string) =>
+  exists(
+    db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId))),
+  );
+
 async function existingEmbeddings(
   userId: string,
   projectId: string,
   model: string,
 ): Promise<Map<string, number[]>> {
-  const rows = await db
-    .select({ contentHash: codeChunks.contentHash, embedding: codeChunks.embedding })
-    .from(codeChunks)
-    .where(
-      and(
-        eq(codeChunks.projectId, projectId),
-        eq(codeChunks.embeddingModel, model),
-        isNotNull(codeChunks.contentHash),
-        exists(
-          db
-            .select({ id: projects.id })
-            .from(projects)
-            .where(and(eq(projects.id, projectId), eq(projects.userId, userId))),
+  const [stored, kept] = await Promise.all([
+    db
+      .select({ contentHash: codeChunks.contentHash, embedding: codeChunks.embedding })
+      .from(codeChunks)
+      .where(
+        and(
+          eq(codeChunks.projectId, projectId),
+          eq(codeChunks.embeddingModel, model),
+          isNotNull(codeChunks.contentHash),
+          ownedProject(userId, projectId),
         ),
       ),
-    );
-  return new Map(rows.map((row) => [row.contentHash!, row.embedding]));
+    db
+      .select({ contentHash: embeddingCache.contentHash, embedding: embeddingCache.embedding })
+      .from(embeddingCache)
+      .where(
+        and(
+          eq(embeddingCache.projectId, projectId),
+          eq(embeddingCache.embeddingModel, model),
+          ownedProject(userId, projectId),
+        ),
+      ),
+  ]);
+  return new Map([...stored, ...kept].map((row) => [row.contentHash!, row.embedding]));
+}
+
+async function keepBatch(
+  userId: string,
+  projectId: string,
+  model: string,
+  vectors: Parameters<VectorStore["keepEmbeddings"]>[3],
+): Promise<void> {
+  const [project] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
+  if (!project) throw new Error("Project not found");
+
+  const INSERT_BATCH = 100;
+  for (let i = 0; i < vectors.length; i += INSERT_BATCH) {
+    await db
+      .insert(embeddingCache)
+      .values(
+        vectors.slice(i, i + INSERT_BATCH).map((vector) => ({
+          projectId,
+          contentHash: vector.contentHash,
+          embeddingModel: model,
+          embedding: vector.embedding,
+        })),
+      )
+      // A retried batch keeps what it already kept.
+      .onConflictDoNothing();
+  }
 }
 
 async function replaceChunks(
@@ -83,6 +132,9 @@ async function replaceChunks(
         })),
       );
     }
+
+    // The batches are now part of the knowledge (ADR-006).
+    await tx.delete(embeddingCache).where(eq(embeddingCache.projectId, projectId));
   });
 }
 

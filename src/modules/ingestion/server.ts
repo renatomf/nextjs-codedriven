@@ -3,7 +3,7 @@ import "server-only";
 import { logger } from "@/shared/logger";
 
 import type { ChunkDraft } from "./domain/knowledge";
-import { storeKnowledge } from "./application/store-knowledge";
+import { embedMissingBatch, storeKnowledge } from "./application/store-knowledge";
 import { onnxEmbedder } from "./infrastructure/onnx-embedder";
 import { pgvectorStore } from "./infrastructure/pgvector-store";
 
@@ -14,6 +14,26 @@ import { pgvectorStore } from "./infrastructure/pgvector-store";
 
 export { embedQuery } from "./infrastructure/onnx-embedder";
 export { searchProjectChunks, type StoredChunk } from "./infrastructure/pgvector-store";
+
+/**
+ * One batch of a large project's embedding (ADR-006): embeds up to `limit`
+ * chunks that have no vector yet and keeps them for the final swap. Returns
+ * how many distinct chunks are still missing.
+ */
+export function embedProjectChunkBatch(
+  userId: string,
+  projectId: string,
+  drafts: ChunkDraft[],
+  limit: number,
+): Promise<{ embedded: number; remaining: number }> {
+  return embedMissingBatch(
+    { embedder: onnxEmbedder, store: pgvectorStore },
+    userId,
+    projectId,
+    drafts,
+    limit,
+  );
+}
 
 /**
  * Embeds the chunks and replaces the project's knowledge in pgvector,

@@ -10,6 +10,44 @@ export function contentHash(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
+/**
+ * One batch of a large project's embedding (ADR-006, TD-46): embeds up to
+ * `limit` distinct texts the project has no vector for yet and keeps them
+ * until `storeKnowledge` swaps the knowledge. Each workflow step runs one
+ * batch within its time limit; a retried batch skips what it already kept.
+ * Returns how many distinct texts are still missing.
+ */
+export async function embedMissingBatch(
+  deps: { embedder: Embedder; store: VectorStore },
+  userId: string,
+  projectId: string,
+  drafts: ChunkDraft[],
+  limit: number,
+): Promise<{ embedded: number; remaining: number }> {
+  const model = deps.embedder.model;
+  const known = await deps.store.embeddingsByContent(userId, projectId, model);
+  const missing = new Map<string, string>(); // hash → content, each once
+  for (const draft of drafts) {
+    const hash = contentHash(draft.content);
+    if (!known.has(hash) && !missing.has(hash)) missing.set(hash, draft.content);
+  }
+
+  const batch = [...missing].slice(0, limit);
+  if (batch.length === 0) return { embedded: 0, remaining: 0 };
+
+  const embeddings = await deps.embedder.embed(batch.map(([, content]) => content));
+  if (embeddings.length !== batch.length) {
+    throw new Error(`Embedder returned ${embeddings.length} vectors for ${batch.length} chunks`);
+  }
+  await deps.store.keepEmbeddings(
+    userId,
+    projectId,
+    model,
+    batch.map(([hash], i) => ({ contentHash: hash, embedding: embeddings[i] })),
+  );
+  return { embedded: batch.length, remaining: missing.size - batch.length };
+}
+
 export type StoreKnowledgeResult = {
   chunks: number;
   /** Chunks whose vector came from the previous knowledge (TD-03). */
