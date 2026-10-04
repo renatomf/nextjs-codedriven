@@ -21,7 +21,8 @@
     "measure:code": "node scripts/measure-code.mjs",
     "measure:functions": "node scripts/measure-functions.mjs",
     "eval": "vitest run --config vitest.eval.config.mts",
-    "eval:chart": "node scripts/dogfooding-chart.mjs"
+    "eval:chart": "node scripts/dogfooding-chart.mjs",
+    "measure:coverage": "node scripts/measure-coverage.mjs"
   },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.52",
@@ -77,6 +78,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitest/coverage-v8": "^5.0.2",
     "babel-plugin-react-compiler": "1.0.0",
     "dependency-cruiser": "^18.4.0",
     "dotenv": "^18.0.4",

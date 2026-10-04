@@ -81,8 +81,13 @@ function componentLogicLines(lines: string[], start: number, end: number): numbe
   return end - start + 1;
 }
 
-// `from "x"`, `import "x"`, `import("x")`, `require("x")` (not vi.mock strings).
-const IMPORT_SPECIFIER = /(?:\bfrom\s+|\bimport\s+|\bimport\s*\(\s*|\brequire\s*\(\s*)["']([^"']+)["']/g;
+// Static `import … from "x"` / `export … from "x"` / `import "x"` only where a
+// statement starts (an import quoted inside a string, e.g. a test fixture, is
+// not one), plus `import("x")` and `require("x")` (not vi.mock strings).
+const IMPORT_SPECIFIER =
+  /(?:^[ \t]*(?:import|export)\b[^;'"`]*?\bfrom\s*|^[ \t]*import\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["']([^"']+)["']/gm;
+// `vi.mock("x")` / `jest.mock("x")`: the module is replaced, its code never runs.
+const MOCK_SPECIFIER = /\b(?:vi|jest)\.mock\s*\(\s*["']([^"']+)["']/g;
 
 /**
  * Source path (without extension) a test imports, or null for packages.
@@ -254,51 +259,65 @@ export function computeDeterministicMetrics(
   const testedBases = new Set(
     testFiles.map((file) => guessSourceFromTest(file.relativePath)),
   );
-  // Files a test imports count as tested too (tests often live apart).
+  // Files a test imports count as tested too (tests often live apart), unless
+  // the same test mocks them (`vi.mock` / `jest.mock`): then they never run.
   const importedByTests = new Set<string>();
   for (const test of testFiles) {
+    const mocked = new Set<string>();
+    for (const [, specifier] of test.content.matchAll(MOCK_SPECIFIER)) {
+      const resolved = resolveImport(test.relativePath, specifier);
+      if (resolved) mocked.add(moduleKey(resolved));
+    }
     for (const [, specifier] of test.content.matchAll(IMPORT_SPECIFIER)) {
       const resolved = resolveImport(test.relativePath, specifier);
-      if (resolved) importedByTests.add(resolved.replace(/\/index$/, ""));
+      if (resolved && !mocked.has(moduleKey(resolved))) importedByTests.add(moduleKey(resolved));
     }
   }
-  // A test that goes through a module's public API (index.ts / server.ts)
-  // exercises what that facade imports or re-exports; facades reached that
-  // way are followed too. Ordinary files are not followed: importing a file
-  // does not test everything it uses.
-  const facadeImports = new Map<string, string[]>();
+
+  // What each source file imports, by module key (`server.ts` and
+  // `index.ts` of one folder answer to different keys).
+  const importsOf = new Map<string, { facade: boolean; targets: string[] }>();
   for (const file of sourceFiles) {
-    if (!isFacade(file.relativePath)) continue;
     const targets: string[] = [];
     for (const [, specifier] of file.content.matchAll(IMPORT_SPECIFIER)) {
       const resolved = resolveImport(file.relativePath, specifier);
       if (resolved) targets.push(moduleKey(resolved));
     }
-    // `server.ts` and `index.ts` of one folder answer to different keys.
-    facadeImports.set(stripExt(file.relativePath).replace(/\/index$/, ""), targets);
+    importsOf.set(moduleKey(file.relativePath), { facade: isFacade(file.relativePath), targets });
   }
-  const pending = [...importedByTests];
-  while (pending.length > 0) {
-    const key = pending.pop()!;
-    for (const target of facadeImports.get(key) ?? []) {
-      if (importedByTests.has(target)) continue;
-      importedByTests.add(target);
-      pending.push(target);
+  // Files reached from the tests by following imports: through every file,
+  // or only through module facades (index.ts / server.ts).
+  const reachedFromTests = (throughEveryFile: boolean) => {
+    const reached = new Set(importedByTests);
+    const pending = [...reached];
+    while (pending.length > 0) {
+      const node = importsOf.get(pending.pop()!);
+      if (!node || (!throughEveryFile && !node.facade)) continue;
+      for (const target of node.targets) {
+        if (reached.has(target)) continue;
+        reached.add(target);
+        pending.push(target);
+      }
     }
-  }
-  const isTested = (filePath: string) => {
-    const base = stripExt(filePath);
-    return (
-      importedByTests.has(base) ||
-      importedByTests.has(base.replace(/\/index$/, "")) ||
-      [...testedBases].some((tested) => tested.endsWith(base) || base.endsWith(tested))
-    );
+    return reached;
   };
+  const testedBy = (reached: Set<string>) => (filePath: string) =>
+    reached.has(moduleKey(filePath)) ||
+    [...testedBases].some((tested) => tested.endsWith(stripExt(filePath)) || stripExt(filePath).endsWith(tested));
+
+  // Calibrated against this repository's measured coverage (2026-10-04, ADR-010
+  // review): following every import estimates the share of files the tests
+  // run best (66% vs 63% measured), so it sets the percentage; but it also
+  // takes for tested the real gaps (auth and billing code imported by tested
+  // code yet never run by a test), so the critical-area rule keeps the
+  // conservative reach, through module facades only.
+  const isExercised = testedBy(reachedFromTests(true));
+  const isTested = testedBy(reachedFromTests(false));
 
   // Only files with logic are expected to have tests (not types, re-exports
   // or constant wiring).
   const logicSources = sourceFiles.filter((file) => hasLogic(file.content));
-  const matchedSources = logicSources.filter((file) => isTested(file.relativePath)).length;
+  const matchedSources = logicSources.filter((file) => isExercised(file.relativePath)).length;
 
   const testedSourceApproxPercent =
     logicSources.length === 0

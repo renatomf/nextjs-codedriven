@@ -213,6 +213,45 @@ describe("computeDeterministicMetrics", () => {
       expect(metrics.testedSourceApproxPercent).toBe(100);
     });
 
+    it("does not count an import written inside a string (a test fixture)", () => {
+      const metrics = computeDeterministicMetrics([
+        {
+          relativePath: "src/lib/auth.ts",
+          content: ["export function auth() {", "  return null;", "}", ""].join("\n"),
+        },
+        {
+          relativePath: "src/lib/metrics.test.ts",
+          content: [
+            "const fixture = 'import { auth } from \"@/lib/auth\";';",
+            'test("fixture", () => expect(fixture).toBeTruthy());',
+            "",
+          ].join("\n"),
+        },
+      ]);
+
+      expect(metrics.untestedCriticalPaths).toEqual(["src/lib/auth.ts"]);
+    });
+
+    it("does not count a module the test mocks (its code never runs)", () => {
+      const metrics = computeDeterministicMetrics([
+        {
+          relativePath: "src/lib/auth.ts",
+          content: ["export function auth() {", "  return null;", "}", ""].join("\n"),
+        },
+        {
+          relativePath: "src/app/route.test.ts",
+          content: [
+            'vi.mock("@/lib/auth", () => ({ auth: vi.fn() }));',
+            'import { auth } from "@/lib/auth";',
+            'test("route", () => auth());',
+            "",
+          ].join("\n"),
+        },
+      ]);
+
+      expect(metrics.untestedCriticalPaths).toEqual(["src/lib/auth.ts"]);
+    });
+
     it("does not follow imports of ordinary files (only facades)", () => {
       const metrics = computeDeterministicMetrics([
         {
