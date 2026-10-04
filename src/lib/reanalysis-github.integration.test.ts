@@ -7,7 +7,6 @@ import { db } from "@/lib/db";
 import { persistProjectFiles, readProjectFiles } from "@/lib/files/storage";
 import {
   listGitHubInstallations,
-  saveGitHubConnection,
   saveGitHubInstallation,
 } from "@/modules/identity/server";
 import { createUser, deleteUsers } from "@/test/integration/factories";
@@ -56,12 +55,15 @@ beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
+let nextInstallationId = 700_000;
+
+/** A signed-in user; `connected` links a GitHub App installation of "octo". */
 async function githubUser({ connected = true } = {}) {
   const userId = await createUser();
   created.push(userId);
   mocks.auth.mockResolvedValue({ user: { id: userId } });
   if (connected) {
-    await saveGitHubConnection(userId, { encryptedToken: "encrypted-token", login: "octo" });
+    await saveGitHubInstallation(userId, { installationId: (nextInstallationId += 1), accountLogin: "octo" });
   }
   return userId;
 }
@@ -156,7 +158,7 @@ describe("retryFullAnalysis (GitHub project)", () => {
     await fetchGitHubSourcesStage(userId, projectId);
 
     expect(mocks.downloadGitHubZipball).toHaveBeenCalledWith(
-      { userId, encryptedToken: "encrypted-token" },
+      { installationId: expect.any(Number) },
       "octo/demo",
     );
     expect(await storedPaths(userId, projectId)).toEqual(["src/more.ts", "src/new.ts"]);
@@ -225,7 +227,7 @@ describe("retryFullAnalysis (GitHub project)", () => {
     expect(await storedPaths(userId, projectId)).toEqual(["src/old.ts"]);
   });
 
-  it("asks to connect GitHub when there is no token, before using the quota", async () => {
+  it("asks to connect GitHub when there is no installation, before using the quota", async () => {
     const userId = await githubUser({ connected: false });
     const projectId = await githubProject(userId);
 
@@ -265,7 +267,7 @@ describe("retryFullAnalysis (GitHub project)", () => {
 });
 
 // GitHub App (ADR-007): the installation of the repository's owner reads the
-// code; the legacy token is only a fallback during the migration.
+// code.
 describe("retryFullAnalysis (GitHub App)", () => {
   it("reads with the installation of the repository's owner (login case ignored)", async () => {
     const userId = await githubUser({ connected: false });
@@ -277,17 +279,6 @@ describe("retryFullAnalysis (GitHub App)", () => {
 
     expect(mocks.downloadGitHubZipball).toHaveBeenCalledWith({ installationId: 55 }, "octo/demo");
     expect(await storedPaths(userId, projectId)).toEqual(["src/more.ts", "src/new.ts"]);
-  });
-
-  it("prefers the installation over the legacy token", async () => {
-    const userId = await githubUser({ connected: true });
-    await saveGitHubInstallation(userId, { installationId: 56, accountLogin: "octo" });
-    const projectId = await githubProject(userId);
-    mocks.downloadGitHubZipball.mockResolvedValue(await zipball());
-
-    await reanalyze(userId, projectId);
-
-    expect(mocks.downloadGitHubZipball).toHaveBeenCalledWith({ installationId: 56 }, "octo/demo");
   });
 
   it("explains an App installed only on another account, before using the quota", async () => {

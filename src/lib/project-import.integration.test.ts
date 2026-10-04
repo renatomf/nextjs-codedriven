@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import JSZip from "jszip";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { projects, usageEvents, users } from "@/db/schema";
+import { projects, usageEvents } from "@/db/schema";
 import { db } from "@/lib/db";
 import { getPlanCatalog } from "@/modules/billing";
 import { createUser, deleteUsers } from "@/test/integration/factories";
@@ -39,6 +39,7 @@ vi.mock("@/lib/analysis/analysis-workflow", () => ({ analysisWorkflow: "analysis
 
 import { createProjectFromGitHub, createProjectFromZip } from "@/lib/actions/github";
 import { GitHubError } from "@/lib/github";
+import { saveGitHubInstallation } from "@/modules/identity/server";
 import { fetchGitHubSourcesStage } from "@/modules/projects/server";
 
 const created: string[] = [];
@@ -182,9 +183,12 @@ describe("createProjectFromZip", () => {
 });
 
 describe("createProjectFromGitHub", () => {
+  let nextInstallationId = 600_000;
+
+  /** Connected through the GitHub App installation of "octo" (ADR-007). */
   async function githubUser() {
     const userId = await signedInUser();
-    await db.update(users).set({ githubAccessToken: "encrypted" }).where(eq(users.id, userId));
+    await saveGitHubInstallation(userId, { installationId: (nextInstallationId += 1), accountLogin: "octo" });
     return userId;
   }
 
@@ -264,7 +268,7 @@ describe("createProjectFromGitHub", () => {
     expect(await usageCount(userId)).toBe(0);
   });
 
-  it("asks to connect GitHub first when there is no token", async () => {
+  it("asks to connect GitHub first when there is no installation", async () => {
     const userId = await signedInUser();
 
     expect(await createProjectFromGitHub({}, repoForm())).toEqual({

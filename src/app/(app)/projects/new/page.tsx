@@ -13,43 +13,34 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
-import { GitHubError, listGitHubRepos } from "@/lib/github";
+import { GitHubError, type GitHubRepo } from "@/lib/github";
 import { githubAppConfig, GitHubInstallationGoneError, listInstallationRepos } from "@/lib/github-app";
 import { storageConfig } from "@/lib/storage/neon-storage";
-import {
-  forgetGitHubInstallation,
-  getGitHubConnection,
-  listGitHubInstallations,
-} from "@/modules/identity/server";
+import { forgetGitHubInstallation, listGitHubInstallations } from "@/modules/identity/server";
 
 export default async function NewProjectPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
 
-  const user = await getGitHubConnection(userId);
   const appEnabled = githubAppConfig() !== null;
   const installations = appEnabled ? await listGitHubInstallations(userId) : [];
 
-  const githubConnected = installations.length > 0 || Boolean(user?.githubAccessToken);
-  let repos: Awaited<ReturnType<typeof listGitHubRepos>> = [];
+  const githubConnected = installations.length > 0;
+  const repos: GitHubRepo[] = [];
   let repoError: string | null = null;
 
   if (githubConnected) {
     try {
-      if (installations.length > 0) {
-        // GitHub App (ADR-007): only the repositories the user chose.
-        for (const installation of installations) {
-          try {
-            repos.push(...(await listInstallationRepos(installation.installationId)));
-          } catch (error) {
-            if (!(error instanceof GitHubInstallationGoneError)) throw error;
-            // Uninstalled on GitHub: forget it; the others still list.
-            await forgetGitHubInstallation(userId, installation.installationId);
-          }
+      // GitHub App (ADR-007): only the repositories the user chose.
+      for (const installation of installations) {
+        try {
+          repos.push(...(await listInstallationRepos(installation.installationId)));
+        } catch (error) {
+          if (!(error instanceof GitHubInstallationGoneError)) throw error;
+          // Uninstalled on GitHub: forget it; the others still list.
+          await forgetGitHubInstallation(userId, installation.installationId);
         }
-      } else if (user?.githubAccessToken) {
-        repos = await listGitHubRepos({ userId, encryptedToken: user.githubAccessToken });
       }
     } catch (error) {
       // Only our own GitHub messages are shown; anything else stays generic.
@@ -78,11 +69,9 @@ export default async function NewProjectPage() {
             <CardHeader>
               <CardTitle>GitHub</CardTitle>
               <CardDescription>
-                {installations.length > 0
+                {githubConnected
                   ? `Read-only access to repositories of ${installations.map((i) => i.accountLogin).join(", ")}`
-                  : githubConnected
-                    ? `Connected as ${user?.githubUsername ?? "GitHub"}`
-                    : "Connect GitHub first to select a repository."}
+                  : "Connect GitHub first to select a repository."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -113,16 +102,14 @@ export default async function NewProjectPage() {
               ) : (
                 <div className="space-y-3">
                   <RepoPicker repos={repos} />
-                  {appEnabled ? (
-                    // GitHub lists only what the user chose: changing the
-                    // choice goes back through GitHub.
-                    <a
-                      href="/api/github/app/install"
-                      className="text-xs text-(--ca-muted) underline underline-offset-4"
-                    >
-                      {installations.length > 0 ? "Missing a repository? Choose repositories on GitHub" : "Switch to read-only access"}
-                    </a>
-                  ) : null}
+                  {/* GitHub lists only what the user chose: changing the
+                      choice goes back through GitHub. */}
+                  <a
+                    href="/api/github/app/install"
+                    className="text-xs text-(--ca-muted) underline underline-offset-4"
+                  >
+                    Missing a repository? Choose repositories on GitHub
+                  </a>
                 </div>
               )}
             </CardContent>

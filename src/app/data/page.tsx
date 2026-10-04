@@ -62,11 +62,6 @@ const STORED = [
     until: "You disconnect GitHub in Settings",
   },
   {
-    data: "Older GitHub connections only: an access token, encrypted with AES-256-GCM (being removed)",
-    where: "Neon Postgres",
-    until: "You disconnect GitHub in Settings, or the planned removal",
-  },
-  {
     data: "Report share links (only a hash of the link)",
     where: "Neon Postgres",
     until: "Revoked, expired or the project is deleted",

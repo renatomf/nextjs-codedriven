@@ -246,12 +246,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                       {installations.map((i) => i.accountLogin).join(", ")}
                     </span>
                   </p>
-                ) : githubConnected ? (
-                  <p className="text-sm text-(--ca-muted)">
-                    Connected as {user?.githubUsername ?? "GitHub"} with the old
-                    full access. Switch to read-only access on the repositories
-                    you choose.
-                  </p>
                 ) : (
                   <p className="text-sm text-(--ca-muted)">
                     GitHub is not connected yet. You choose which repositories
@@ -265,22 +259,13 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                   {githubConnected ? <DisconnectGitHubButton /> : null}
                 </div>
               </>
-            ) : githubConnected ? (
-              <>
-                <p className="text-sm">
-                  Connected as:{" "}
-                  <span className="font-semibold text-(--ca-green-deep)">
-                    {user?.githubUsername ?? "GitHub"}
-                  </span>
-                </p>
-                <DisconnectGitHubButton />
-              </>
             ) : (
               <>
                 <p className="text-sm text-(--ca-muted)">
                   GitHub repository access is not available in this
                   environment.
                 </p>
+                {githubConnected ? <DisconnectGitHubButton /> : null}
               </>
             )}
             {/* Its own block: the Disconnect/Connect button above is inline,

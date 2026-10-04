@@ -130,6 +130,8 @@ async function rowsMentioning(needle: string): Promise<Record<string, number>> {
 }
 
 describe("deleteAccount", () => {
+  // Scans every table of the schema six times: slower than the default 5 s
+  // on a test database that grows with every run.
   it("leaves no row anywhere that mentions the user's id or email", async () => {
     const account = await fullAccount();
     // Sanity: the check sees the data before the deletion.
@@ -142,7 +144,7 @@ describe("deleteAccount", () => {
     expect(await rowsMentioning(account.email)).toEqual({});
     expect(await rowsMentioning(account.customerId)).toEqual({});
     expect(await rowsMentioning(account.projectId)).toEqual({});
-  });
+  }, 30_000);
 
   it("deletes the Stripe customer first (subscriptions end at once)", async () => {
     const account = await fullAccount();

@@ -6,12 +6,7 @@ import "server-only";
  * from the server session.
  */
 
-export {
-  disconnectGitHub,
-  getAccountSettings,
-  getGitHubConnection,
-  saveGitHubConnection,
-} from "./infrastructure/drizzle-github-connection";
+export { disconnectGitHub, getAccountSettings } from "./infrastructure/drizzle-github-connection";
 export {
   createEmailAccount,
   dropUnverifiedPassword,
