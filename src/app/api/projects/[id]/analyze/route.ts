@@ -4,7 +4,7 @@ import { z } from "zod";
 import { analysisRunStatus, enqueueAnalysis } from "@/lib/analysis/analysis-job";
 import { auth } from "@/lib/auth";
 import { assertRateLimit, RateLimitError } from "@/lib/rate-limit";
-import { analysisStart } from "@/modules/projects";
+import { analysisStart, codeRemovedMessage } from "@/modules/projects";
 import {
   claimAnalysis,
   failRunningAnalysis,
@@ -70,6 +70,10 @@ export async function POST(_request: Request, context: RouteContext) {
   // Avoid starting a second run if one is clearly in-flight.
   if (start === "running") {
     return alreadyRunning();
+  }
+
+  if (start === "code-removed") {
+    return Response.json({ error: codeRemovedMessage(project.source) }, { status: 400 });
   }
 
   if (start === "import-failed") {

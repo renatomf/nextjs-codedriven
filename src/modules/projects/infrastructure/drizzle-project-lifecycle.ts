@@ -22,12 +22,14 @@ export async function findAnalysisCandidate(userId: string, projectId: string) {
   const [project] = await db
     .select({
       id: projects.id,
+      source: projects.source,
       status: projects.status,
       fileCount: projects.fileCount,
       progressStep: projects.progressStep,
       progressPercent: projects.progressPercent,
       updatedAt: projects.updatedAt,
       analysisRunId: projects.analysisRunId,
+      codeRemovedAt: projects.codeRemovedAt,
     })
     .from(projects)
     .where(owned(userId, projectId))
@@ -79,6 +81,8 @@ export async function createImportingProject(
  * rule as `analysisStart` returning "claimable". `deadRunId`: the run the
  * caller saw finished while the project stayed "processing"; the claim clears
  * the run id, so of two requests that saw the same dead run only one wins.
+ * A project whose code was removed (retention) is never claimed: there are
+ * no stored files to analyze.
  */
 export async function claimAnalysis(
   userId: string,
@@ -97,6 +101,7 @@ export async function claimAnalysis(
     .where(
       and(
         owned(userId, projectId),
+        isNull(projects.codeRemovedAt),
         or(
           eq(projects.status, "queued"),
           and(eq(projects.status, "failed"), gt(projects.fileCount, 0)),

@@ -12,7 +12,8 @@ function sameSecret(received: string, expected: string): boolean {
 }
 
 /**
- * Daily cron (vercel.json): fails projects stuck in "processing" (TD-11).
+ * Daily cron (vercel.json): fails projects stuck in "processing" (TD-11),
+ * deletes abandoned uploads and removes the code of idle projects (retention).
  * Vercel calls it with `Authorization: Bearer <CRON_SECRET>`; anything else
  * is refused. Without CRON_SECRET the route never runs.
  */

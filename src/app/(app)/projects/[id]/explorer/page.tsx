@@ -9,6 +9,7 @@ import {
   readProjectFile,
 } from "@/lib/files/explorer";
 import { getProjectSummary } from "@/lib/projects";
+import { codeRemovedMessage } from "@/modules/projects";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -56,7 +57,9 @@ export default async function ProjectExplorerPage({
       <div className="ca-container py-10">
         {paths.length === 0 ? (
           <div className="ca-panel p-8 text-center text-sm text-(--ca-muted)">
-            No extracted files are available for this project yet.
+            {project.codeRemovedAt
+              ? codeRemovedMessage(project.source)
+              : "No extracted files are available for this project yet."}
           </div>
         ) : (
           <CodeExplorer

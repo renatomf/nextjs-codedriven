@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { EXPLAIN_MAX_CHARS, RAG_TOP_K } from "@/lib/limits";
 import { REVIEW_BUDGET } from "@/modules/analysis";
+import { CODE_RETENTION_DAYS } from "@/modules/projects";
 
 // Public page (outside the proxy matcher): what leaves the app, for how long
 // it is kept and where (roadmap Phase 6). It only states what the code does;
@@ -43,7 +44,7 @@ const STORED = [
   {
     data: "Project files, code pieces and their vectors (embeddings)",
     where: "Neon Postgres",
-    until: "You delete the project",
+    until: `You delete the project, or ${CODE_RETENTION_DAYS} days without use (opening the project or analyzing it counts as use). The project and its report stay; analyzing again brings the code back.`,
   },
   {
     data: "Reports and the AI review",
@@ -212,6 +213,11 @@ export default function DataPage() {
               <li>
                 Deleting a project removes its files, code pieces, vectors,
                 reports and share links at once.
+              </li>
+              <li>
+                Code you stop using is removed on its own: {CODE_RETENTION_DAYS}{" "}
+                days after you last opened or analyzed a project, a daily job
+                deletes its files, code pieces and vectors.
               </li>
               <li>
                 Disconnecting GitHub in{" "}

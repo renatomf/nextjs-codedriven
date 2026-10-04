@@ -136,7 +136,12 @@ O projeto guarda o run dono (`analysis_run_id`): a rota pergunta ao
 Workflow se ele está vivo antes de disparar outro (a janela de 360 s só vale
 sem run). O reaper (`/api/cron/reap-stuck-projects`, cron diário da Vercel
 com `CRON_SECRET`) marca como falha o projeto parado em `processing` há mais
-de 1 h cujo run não está vivo (TD-11).
+de 1 h cujo run não está vivo (TD-11). O mesmo cron aplica a retenção
+(Fase 6): projeto sem uso há 90 dias (`last_used_at`, gravado ao abrir o
+projeto ou importar o código) perde arquivos, chunks e vetores numa
+transação que confere a regra de novo; o projeto e o relatório ficam
+(`code_removed_at`), e as ações que precisariam do código guardado recusam
+no servidor.
 
 ### Chat (RAG)
 

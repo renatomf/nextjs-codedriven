@@ -6,6 +6,7 @@ import { ProjectChat } from "@/components/projects/project-chat";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { getProjectSummary } from "@/lib/projects";
+import { codeRemovedMessage } from "@/modules/projects";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -40,8 +41,9 @@ export default async function ProjectChatPage({ params }: PageProps) {
                 <span className="ca-dim">Code knowledge</span> is not ready
               </h2>
               <p className="max-w-md text-sm leading-relaxed text-(--ca-muted)">
-                This project has no indexed chunks yet. Finish import / knowledge
-                building before chatting.
+                {project.codeRemovedAt
+                  ? codeRemovedMessage(project.source)
+                  : "This project has no indexed chunks yet. Finish import / knowledge building before chatting."}
               </p>
               <Button
                 variant="night"

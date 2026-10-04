@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { analysisStart, STALE_AFTER_SECONDS, type ProjectStatus } from "./project";
+import {
+  analysisStart,
+  codeRemovedMessage,
+  STALE_AFTER_SECONDS,
+  type ProjectStatus,
+} from "./project";
 
 const NOW = new Date("2026-09-29T12:00:00Z");
 const secondsBefore = (s: number) => new Date(NOW.getTime() - s * 1000);
 
-function project(status: ProjectStatus, overrides: { fileCount?: number; updatedAt?: Date } = {}) {
+function project(
+  status: ProjectStatus,
+  overrides: { fileCount?: number; updatedAt?: Date; codeRemovedAt?: Date | null } = {},
+) {
   return { status, fileCount: 3, updatedAt: NOW, ...overrides };
 }
 
@@ -53,5 +61,35 @@ describe("analysisStart", () => {
   it("retries a failed project only if its files were stored", () => {
     expect(analysisStart(project("failed", { fileCount: 3 }), NOW)).toBe("claimable");
     expect(analysisStart(project("failed", { fileCount: 0 }), NOW)).toBe("import-failed");
+  });
+});
+
+describe("analysisStart after retention removed the code", () => {
+  const removed = { codeRemovedAt: secondsBefore(60) };
+
+  it("refuses to analyze stored files that are gone", () => {
+    expect(analysisStart(project("failed", removed), NOW)).toBe("code-removed");
+    expect(analysisStart(project("queued", removed), NOW)).toBe("code-removed");
+  });
+
+  it("refuses to restart a dead GitHub re-analysis that never downloaded the code", () => {
+    const dead = project("processing", { ...removed, updatedAt: secondsBefore(5) });
+    expect(analysisStart(dead, NOW, "failed")).toBe("code-removed");
+  });
+
+  it("still leaves a live run alone (it is downloading the code back)", () => {
+    const live = project("processing", { ...removed, updatedAt: secondsBefore(5) });
+    expect(analysisStart(live, NOW, "running")).toBe("running");
+  });
+
+  it("still reports a completed project as completed", () => {
+    expect(analysisStart(project("completed", removed), NOW)).toBe("completed");
+  });
+});
+
+describe("codeRemovedMessage", () => {
+  it("tells how to get the code back for each source", () => {
+    expect(codeRemovedMessage("github")).toMatch(/Analyze again.*GitHub/);
+    expect(codeRemovedMessage("upload")).toMatch(/Upload the ZIP again/);
   });
 });

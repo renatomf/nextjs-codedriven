@@ -22,6 +22,11 @@ export {
   startReanalysis,
 } from "./infrastructure/drizzle-project-lifecycle";
 export {
+  findIdleProjects,
+  removeIdleProjectCode,
+  touchProject,
+} from "./infrastructure/drizzle-project-retention";
+export {
   ArchiveError,
   assertGitHubSourceReady,
   fetchGitHubSourcesStage,

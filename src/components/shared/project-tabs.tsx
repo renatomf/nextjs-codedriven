@@ -12,7 +12,7 @@ export type ProjectTab = {
   /** Why the tab is not available yet. Locked tabs stay in place, dimmed. */
   lockedReason?: string;
   count?: number;
-  /** Highlights the count (e.g. there are critical issues). */
+  /** Highlights the count in red (there are issues to look at). */
   alert?: boolean;
 };
 
@@ -42,6 +42,7 @@ export function ProjectTabs({
           className="ml-px flex w-fit max-w-full gap-0.5 overflow-x-auto overflow-y-hidden bg-(--ca-paper) scrollbar-none [&::-webkit-scrollbar]:hidden"
         >
         {tabs.map((tab) => {
+          const current = active === tab.segment;
           const count =
             tab.count !== undefined ? (
               <span
@@ -49,7 +50,13 @@ export function ProjectTabs({
                   "border px-1.5 py-px text-[0.66rem] tabular-nums",
                   tab.alert
                     ? "ca-sev-critical border-(--ca-sev) text-(--ca-sev)"
-                    : "border-(--ca-line) bg-(--ca-card) text-(--ca-muted) group-hover/tab:border-[#050505]/25 group-hover/tab:bg-transparent group-hover/tab:text-[#050505]",
+                    : "border-(--ca-line) bg-(--ca-card) text-(--ca-muted)",
+                  // Dark text only over the green hover of another tab: the
+                  // current tab is not painted, so in dark mode the count
+                  // would vanish on its own background.
+                  !tab.alert &&
+                    !current &&
+                    "group-hover/tab:border-[#050505]/25 group-hover/tab:bg-transparent group-hover/tab:text-[#050505]",
                 )}
               >
                 {tab.count}
@@ -72,7 +79,6 @@ export function ProjectTabs({
             );
           }
 
-          const current = active === tab.segment;
           return (
             <Link
               key={tab.label}

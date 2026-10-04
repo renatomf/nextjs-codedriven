@@ -1,7 +1,12 @@
 import "server-only";
 
-import { STUCK_AFTER_SECONDS, stuckProjectMessage } from "@/modules/projects";
-import { failStuckProject, findStuckProjects } from "@/modules/projects/server";
+import { CODE_RETENTION_DAYS, STUCK_AFTER_SECONDS, stuckProjectMessage } from "@/modules/projects";
+import {
+  failStuckProject,
+  findIdleProjects,
+  findStuckProjects,
+  removeIdleProjectCode,
+} from "@/modules/projects/server";
 import { deleteObject, staleObjects, storageConfig } from "@/lib/storage/neon-storage";
 import { UPLOADS_PREFIX } from "@/lib/storage/upload-keys";
 import { logger } from "@/shared/logger";
@@ -11,7 +16,13 @@ import { analysisRunStatus } from "./analysis-job";
 /** Bounds one daily run; the rest waits for the next day. */
 const REAP_LIMIT = 100;
 
-export type ReapResult = { checked: number; failed: number; alive: number; uploadsDeleted: number };
+export type ReapResult = {
+  checked: number;
+  failed: number;
+  alive: number;
+  uploadsDeleted: number;
+  codeRemoved: number;
+};
 
 /**
  * ZIPs sent to object storage but never imported (the tab closed between the
@@ -29,11 +40,27 @@ async function deleteAbandonedUploads(): Promise<number> {
 }
 
 /**
+ * Retention (roadmap Phase 6): removes the code of projects nobody used for
+ * CODE_RETENTION_DAYS. Each removal re-checks the rule in its transaction,
+ * so a project opened in the meantime keeps its code.
+ */
+async function removeIdleCode(): Promise<number> {
+  const idleSeconds = CODE_RETENTION_DAYS * 24 * 60 * 60;
+  const idle = await findIdleProjects(idleSeconds, REAP_LIMIT);
+  let removed = 0;
+  for (const project of idle) {
+    if (await removeIdleProjectCode(project.id, idleSeconds)) removed += 1;
+  }
+  return removed;
+}
+
+/**
  * Fails projects stuck in "processing" that nobody reopened (TD-11). A
  * project whose workflow run is still pending or running is left alone,
  * however old its last write; an import (no run) or a finished run that
  * left the project "processing" is failed with a message the user can act
- * on. Called by the daily cron (`/api/cron/reap-stuck-projects`).
+ * on. Also deletes abandoned uploads and removes the code of idle projects
+ * (retention). Called by the daily cron (`/api/cron/reap-stuck-projects`).
  */
 export async function reapStuckProjects(): Promise<ReapResult> {
   const stuck = await findStuckProjects(STUCK_AFTER_SECONDS, REAP_LIMIT);
@@ -54,8 +81,9 @@ export async function reapStuckProjects(): Promise<ReapResult> {
   }
 
   const uploadsDeleted = await deleteAbandonedUploads();
+  const codeRemoved = await removeIdleCode();
 
-  const result = { checked: stuck.length, failed, alive, uploadsDeleted };
+  const result = { checked: stuck.length, failed, alive, uploadsDeleted, codeRemoved };
   logger.info("projects.reaped", result);
   return result;
 }

@@ -157,6 +157,13 @@ export const projects = pgTable(
     // (ADR-005): asked for its status instead of guessing from updatedAt.
     // Null before the run starts, for imports and for older projects.
     analysisRunId: text("analysis_run_id"),
+    // Retention (roadmap Phase 6): the code (files, chunks, vectors) of a
+    // project unused for CODE_RETENTION_DAYS is removed; the project and its
+    // report stay. Opening the project or importing its code counts as use
+    // (written at most once a day). `codeRemovedAt` is set when the code is
+    // removed and cleared when it is imported again.
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }).defaultNow().notNull(),
+    codeRemovedAt: timestamp("code_removed_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, exists } from "drizzle-orm";
+import { and, asc, eq, exists, sql } from "drizzle-orm";
 
 import { projectFiles, projects } from "@/db/schema";
 import { db, type Db } from "@/lib/db";
@@ -60,14 +60,23 @@ function toBatches(files: ExtractedFile[]): ExtractedFile[][] {
   return batches;
 }
 
-/** Replaces all stored files of the project atomically. */
+/**
+ * Replaces all stored files of the project atomically. An import is a use
+ * of the project and brings removed code back (retention, Phase 6); the
+ * update also locks the row, so the retention job cannot remove the new
+ * files half-way (its own update waits, then sees a fresh `lastUsedAt`).
+ */
 export async function persistProjectFiles(
   userId: string,
   projectId: string,
   files: ExtractedFile[],
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    const [project] = await ownedProject(tx, userId, projectId);
+    const [project] = await tx
+      .update(projects)
+      .set({ lastUsedAt: sql`now()`, codeRemovedAt: null })
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .returning({ id: projects.id });
     if (!project) throw new Error("Project not found");
 
     await tx.delete(projectFiles).where(eq(projectFiles.projectId, projectId));
