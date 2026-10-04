@@ -106,17 +106,47 @@ export async function GET(request: Request) {
     const scoped = await fetch(`${GITHUB_API}/app/installations/${installationId}/access_tokens`, {
       method: "POST",
       headers: githubHeaders(jwt),
-      body: JSON.stringify({ repositories: [target.full_name.split("/")[1]], permissions: { contents: "read" } }),
+      body: JSON.stringify({
+        repositories: [target.full_name.split("/")[1]],
+        permissions: { contents: "read", metadata: "read" },
+      }),
     });
-    const scopedToken = ((await scoped.json()) as { token?: string }).token;
+    const scopedBody = (await scoped.json()) as { token?: string; permissions?: Record<string, string> };
+    const scopedToken = scopedBody.token;
     if (!scopedToken) {
       results.scopedToken = { ok: false, detail: `HTTP ${scoped.status}` };
       return NextResponse.json({ results }, { status: 502 });
     }
-    results.scopedToken = { ok: true, detail: `HTTP ${scoped.status}, one repository, contents: read` };
+    results.scopedToken = {
+      ok: true,
+      detail: `HTTP ${scoped.status}, one repository, permissions ${JSON.stringify(scopedBody.permissions)}`,
+    };
+
+    // Diagnosis of the zipball 404 (first run): repository state, the first
+    // hop without following the redirect, and both tokens.
+    const repo = await fetch(`${GITHUB_API}/repos/${target.full_name}`, { headers: githubHeaders(scopedToken) });
+    const repoBody = (await repo.json()) as { size?: number; default_branch?: string; pushed_at?: string };
+    results.repository = {
+      ok: repo.ok,
+      detail: `HTTP ${repo.status}, size ${repoBody.size} KB, default branch ${repoBody.default_branch}, pushed ${repoBody.pushed_at}`,
+    };
+    const hop = await fetch(`${GITHUB_API}/repos/${target.full_name}/zipball`, {
+      headers: githubHeaders(scopedToken),
+      redirect: "manual",
+    });
+    results.zipballFirstHop = {
+      ok: hop.status === 302,
+      detail: `HTTP ${hop.status}, location host ${hop.headers.get("location") ? new URL(hop.headers.get("location")!).host : "none"}`,
+    };
     const zip = await fetch(`${GITHUB_API}/repos/${target.full_name}/zipball`, { headers: githubHeaders(scopedToken) });
     const bytes = zip.ok ? (await zip.arrayBuffer()).byteLength : 0;
-    results.downloadZipball = { ok: zip.ok, detail: `HTTP ${zip.status}, ${bytes} bytes from ${target.full_name}` };
+    results.downloadZipball = { ok: zip.ok, detail: `scoped token: HTTP ${zip.status}, ${bytes} bytes from ${target.full_name}` };
+    const zipFull = await fetch(`${GITHUB_API}/repos/${target.full_name}/zipball`, { headers: githubHeaders(token) });
+    const bytesFull = zipFull.ok ? (await zipFull.arrayBuffer()).byteLength : 0;
+    results.downloadZipballInstallationToken = {
+      ok: zipFull.ok,
+      detail: `installation-wide token: HTTP ${zipFull.status}, ${bytesFull} bytes`,
+    };
 
     // 5. The same token cannot write.
     const write = await fetch(`${GITHUB_API}/repos/${target.full_name}/contents/spike-write-test.txt`, {
