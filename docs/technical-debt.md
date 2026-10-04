@@ -331,7 +331,14 @@ maintainability) · **Low** (cleanup).
   E2E). **Still open:** a test that reaches a file through an ordinary
   import needs the full import graph (v2.1 Code Intelligence); the Testing
   base was revised in ADR-010 (no test file → 0; otherwise 40 + 0.6 × %;
-  this repository 30 → 51, eval `2026-10-04-5ded353`).
+  this repository 30 → 51, eval `2026-10-04-5ded353`). **Calibrated
+  (2026-10-04):** against this repository's measured coverage
+  (`npm run measure:coverage`, 63%), the percentage now follows every import
+  from the tests (estimate 66%, 94% per-file agreement) while the
+  critical-area rule keeps the facade-only reach (its 4 findings are exactly
+  the 4 critical files no test runs); imports inside strings and modules the
+  test mocks no longer count. Testing 51 → 57. The import-graph item above is
+  done for this purpose.
 
 ### TD-42 — Chat retrieval misses questions asked in Portuguese · Medium
 - **Where:** [onnx-embedder.ts](../src/modules/ingestion/infrastructure/onnx-embedder.ts)

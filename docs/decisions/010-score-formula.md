@@ -102,3 +102,32 @@ para comparação.
 alerta de cobertura baixa). Aceito: é a passagem de "não há testes" para "há
 testes". Revisar se o eval de repositórios reais mostrar que o salto distorce
 a comparação entre projetos pequenos.
+
+### Calibração contra a cobertura medida (2026-10-04)
+
+A heurística estima, sem executar nada, quantos arquivos com lógica os
+testes exercitam. Para ter uma referência, a cobertura **real** deste
+repositório foi medida (`npm run measure:coverage`: testes unitários e de
+integração com v8; o E2E fica de fora): **63%** de statements e **63%** dos
+arquivos com funções tiveram alguma função executada (112 de 179). Comparação
+arquivo a arquivo com a heurística:
+
+| Alcance a partir dos testes | Estimativa | Concordância | Diz "não testado" e roda | Diz "testado" e não roda |
+|---|---|---|---|---|
+| Só fachadas (`index.ts` / `server.ts`), #132 | 53% | 91% | 15 | 1 |
+| Todos os imports | 66% | 94% | 0 | 11, incluindo `actions/billing.ts`, `auth.config.ts` e `auth.ts` |
+
+Seguir todos os imports estima melhor o percentual, mas marca como testadas
+justamente as lacunas reais de auth e billing, que o alerta de áreas
+críticas existe para mostrar. **Decisão:** um híbrido. O **percentual** (a
+base) segue todos os imports; o **alerta de áreas críticas** segue só as
+fachadas. Dois ajustes achados na calibração: um import dentro de uma string
+(uma fixture de teste) não conta; um módulo que o próprio teste mocka
+(`vi.mock`) não conta.
+
+**Resultado:** estimativa 66% (real 63%); as 4 áreas críticas apontadas
+(`actions/auth.ts`, `actions/billing.ts`, `auth.config.ts`, `auth.ts`) são as
+4 que nenhum teste executa (precisão e recall 4/4 contra a cobertura); Testing
+deste repositório **51 → 57** (eval `2026-10-04-436f928`); casos anotados
+1,00 / 1,00. O que falta para chegar perto de 100 é real: testar essas 4 áreas
+e as telas (`.tsx`), hoje cobertas só pelo E2E.
