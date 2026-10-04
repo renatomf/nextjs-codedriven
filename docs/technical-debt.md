@@ -330,7 +330,8 @@ maintainability) · **Low** (cleanup).
   19 → 30 (critical "may lack tests" 8 → 4, the 4 left are only covered by
   E2E). **Still open:** a test that reaches a file through an ordinary
   import needs the full import graph (v2.1 Code Intelligence); the Testing
-  base (`max(40, %)`) barely rewards tests (ADR-010 review).
+  base was revised in ADR-010 (no test file → 0; otherwise 40 + 0.6 × %;
+  this repository 30 → 51, eval `2026-10-04-5ded353`).
 
 ### TD-42 — Chat retrieval misses questions asked in Portuguese · Medium
 - **Where:** [onnx-embedder.ts](../src/modules/ingestion/infrastructure/onnx-embedder.ts)

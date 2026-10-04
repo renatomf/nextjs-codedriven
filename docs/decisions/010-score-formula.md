@@ -65,3 +65,40 @@ do eval inalterados (o agrupamento não esconde nem inventa achados).
   fórmula.
 - Revisar se o eval mostrar que um grupo grande (ex.: dezenas de segredos)
   merece pesar mais que 2×.
+
+## Revisão — base de Testing (2026-10-04, pelo autor)
+
+**Contexto.** Em produção, este repositório (85 arquivos de teste) tirou
+Testing **19**, e um repositório **sem nenhum teste** (`dream-v2`) tirou
+**28**. Duas causas:
+
+1. A **heurística** não contava os testes que passam pela API pública de um
+   módulo e cobrava teste de arquivos sem lógica. Isso foi corrigido no
+   TD-31 (PR #132): Testing deste repositório 19 → 30.
+2. A **base** `max(40, %)`: 0% de cobertura começava em 40 e 43% em 43, então
+   ter testes quase não contava. Um projeto sem testes, com o alerta de
+   cobertura baixa (−12), ficava com 28.
+
+**Opções** (números reais: este repositório, ~52% dos arquivos com lógica
+testados, com 4 áreas críticas sem teste; `dream-v2`, 0 testes):
+
+| Base de Testing | Este repo | Sem testes |
+|---|---|---|
+| `max(40, %)` (antes) | 30 | 28 |
+| `%` sem piso | 30 | 0 |
+| `40 + 0,6 × %` | 49 | 28 |
+| **`40 + 0,6 × %`, e 0 sem nenhum arquivo de teste** | **51** | **0** |
+
+**Decisão:** a última. Sem nenhum arquivo de teste, a base é 0: o relatório
+diz que não há testes, e a nota não sugere o contrário. Com pelo menos um,
+`40 + 0,6 × %`: cada ponto de cobertura conta, e 100% chega a 100.
+
+**Resultado medido** (eval `2026-10-04-5ded353`): Testing deste repositório
+19 → **51**, nota determinística 67 → **73**; precisão e recall dos casos
+anotados 1,00 / 1,00. `linearPenaltyPolicy` (v1) continua com a base antiga,
+para comparação.
+
+**Trade-off:** escrever o primeiro teste salta Testing de 0 para ~29 (com o
+alerta de cobertura baixa). Aceito: é a passagem de "não há testes" para "há
+testes". Revisar se o eval de repositórios reais mostrar que o salto distorce
+a comparação entre projetos pequenos.
