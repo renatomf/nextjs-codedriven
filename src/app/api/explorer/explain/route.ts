@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getLanguageModel, languageModelId } from "@/lib/ai/llm";
 import { auth } from "@/lib/auth";
 import { readProjectFile } from "@/lib/files/explorer";
+import { EXPLAIN_MAX_CHARS } from "@/lib/limits";
 import { assertChatRateLimit, RateLimitError } from "@/lib/rate-limit";
 import { BillingLimitError, LlmUnavailableError } from "@/modules/billing";
 import { assertLlmBudget, assertLlmEnabled, recordLlmCall } from "@/modules/billing/server";
@@ -54,8 +55,8 @@ export async function POST(request: Request) {
     }
 
     const truncated =
-      file.content.length > 12000
-        ? `${file.content.slice(0, 12000)}\n\n/* truncated for analysis */`
+      file.content.length > EXPLAIN_MAX_CHARS
+        ? `${file.content.slice(0, EXPLAIN_MAX_CHARS)}\n\n/* truncated for analysis */`
         : file.content;
 
     // The file is untrusted (TD-28): it goes in a data block, the rules in

@@ -21,6 +21,9 @@ export const MAX_ZIP_ENTRIES = 50_000;
 /** RAG retrieval size */
 export const RAG_TOP_K = 8;
 
+/** Characters of a file sent to the model by "Explain this file" (the rest is cut). */
+export const EXPLAIN_MAX_CHARS = 12_000;
+
 /** Source file extensions that are parsed and chunked */
 export const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
 

@@ -469,6 +469,9 @@ export default function HomePage() {
                   {link.label}
                 </a>
               ))}
+              <Link href="/data" className="ca-footer-link">
+                Your data
+              </Link>
             </nav>
           </div>
         </div>
