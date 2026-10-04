@@ -7,7 +7,6 @@ type Source = Record<string, string | undefined>;
 const valid: Source = {
   DATABASE_URL: "postgresql://app:secret@localhost:5432/app",
   AUTH_SECRET: "a".repeat(32),
-  ENCRYPTION_KEY: Buffer.alloc(32).toString("base64"),
   GROQ_API_KEY: "gsk_test",
 };
 
@@ -36,7 +35,7 @@ describe("validateEnv", () => {
 
   it("names every missing required variable", () => {
     const problems = problemsOf({});
-    for (const name of ["DATABASE_URL", "AUTH_SECRET", "ENCRYPTION_KEY"]) {
+    for (const name of ["DATABASE_URL", "AUTH_SECRET"]) {
       expect(problems.some((p) => p.startsWith(name))).toBe(true);
     }
   });
@@ -55,9 +54,9 @@ describe("validateEnv", () => {
     const problems = problemsOf({
       ...valid,
       DATABASE_URL: "mysql://x",
-      ENCRYPTION_KEY: Buffer.alloc(16).toString("base64"),
+      AUTH_SECRET: "too-short",
     });
-    for (const name of ["DATABASE_URL", "ENCRYPTION_KEY"]) {
+    for (const name of ["DATABASE_URL", "AUTH_SECRET"]) {
       expect(problems.some((p) => p.startsWith(name))).toBe(true);
     }
   });

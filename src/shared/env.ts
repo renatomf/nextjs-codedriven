@@ -21,11 +21,6 @@ const requiredSchema = z
       .string()
       .regex(/^postgres(ql)?:\/\//, { message: "must be a postgres:// URL" }),
     AUTH_SECRET: z.string().min(32, { message: "must be at least 32 characters" }),
-    ENCRYPTION_KEY: z
-      .string()
-      .refine((value) => Buffer.from(value, "base64").length === 32, {
-        message: "must be 32 bytes encoded in base64",
-      }),
     GROQ_API_KEY: z.string().optional(),
     E2E_FAKE_LLM: z.enum(["1"]).optional(),
   })

@@ -64,7 +64,6 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
 
   authProvider: text("auth_provider"), // google | email | github
-  githubAccessToken: text("github_access_token"),
   githubUsername: text("github_username"),
 
   stripeCustomerId: text("stripe_customer_id").unique(),

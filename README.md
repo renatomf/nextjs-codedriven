@@ -88,20 +88,14 @@ npm run dev                  # http://localhost:3000
 | `DATABASE_URL_UNPOOLED` | for migrations | Direct connection used by `drizzle-kit` |
 | `AUTH_SECRET` | yes | Auth.js session signing (`npx auth secret`) |
 | `AUTH_URL` | production | Public URL of the app |
-| `ENCRYPTION_KEY` | yes | 32 bytes, base64 — encrypts stored GitHub tokens |
 | `GROQ_API_KEY` | yes | LLM for reports, chat and explanations (free tier) |
 | `GROQ_MODEL`, `GROQ_STRUCTURED_MODEL` | no | Override the default model |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | for GitHub | OAuth login and repository import |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | for GitHub login | OAuth sign-in (profile and email only) |
+| `GITHUB_APP_ID`, `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_SLUG` | for repository import | Read-only GitHub App, one per environment ([runbook](docs/runbooks/github-app.md)) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | for Google | OAuth login |
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_PREMIUM`, `STRIPE_WEBHOOK_SECRET` | for billing | Checkout and the signed webhook |
 | `NEXT_PUBLIC_APP_URL` | no | Fallback public URL (Stripe return URLs) |
 | `PLAN_FREE_*`, `PLAN_PREMIUM_*`, `NEXT_PUBLIC_PLAN_PREMIUM_*` | no | Override plan limits and labels |
-
-Generate an `ENCRYPTION_KEY` with:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
 
 ## Scripts and tests
 
