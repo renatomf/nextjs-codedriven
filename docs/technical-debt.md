@@ -422,8 +422,51 @@ maintainability) · **Low** (cleanup).
   forbidden finding, synthetic cases all found, NodeGoat 7 of 9 (was 6-7),
   Juice Shop 2 of 8 (`2026-10-04-d565f70-llm.json`, 1 run). The same report
   also had findings that are design choices, not defects (per-handler
-  session checks, CSP in Report-Only): out of scope here.
+  session checks, CSP in Report-Only): out of scope here (TD-49).
 - **Phase:** Evals + analysis quality (Phase 7 follow-up).
+
+### TD-49 — The LLM review reported design choices as defects · Medium
+- **Where:** [review-prompt.ts](../src/modules/analysis/domain/review-prompt.ts)
+- **Problem:** the production report of this repository (2026-10-04) had
+  7 LLM findings besides TD-48, and none was a new defect:
+  - "repeated auth checks", to move to middleware: a session check in every
+    handler is defense in depth, and middleware alone can be bypassed;
+  - `timingSafeEqual` in the cron route: the whole `Bearer <secret>` is
+    compared in constant time;
+  - "swallowed" JSON parse in the chat route: the null body fails zod (400);
+  - an "unnecessary" run status check: it decides whether to start a run;
+  - a cookie not `secure` in development: local development is http;
+  - a file route "without size limits": imported files are capped at 500 KB;
+  - "CSP not applied to responses": it is, as Report-Only; that it is not
+    enforced yet is TD-34.
+  Each costs 2-12 points of a category.
+- **Direction:** general rules, not one per file:
+  - no claim that a limit is missing unless the snippet shows it;
+  - follow the quoted code to where its result is used;
+  - a security issue needs a concrete way to be exploited;
+  - per-handler session checks and settings that differ by environment are
+    not issues.
+  The LLM eval gained the case `design-choices-not-defects` (this
+  repository's own routes, a forbidden finding per false positive); a
+  forbidden rule without a file matches project-wide issues too.
+- **Phase:** Evals + analysis quality (Phase 7 follow-up).
+
+### TD-50 — Category bases are fixed, not calibrated · Medium
+- **Where:** [scoring.ts](../src/modules/analysis/domain/scoring.ts)
+  (`categoryBases`)
+- **Problem:** only Testing is measured (ADR-010 review, calibrated against
+  v8 coverage). Architecture (88), Security (90/70), Performance (86) and
+  Code Quality (85/72) are bases kept from v1 minus penalties. Even with no
+  finding, Architecture stops at 88. Nobody checked yet that a vulnerable
+  repository scores clearly below a sound one.
+- **Direction:** calibrate only against a reference, never to make this
+  repository score well:
+  1. Security against the annotated vulnerable repositories (NodeGoat,
+     Juice Shop) and a sound one: the scores must rank them.
+  2. Code Quality against a complexity tool.
+  3. Architecture and Performance have no reference: they first need
+     measured signals (import cycles, layer violations), in an ADR.
+- **Phase:** after v2.0 (outside the roadmap's closed scope).
 
 ---
 
