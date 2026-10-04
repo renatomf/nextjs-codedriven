@@ -7,7 +7,7 @@
 
 export type CspOptions = {
   nonce: string;
-  /** `next dev`: React needs eval and unnamed inline styles for its overlay. */
+  /** `next dev`: React needs eval to rebuild server error stacks. */
   isDev: boolean;
   /** Public Sentry DSN: the browser SDK sends there and violations are reported there. */
   sentryDsn?: string;
@@ -69,9 +69,11 @@ export function buildCsp(options: CspOptions): string {
     ["default-src", ["'self'"]],
     // Only scripts carrying this request's nonce, and what they load.
     ["script-src", ["'self'", nonce, "'strict-dynamic'", options.isDev && "'unsafe-eval'"]],
-    ["style-src", ["'self'", options.isDev ? "'unsafe-inline'" : nonce]],
-    // React `style={...}` props are attributes, which a nonce cannot cover.
-    ["style-src-attr", ["'unsafe-inline'"]],
+    // UI libraries insert <style> elements at runtime with no way to pass a
+    // nonce, and React `style` props are attributes a nonce cannot cover.
+    // Injected CSS is far less dangerous than script: like Google's strict
+    // CSP, the nonce guards scripts only.
+    ["style-src", ["'self'", "'unsafe-inline'"]],
     ["img-src", ["'self'", "blob:", "data:", ...AVATAR_HOSTS]],
     ["font-src", ["'self'"]],
     ["connect-src", connect],

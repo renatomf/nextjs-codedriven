@@ -26,18 +26,17 @@ const prod = directives(
 describe("buildCsp", () => {
   it("only runs scripts with this request's nonce (no inline, no eval)", () => {
     expect(prod.get("script-src")).toEqual(["'self'", "'nonce-n0nce'", "'strict-dynamic'"]);
-    expect(prod.get("style-src")).toEqual(["'self'", "'nonce-n0nce'"]);
   });
 
-  it("allows eval and inline styles only in development", () => {
+  it("allows eval only in development", () => {
     const dev = directives(buildCsp({ nonce: "n", isDev: true }));
     expect(dev.get("script-src")).toContain("'unsafe-eval'");
-    expect(dev.get("style-src")).toContain("'unsafe-inline'");
+    expect(prod.get("script-src")).not.toContain("'unsafe-eval'");
   });
 
-  it("allows inline style attributes (React style props), not inline style tags", () => {
-    expect(prod.get("style-src-attr")).toEqual(["'unsafe-inline'"]);
-    expect(prod.get("style-src")).not.toContain("'unsafe-inline'");
+  it("guards scripts with the nonce, not styles (libraries inject <style> at runtime)", () => {
+    expect(prod.get("style-src")).toEqual(["'self'", "'unsafe-inline'"]);
+    expect(prod.get("script-src")).not.toContain("'unsafe-inline'");
   });
 
   it("connects only to the app, Sentry and the upload bucket (origins only)", () => {
