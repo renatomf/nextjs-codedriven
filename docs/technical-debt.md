@@ -743,6 +743,12 @@ maintainability) · **Low** (cleanup).
   CSP guide; allow GitHub/Google avatars and fonts; roll out with
   `Content-Security-Policy-Report-Only` first and test every page.
 - **Phase:** Security.
+- **Partly done (Phase 6):** the proxy sends a nonce-based policy on every
+  page as `Content-Security-Policy-Report-Only` (`src/shared/csp.ts`),
+  reported to Sentry's security endpoint. E2E fails on any violation on the
+  public pages and in the main flow. Every page is now rendered per
+  request (a nonce cannot be static). **Left:** read the reports for a
+  while, then switch the header to `Content-Security-Policy`.
 
 ### TD-27 — Thin test net, no CI · High
 - **Status:** 7 unit test files (`issue-utils`, `metrics`, `score-ui`,

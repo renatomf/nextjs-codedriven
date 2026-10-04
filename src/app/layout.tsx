@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -42,7 +43,11 @@ export const metadata: Metadata = {
     "An AI Senior developer that understands your codebase - health reports, issues, and chat grounded in your real code.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Set by the proxy on every page request (CSP, TD-34): next-themes puts it
+  // on the inline script that applies the theme before paint.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <>
       <html
@@ -57,6 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
+            nonce={nonce}
           >
             {children}
             <Toaster />

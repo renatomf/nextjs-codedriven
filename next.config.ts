@@ -62,8 +62,9 @@ const nextConfig: NextConfig = {
     ],
   },
   poweredByHeader: false,
-  // Baseline security headers. A full Content-Security-Policy (scripts,
-  // styles, images) is tracked in docs/technical-debt.md (TD-34).
+  // Baseline security headers, enforced. The full Content-Security-Policy
+  // (scripts, styles, images) needs a nonce per request, so the proxy sends
+  // it, as Report-Only for now (src/proxy.ts, TD-34).
   headers() {
     return [
       {

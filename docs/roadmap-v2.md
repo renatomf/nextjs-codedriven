@@ -559,7 +559,11 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 
 - [ ] GitHub App com `contents: read`, instalação por repositório e tokens de
       curta duração (TD-15, ADR). Remove o escopo `repo` de escrita.
-- [ ] CSP com nonce, começando em `Report-Only` (TD-34).
+- [x] CSP com nonce, começando em `Report-Only` (TD-34). O proxy gera um
+      nonce por request e manda a política em `Report-Only`; violações vão
+      para o Sentry. O E2E falha com qualquer violação nas páginas públicas
+      e no fluxo principal. Passar para `Content-Security-Policy` depois de
+      ler os relatórios (TD-34).
 - [x] Retenção: `project_files` e `code_chunks` apagados após N dias sem uso.
       N = 90 (`CODE_RETENTION_DAYS`). "Uso" = abrir o projeto (gravado no
       máximo 1×/dia, depois da resposta) ou importar o código. O cron diário
