@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 
 const REVIEWED_ON = "2026-10-04";
 const GROQ_POLICY_URL = "https://console.groq.com/docs/your-data";
+// Global and Inference APIs ZDR turned on in the Groq console (Data Controls).
+const ZDR_ENABLED_ON = "2026-10-04";
 
 const n = (value: number) => value.toLocaleString("en-US");
 
@@ -147,9 +149,10 @@ export default function DataPage() {
               on public share links.
             </p>
             <p className="text-sm text-(--ca-muted)">
-              Groq&apos;s policy: by default it does not keep the data of a
-              request; it may keep it for up to 30 days when needed for
-              reliability or abuse monitoring, in Google Cloud in the US. Read{" "}
+              <strong>Zero Data Retention is on</strong> for this app&apos;s
+              Groq organization (since {ZDR_ENABLED_ON}): Groq does not keep
+              the input or output of requests, not even the up to 30 days it
+              otherwise may keep for reliability and abuse monitoring. Read{" "}
               <a
                 href={GROQ_POLICY_URL}
                 target="_blank"

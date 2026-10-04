@@ -42,6 +42,12 @@ describe("data page", () => {
     expect(screen.getByText("Code is sent as it is.")).toBeTruthy();
   });
 
+  it("says Groq keeps no request data (Zero Data Retention)", () => {
+    render(<DataPage />);
+
+    expect(screen.getByText("Zero Data Retention is on")).toBeTruthy();
+  });
+
   it("states the retention period the daily job uses", () => {
     render(<DataPage />);
 
