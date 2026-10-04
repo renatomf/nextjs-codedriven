@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { logger } from "@/shared/logger";
 
 // Self-hosted (latin subset, from Fontsource 5.3.0; OFL licenses in
 // ./fonts). next/font/google downloaded them at build time, and a failed
@@ -46,7 +47,16 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Set by the proxy on every page request (CSP, TD-34): next-themes puts it
   // on the inline script that applies the theme before paint.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // TEMPORARY (TD-34 diagnosis, remove before merge): which CSP headers the
+  // render receives on Vercel. Policies only, no secrets.
+  logger.info("csp.render_headers", {
+    xNonce: Boolean(nonce),
+    csp: requestHeaders.get("content-security-policy")?.slice(0, 60) ?? null,
+    cspReportOnly: requestHeaders.get("content-security-policy-report-only")?.slice(0, 60) ?? null,
+    overrides: requestHeaders.get("x-middleware-override-headers")?.slice(0, 200) ?? null,
+  });
 
   return (
     <>
