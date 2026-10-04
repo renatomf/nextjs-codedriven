@@ -563,8 +563,10 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 - [ ] Retenção: `project_files` e `code_chunks` apagados após N dias sem uso.
 - [ ] Exclusão de conta de ponta a ponta: cascade + cancelamento no Stripe +
       teste provando que nada sobra (LGPD).
-- [ ] Página de dados: o que vai para o Groq, por quanto tempo e onde fica
-      guardado.
+- [x] Página de dados: o que vai para o Groq, por quanto tempo e onde fica
+      guardado. Pública em `/data` (link no rodapé e em Settings); os números
+      vêm das mesmas constantes do código. Achado: o código vai ao Groq sem
+      redação de segredos (TD-47).
 
 **Se sobrar**
 

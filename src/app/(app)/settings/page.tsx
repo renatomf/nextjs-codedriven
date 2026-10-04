@@ -258,6 +258,14 @@ export default async function SettingsPage({ searchParams }: PageProps) {
               </Button>
             </div>
           </section>
+
+          <p className="mt-6 text-sm text-(--ca-muted)">
+            What is sent to the AI model and what is stored:{" "}
+            <Link href="/data" className="underline underline-offset-4">
+              Your data
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </main>
