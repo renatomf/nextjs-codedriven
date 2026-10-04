@@ -1,6 +1,6 @@
 # ADR-007 — GitHub App no lugar do OAuth App para ler repositórios
 
-- **Status:** proposta (2026-10-04); spike aprovado em todas as perguntas, aguardando aceite do autor
+- **Status:** aceita (2026-10-04, pelo autor, depois do spike)
 - **Data:** 2026-10-04
 - **Fase do roadmap:** 6 — Segurança e dados (TD-15, TD-16)
 
