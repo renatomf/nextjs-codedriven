@@ -3,16 +3,8 @@ import "server-only";
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { z } from "zod";
 
-import { decryptToken } from "@/lib/encryption";
 import { MAX_REPO_SIZE_BYTES } from "@/lib/limits";
-import {
-  GITHUB_API,
-  GITHUB_TIMEOUT_MS,
-  GitHubError,
-  githubHeaders,
-  gitHubRepoSchema,
-  type GitHubRepo,
-} from "@/lib/github-api";
+import { GITHUB_API, GITHUB_TIMEOUT_MS, GitHubError, githubHeaders } from "@/lib/github-api";
 import { mintInstallationToken } from "@/lib/github-app";
 
 export {
@@ -37,13 +29,11 @@ export const GITHUB_OAUTH_NONCE_COOKIE =
 export const GITHUB_OAUTH_NONCE_MAX_AGE_S = OAUTH_STATE_TTL_MS / 1000;
 
 /**
- * How the server reads a user's repositories: a GitHub App installation
- * (ADR-007, read-only, a 1-hour token per use) or, until the migration ends,
- * the legacy OAuth token stored encrypted on `users.githubAccessToken`.
+ * How the server reads a user's repositories: the GitHub App installation
+ * of the repository's owner (ADR-007). Each read mints a 1-hour, read-only
+ * token; nothing is stored.
  */
-export type GitHubCredentials =
-  | { installationId: number }
-  | { userId: string; encryptedToken: string };
+export type GitHubCredentials = { installationId: number };
 
 /** owner/repo as GitHub allows it; blocks `..`, extra slashes, query strings. */
 export const fullNameSchema = z
@@ -57,19 +47,6 @@ export const refSchema = z
   .max(255)
   .regex(/^[^\s~^:?*[\\]+$/)
   .refine((value) => !value.includes(".."));
-
-export function getAppUrl() {
-  const url = process.env.AUTH_URL;
-  if (url) return url;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_URL is not set");
-  }
-  return "http://localhost:3000";
-}
-
-function getRedirectUri() {
-  return `${getAppUrl()}/api/github/callback`;
-}
 
 function getStateSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -142,119 +119,6 @@ export function verifyGitHubOAuthState(
   return parsed.userId === expected.sessionUserId;
 }
 
-export function getGitHubAuthorizeUrl(state: string): string {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  if (!clientId) throw new Error("GITHUB_CLIENT_ID is not set");
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: getRedirectUri(),
-    // OAuth Apps have no read-only scope for private repos; `repo` is the
-    // minimum that allows downloading them.
-    scope: "read:user user:email repo",
-    state,
-  });
-
-  return `https://github.com/login/oauth/authorize?${params.toString()}`;
-}
-
-/** Returns the plain token: encrypt it with encryptToken(token, userId) before storing. */
-export async function exchangeGitHubCode(code: string): Promise<{
-  accessToken: string;
-  login: string;
-}> {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error("GitHub OAuth env vars are missing");
-  }
-
-  const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      redirect_uri: getRedirectUri(),
-    }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
-  });
-
-  if (!tokenRes.ok) {
-    throw new Error("Failed to exchange GitHub OAuth code");
-  }
-
-  const tokenJson = (await tokenRes.json()) as { access_token?: unknown };
-  if (typeof tokenJson.access_token !== "string" || !tokenJson.access_token) {
-    throw new Error("GitHub did not return an access token");
-  }
-
-  const userRes = await fetch(`${GITHUB_API}/user`, {
-    headers: githubHeaders(tokenJson.access_token),
-    cache: "no-store",
-    signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
-  });
-
-  if (!userRes.ok) {
-    throw new Error("Failed to fetch GitHub user profile");
-  }
-
-  const profile = (await userRes.json()) as { login?: unknown };
-  if (typeof profile.login !== "string" || !profile.login) {
-    throw new Error("GitHub profile is missing a username");
-  }
-
-  return { accessToken: tokenJson.access_token, login: profile.login };
-}
-
-/** Legacy OAuth listing (`/user/repos`); App installations list their own. */
-export async function listGitHubRepos(
-  credentials: { userId: string; encryptedToken: string },
-): Promise<GitHubRepo[]> {
-  const token = decryptToken(credentials.encryptedToken, credentials.userId);
-  const repos: GitHubRepo[] = [];
-  let page = 1;
-
-  while (page <= 5) {
-    const params = new URLSearchParams({
-      per_page: "100",
-      page: String(page),
-      sort: "updated",
-      affiliation: "owner,collaborator,organization_member",
-    });
-    const res = await fetch(`${GITHUB_API}/user/repos?${params.toString()}`, {
-      headers: githubHeaders(token),
-      cache: "no-store",
-      signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
-    });
-
-    if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        throw new GitHubError(
-          "GitHub access denied. Reconnect GitHub in Settings and check permissions.",
-        );
-      }
-      throw new GitHubError("Failed to list GitHub repositories");
-    }
-
-    const parsed = z.array(gitHubRepoSchema).safeParse(await res.json());
-    if (!parsed.success) {
-      throw new GitHubError("Failed to list GitHub repositories");
-    }
-
-    repos.push(...parsed.data);
-    if (parsed.data.length < 100) break;
-    page += 1;
-  }
-
-  return repos;
-}
-
 /** True only when GitHub confirms the repository exists and has no content. */
 async function isEmptyRepository(token: string, owner: string, repo: string): Promise<boolean> {
   try {
@@ -319,11 +183,8 @@ export async function downloadGitHubZipball(
   const base = `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/zipball`;
   const url = parsedRef ? `${base}/${encodeURIComponent(parsedRef.data)}` : base;
 
-  // An App installation gets a token that can only read this repository.
-  const token =
-    "installationId" in credentials
-      ? await mintInstallationToken(credentials.installationId, { repository: repo })
-      : decryptToken(credentials.encryptedToken, credentials.userId);
+  // A token that can only read this repository, for one hour.
+  const token = await mintInstallationToken(credentials.installationId, { repository: repo });
 
   // GitHub answers with a redirect to a pre-signed codeload URL; fetch strips
   // the Authorization header on that cross-origin hop.

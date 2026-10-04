@@ -563,7 +563,9 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       antigo como reserva ([runbook](runbooks/github-app.md)). Etapa 2/3:
       login com escopo mínimo e sem guardar token; conexão só pelo App;
       desconectar/apagar a conta desinstala o App onde ninguém mais o usa.
-      Falta: revogar e apagar os tokens antigos (3/3).
+      Etapa 3a: o token antigo não é mais lido (sem reserva, rotas antigas
+      removidas, TD-16 fechado) e a migração 0012 o apaga. Falta 3b: remover
+      a coluna `github_access_token` e a criptografia do token.
 - [x] CSP com nonce, começando em `Report-Only` (TD-34). O proxy gera um
       nonce por request e manda a política em `Report-Only`; violações vão
       para o Sentry. O E2E falha com qualquer violação nas páginas públicas

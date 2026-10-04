@@ -15,8 +15,9 @@ import {
   recordSignIn,
   verifyCredentials,
 } from "@/modules/identity/server";
+import { GITHUB_API, githubHeaders } from "@/lib/github-api";
 
-const GITHUB_API = "https://api.github.com";
+// Sign-in checks are short: a slow GitHub must not hold the login.
 const GITHUB_TIMEOUT_MS = 5000;
 
 type AdapterSchema = NonNullable<Parameters<typeof DrizzleAdapter<typeof db>>[1]>;
@@ -31,8 +32,8 @@ const drizzleAdapter = DrizzleAdapter(db, {
   verificationTokensTable: verificationTokens,
 } as unknown as AdapterSchema);
 
-// OAuth tokens are never stored in plain text: the GitHub token is saved
-// encrypted on the user row (see events.signIn) and the rest are not needed.
+// OAuth tokens are never stored: the sign-in token is used in memory only
+// (events.signIn) and repository access is the GitHub App's (ADR-007).
 const adapter: Adapter = {
   ...drizzleAdapter,
   linkAccount: (account) =>
@@ -43,14 +44,6 @@ const adapter: Adapter = {
       id_token: undefined,
     }),
 };
-
-function githubHeaders(accessToken: string) {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-}
 
 async function isGithubEmailVerified(accessToken: string, email: string) {
   const res = await fetch(`${GITHUB_API}/user/emails`, {

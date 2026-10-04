@@ -18,7 +18,6 @@ import { GitHubInstallationGoneError } from "@/lib/github-app";
 import { refundAnalysisUsage, withQuota } from "@/modules/billing/server";
 import {
   forgetGitHubInstallation,
-  getGitHubConnection,
   installationForOwner,
   listGitHubInstallations,
 } from "@/modules/identity/server";
@@ -175,10 +174,9 @@ type GitHubSourceProject = {
 
 /**
  * What a GitHub project needs before its code can be fetched: the
- * repository's name and how to read it. The GitHub App installation of the
- * repository's owner comes first (ADR-007, read-only); the legacy OAuth
- * token only while the migration lasts. Cheap, so callers run it before
- * charging the quota and answer at once.
+ * repository's name and the GitHub App installation of its owner (ADR-007,
+ * read-only). Cheap, so callers run it before charging the quota and answer
+ * at once.
  */
 export async function assertGitHubSourceReady(
   project: Pick<GitHubSourceProject, "userId" | "name" | "repositoryUrl">,
@@ -194,11 +192,6 @@ export async function assertGitHubSourceReady(
   const installation = installationForOwner(installations, fullName.split("/")[0]);
   if (installation) {
     return { fullName, credentials: { installationId: installation.installationId } };
-  }
-
-  const user = await getGitHubConnection(project.userId);
-  if (user?.githubAccessToken) {
-    return { fullName, credentials: { userId: project.userId, encryptedToken: user.githubAccessToken } };
   }
 
   if (installations.length > 0) {
@@ -235,7 +228,7 @@ export async function refreshGitHubSources(
     zipBuffer = await downloadGitHubZipball(credentials, fullName);
   } catch (error) {
     // Uninstalled on GitHub: forget the link, so the next try asks to connect.
-    if (error instanceof GitHubInstallationGoneError && "installationId" in credentials) {
+    if (error instanceof GitHubInstallationGoneError) {
       await forgetGitHubInstallation(project.userId, credentials.installationId);
     }
     throw error;

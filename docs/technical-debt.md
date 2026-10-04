@@ -584,8 +584,11 @@ maintainability) · **Low** (cleanup).
   OAuth token stays as a fallback. Step 2: sign-in asks only
   `read:user user:email` and stores no token; "Connect GitHub" goes through
   the App only; disconnecting or deleting the account uninstalls the App
-  from the installations no other user linked. Left (step 3): revoke the old
-  grants and drop `users.github_access_token`.
+  from the installations no other user linked. Step 3a: the legacy token is
+  no longer read anywhere (no fallback, no `/user/repos` listing, the old
+  connect routes are gone) and migration 0012 clears the stored tokens; the
+  author revokes the OAuth grant on GitHub. Left (step 3b, contract): drop
+  `users.github_access_token`, and the token encryption with it.
 
 ### TD-16 — Two "connect GitHub" flows · Medium
 - **Where:** [actions/github.ts:62-65](../src/lib/actions/github.ts#L62-L65)
@@ -596,6 +599,10 @@ maintainability) · **Low** (cleanup).
   [github.ts:9](../src/lib/github.ts#L9).
 - **Direction:** keep one flow (naturally solved by TD-15).
 - **Phase:** Clean Architecture.
+- **Done (Phase 6, with TD-15 step 3a):** one flow, the GitHub App's
+  (`/api/github/app/install` + `callback`); the Auth.js-based connect and the
+  custom OAuth routes are gone. `GITHUB_API` and `githubHeaders` live once,
+  in `src/lib/github-api.ts`, used by `auth.ts` and both GitHub clients.
 
 ### TD-17 — Rate limiter follow-ups · Low
 - **Where:** [rate-limit.ts](../src/lib/rate-limit.ts),
