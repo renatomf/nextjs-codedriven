@@ -5,10 +5,26 @@ import { z } from "zod";
 
 import { decryptToken } from "@/lib/encryption";
 import { MAX_REPO_SIZE_BYTES } from "@/lib/limits";
-import { DomainError } from "@/shared/errors";
+import {
+  GITHUB_API,
+  GITHUB_TIMEOUT_MS,
+  GitHubError,
+  githubHeaders,
+  gitHubRepoSchema,
+  type GitHubRepo,
+} from "@/lib/github-api";
+import { mintInstallationToken } from "@/lib/github-app";
 
-export const GITHUB_API = "https://api.github.com";
-export const GITHUB_TIMEOUT_MS = 10_000;
+export {
+  GITHUB_API,
+  GITHUB_TIMEOUT_MS,
+  GitHubError,
+  GitHubNotConnectedError,
+  githubHeaders,
+  gitHubRepoSchema,
+  type GitHubRepo,
+} from "@/lib/github-api";
+
 const GITHUB_DOWNLOAD_TIMEOUT_MS = 60_000;
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 const OAUTH_STATE_PURPOSE = "github-oauth-state:v1";
@@ -20,16 +36,6 @@ export const GITHUB_OAUTH_NONCE_COOKIE =
     : "github_oauth_nonce";
 export const GITHUB_OAUTH_NONCE_MAX_AGE_S = OAUTH_STATE_TTL_MS / 1000;
 
-/** Errors whose message is safe to show to the user (no internals). */
-export class GitHubError extends DomainError {
-  name = "GitHubError";
-}
-
-/** No way to read the user's repositories: neither the App nor a token. */
-export class GitHubNotConnectedError extends GitHubError {
-  name = "GitHubNotConnectedError";
-}
-
 /**
  * How the server reads a user's repositories: a GitHub App installation
  * (ADR-007, read-only, a 1-hour token per use) or, until the migration ends,
@@ -38,20 +44,6 @@ export class GitHubNotConnectedError extends GitHubError {
 export type GitHubCredentials =
   | { installationId: number }
   | { userId: string; encryptedToken: string };
-
-// Only the fields we use; anything else GitHub returns is dropped.
-export const gitHubRepoSchema = z.object({
-  id: z.number(),
-  full_name: z.string(),
-  name: z.string(),
-  private: z.boolean(),
-  html_url: z.string(),
-  default_branch: z.string(),
-  pushed_at: z.string().nullable(),
-  size: z.number(), // KB according to GitHub API
-});
-
-export type GitHubRepo = z.infer<typeof gitHubRepoSchema>;
 
 /** owner/repo as GitHub allows it; blocks `..`, extra slashes, query strings. */
 export const fullNameSchema = z
@@ -65,15 +57,6 @@ export const refSchema = z
   .max(255)
   .regex(/^[^\s~^:?*[\\]+$/)
   .refine((value) => !value.includes(".."));
-
-export function githubHeaders(accessToken?: string): HeadersInit {
-  return {
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "codedriven",
-  };
-}
 
 export function getAppUrl() {
   const url = process.env.AUTH_URL;
@@ -339,9 +322,7 @@ export async function downloadGitHubZipball(
   // An App installation gets a token that can only read this repository.
   const token =
     "installationId" in credentials
-      ? await (await import("@/lib/github-app")).mintInstallationToken(credentials.installationId, {
-          repository: repo,
-        })
+      ? await mintInstallationToken(credentials.installationId, { repository: repo })
       : decryptToken(credentials.encryptedToken, credentials.userId);
 
   // GitHub answers with a redirect to a pre-signed codeload URL; fetch strips

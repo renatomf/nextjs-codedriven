@@ -11,7 +11,7 @@ import {
   githubHeaders,
   gitHubRepoSchema,
   type GitHubRepo,
-} from "@/lib/github";
+} from "@/lib/github-api";
 
 /**
  * GitHub App client (ADR-007): read-only access to the repositories a user
