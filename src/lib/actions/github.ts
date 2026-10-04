@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import { startAnalysisRun } from "@/lib/analysis/analysis-job";
 import { auth, signIn } from "@/lib/auth";
-import { fullNameSchema, refSchema } from "@/lib/github";
+import { fullNameSchema, GitHubNotConnectedError, refSchema } from "@/lib/github";
 import { MAX_REPO_SIZE_BYTES, MAX_UPLOAD_BYTES, UPLOAD_TOO_BIG_MESSAGE } from "@/lib/limits";
 import { assertRateLimit } from "@/lib/rate-limit";
 import {
@@ -20,11 +20,9 @@ import {
 import { isOwnUploadKey, newUploadKey } from "@/lib/storage/upload-keys";
 import { BillingLimitError } from "@/modules/billing";
 import { getPlanCatalogWithPricing } from "@/modules/billing/server";
+import { disconnectGitHub as forgetGitHubConnection } from "@/modules/identity/server";
 import {
-  disconnectGitHub as forgetGitHubConnection,
-  getGitHubConnection,
-} from "@/modules/identity/server";
-import {
+  assertGitHubSourceReady,
   findExistingImport,
   importArchive,
   startGitHubImport,
@@ -115,15 +113,18 @@ export async function createProjectFromGitHub(
   }
   const { fullName } = parsed.data;
 
-  const dbUser = await getGitHubConnection(user.id);
-
-  if (!dbUser?.githubAccessToken) {
-    return {
-      error: "Connect GitHub in Settings before selecting a repository.",
-    };
-  }
-
   const repositoryUrl = `https://github.com/${fullName}`;
+
+  // How the code will be read (GitHub App installation of the owner, or the
+  // legacy token): checked now, before the quota, so the answer is instant.
+  try {
+    await assertGitHubSourceReady({ userId: user.id, name: fullName, repositoryUrl });
+  } catch (error) {
+    if (error instanceof GitHubNotConnectedError) {
+      return { error: "Connect GitHub in Settings before selecting a repository." };
+    }
+    return { error: publicErrorMessage(error, "Failed to import repository.") };
+  }
   if (
     formData.get("confirmReanalyze") !== "1" &&
     (await findExistingImport(user.id, { source: "github", repositoryUrl }))

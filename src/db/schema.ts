@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -326,6 +327,24 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
 export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
   project: one(projects, { fields: [projectFiles.projectId], references: [projects.id] }),
 }));
+
+// GitHub App installations a user connected (ADR-007). Only the ids: no
+// token is stored; a 1-hour installation token is minted for each use. The
+// installation's account (user or org) owns the repositories it can read.
+// One installation can be linked by several users (an org's members).
+export const githubInstallations = pgTable(
+  "github_installations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    installationId: bigint("installation_id", { mode: "number" }).notNull(),
+    accountLogin: text("account_login").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("github_installations_user_installation_key").on(t.userId, t.installationId)],
+).enableRLS();
 
 // Vectors embedded in batches across workflow steps (ADR-006, TD-46), kept
 // until the last step swaps the project's knowledge at once and clears

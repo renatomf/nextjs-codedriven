@@ -53,6 +53,14 @@ const optionalSchemas = {
     .string()
     .regex(/^whsec_/, { message: "must be a Stripe webhook secret" }),
   NEXT_PUBLIC_SENTRY_DSN: z.url(),
+  // GitHub App for repository access (ADR-007): one App per environment.
+  GITHUB_APP_ID: z.string().regex(/^\d+$/, { message: "must be the numeric App ID" }),
+  GITHUB_APP_CLIENT_ID: nonEmpty,
+  GITHUB_APP_CLIENT_SECRET: nonEmpty,
+  GITHUB_APP_PRIVATE_KEY: z
+    .string()
+    .refine((value) => value.includes("PRIVATE KEY"), { message: "must be the App's PEM private key" }),
+  GITHUB_APP_SLUG: z.string().regex(/^[a-z0-9-]+$/, { message: "must be the App's URL slug" }),
   // Vercel sends it as a Bearer token to the cron routes (TD-11 reaper).
   CRON_SECRET: z.string().min(32, { message: "must be at least 32 characters" }),
 } satisfies Record<string, z.ZodType<string>>;
@@ -62,6 +70,13 @@ type OptionalKey = keyof typeof optionalSchemas;
 /** Features that are disabled when any of their variables is unusable. */
 const OPTIONAL_FEATURES: Record<string, OptionalKey[]> = {
   "GitHub login and import": ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+  "GitHub App (repository access)": [
+    "GITHUB_APP_ID",
+    "GITHUB_APP_CLIENT_ID",
+    "GITHUB_APP_CLIENT_SECRET",
+    "GITHUB_APP_PRIVATE_KEY",
+    "GITHUB_APP_SLUG",
+  ],
   "Google login": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
   billing: ["STRIPE_SECRET_KEY", "STRIPE_PRICE_PREMIUM", "STRIPE_WEBHOOK_SECRET"],
   "error monitoring (Sentry)": ["NEXT_PUBLIC_SENTRY_DSN"],

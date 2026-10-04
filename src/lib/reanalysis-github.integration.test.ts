@@ -5,7 +5,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { projects, usageEvents } from "@/db/schema";
 import { db } from "@/lib/db";
 import { persistProjectFiles, readProjectFiles } from "@/lib/files/storage";
-import { saveGitHubConnection } from "@/modules/identity/server";
+import {
+  listGitHubInstallations,
+  saveGitHubConnection,
+  saveGitHubInstallation,
+} from "@/modules/identity/server";
 import { createUser, deleteUsers } from "@/test/integration/factories";
 
 // Re-analyzing a GitHub project. The action checks the repository and the
@@ -35,6 +39,7 @@ vi.mock("@/lib/analysis/analysis-workflow", () => ({ analysisWorkflow: "analysis
 
 import { retryFullAnalysis } from "@/lib/actions/analysis";
 import { GitHubError } from "@/lib/github";
+import { GitHubInstallationGoneError } from "@/lib/github-app";
 import { fetchGitHubSourcesStage } from "@/modules/projects/server";
 
 const created: string[] = [];
@@ -256,5 +261,67 @@ describe("retryFullAnalysis (GitHub project)", () => {
       errorMessage: "Failed to start the analysis. Please try again.",
     });
     expect(await storedPaths(userId, projectId)).toEqual(["src/old.ts"]);
+  });
+});
+
+// GitHub App (ADR-007): the installation of the repository's owner reads the
+// code; the legacy token is only a fallback during the migration.
+describe("retryFullAnalysis (GitHub App)", () => {
+  it("reads with the installation of the repository's owner (login case ignored)", async () => {
+    const userId = await githubUser({ connected: false });
+    await saveGitHubInstallation(userId, { installationId: 55, accountLogin: "Octo" });
+    const projectId = await githubProject(userId);
+    mocks.downloadGitHubZipball.mockResolvedValue(await zipball());
+
+    await reanalyze(userId, projectId);
+
+    expect(mocks.downloadGitHubZipball).toHaveBeenCalledWith({ installationId: 55 }, "octo/demo");
+    expect(await storedPaths(userId, projectId)).toEqual(["src/more.ts", "src/new.ts"]);
+  });
+
+  it("prefers the installation over the legacy token", async () => {
+    const userId = await githubUser({ connected: true });
+    await saveGitHubInstallation(userId, { installationId: 56, accountLogin: "octo" });
+    const projectId = await githubProject(userId);
+    mocks.downloadGitHubZipball.mockResolvedValue(await zipball());
+
+    await reanalyze(userId, projectId);
+
+    expect(mocks.downloadGitHubZipball).toHaveBeenCalledWith({ installationId: 56 }, "octo/demo");
+  });
+
+  it("explains an App installed only on another account, before using the quota", async () => {
+    const userId = await githubUser({ connected: false });
+    await saveGitHubInstallation(userId, { installationId: 57, accountLogin: "someone-else" });
+    const projectId = await githubProject(userId);
+
+    expect(await retryFullAnalysis({}, form(projectId))).toEqual({
+      error: "The GitHub App is not installed on this repository's account. Add it in Settings → Connect GitHub.",
+    });
+    expect(await usageCount(userId)).toBe(0);
+  });
+
+  it("forgets an installation removed on GitHub, and fails the project with a message", async () => {
+    const userId = await githubUser({ connected: false });
+    await saveGitHubInstallation(userId, { installationId: 58, accountLogin: "octo" });
+    const projectId = await githubProject(userId);
+    mocks.downloadGitHubZipball.mockRejectedValue(new GitHubInstallationGoneError());
+
+    await reanalyze(userId, projectId).catch(() => undefined);
+
+    expect(await listGitHubInstallations(userId)).toEqual([]);
+    expect(await storedPaths(userId, projectId)).toEqual(["src/old.ts"]);
+  });
+
+  it("never uses another user's installation", async () => {
+    const owner = await githubUser({ connected: false });
+    await saveGitHubInstallation(owner, { installationId: 59, accountLogin: "octo" });
+    const userId = await githubUser({ connected: false });
+    const projectId = await githubProject(userId);
+
+    expect(await retryFullAnalysis({}, form(projectId))).toEqual({
+      error: "Connect GitHub in Settings before re-analyzing this repository.",
+    });
+    expect(mocks.downloadGitHubZipball).not.toHaveBeenCalled();
   });
 });

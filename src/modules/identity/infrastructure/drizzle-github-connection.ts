@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, exists } from "drizzle-orm";
 
-import { accounts, users } from "@/db/schema";
+import { accounts, githubInstallations, users } from "@/db/schema";
 import { db } from "@/lib/db";
 
 /**
@@ -32,13 +32,20 @@ export async function getAccountSettings(userId: string) {
       authProvider: users.authProvider,
       githubUsername: users.githubUsername,
       githubAccessToken: users.githubAccessToken,
+      githubAppInstalled: exists(
+        db
+          .select({ id: githubInstallations.id })
+          .from(githubInstallations)
+          .where(eq(githubInstallations.userId, users.id)),
+      ).mapWith(Boolean),
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
   if (!user) return undefined;
-  const { githubAccessToken, ...account } = user;
-  return { ...account, githubConnected: Boolean(githubAccessToken) };
+  const { githubAccessToken, githubAppInstalled, ...account } = user;
+  // Connected through the GitHub App (ADR-007) or the legacy OAuth token.
+  return { ...account, githubConnected: githubAppInstalled || Boolean(githubAccessToken) };
 }
 
 /** Stores a (already encrypted) token after the OAuth callback. */
@@ -57,13 +64,18 @@ export async function saveGitHubConnection(
   return updated.length > 0;
 }
 
-/** Forgets the token and the GitHub sign-in link, all or nothing. */
+/**
+ * Forgets the token, the GitHub App links and the GitHub sign-in link, all
+ * or nothing.
+ */
 export async function disconnectGitHub(userId: string): Promise<void> {
   await db.transaction(async (tx) => {
     await tx
       .update(users)
       .set({ githubAccessToken: null, githubUsername: null })
       .where(eq(users.id, userId));
+
+    await tx.delete(githubInstallations).where(eq(githubInstallations.userId, userId));
 
     await tx
       .delete(accounts)
