@@ -593,11 +593,17 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       guardado. Pública em `/data` (link no rodapé e em Settings); os números
       vêm das mesmas constantes do código. Achado: o código vai ao Groq sem
       redação de segredos (TD-47).
+- [x] Fechamento: [results-phase-6.md](results-phase-6.md) (antes × depois
+      com data e método, incidentes), [architecture.md](architecture.md) e
+      [retros/phase-6.md](retros/phase-6.md) (a escrever pelo autor). Não
+      medido: a primeira execução da retenção em produção, o custo de
+      renderizar todas as páginas por request e os relatórios de CSP das
+      páginas logadas (antes de aplicar a política, TD-34).
 
 **Se sobrar**
 
-- [ ] Sessões revogáveis (TD-18, ADR) e rotação de chave de criptografia
-      (TD-19).
+- [ ] Sessões revogáveis (TD-18, ADR). A rotação de chave de criptografia
+      (TD-19) ficou obsoleta: nada mais é cifrado (ADR-007).
 - [ ] RLS com role da aplicação que não é dona das tabelas + políticas por
       `userId` (TD-21).
 - [ ] Rate limiter: contar só logins com falha, limpar linhas antigas por
