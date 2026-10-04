@@ -14,6 +14,7 @@ import {
 } from "@/components/settings/settings-toast";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { connectGitHubAccount } from "@/lib/actions/github";
+import { githubAppConfig } from "@/lib/github-app";
 import { auth } from "@/lib/auth";
 import { effectivePlanId } from "@/modules/billing";
 import {
@@ -22,7 +23,7 @@ import {
   syncCheckoutSessionForUser,
   syncCustomerSubscriptionsForUser,
 } from "@/modules/billing/server";
-import { getAccountSettings } from "@/modules/identity/server";
+import { getAccountSettings, listGitHubInstallations } from "@/modules/identity/server";
 
 type PageProps = {
   searchParams: Promise<{
@@ -63,6 +64,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   const current = plans[planId];
   // Only a boolean reaches the markup, never the (encrypted) token.
   const githubConnected = Boolean(user?.githubConnected);
+  const appEnabled = githubAppConfig() !== null;
+  const installations = appEnabled ? await listGitHubInstallations(session.user.id) : [];
 
   // Fixed messages only: the query values are user-controlled and never echoed.
   const notices: SettingsNotice[] = [];
@@ -70,7 +73,15 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     notices.push({ type: "success", message: "GitHub connected successfully." });
   }
   if (params.github_error) {
-    notices.push({ type: "error", message: "GitHub connection failed. Try again." });
+    notices.push({
+      type: "error",
+      message:
+        params.github_error === "approval_requested"
+          ? "An organization admin must approve the GitHub App first. Connect again once it is approved."
+          : params.github_error === "installation_not_yours"
+            ? "That GitHub App installation is not accessible from your GitHub account."
+            : "GitHub connection failed. Try again.",
+    });
   }
   if (params.billing === "success") {
     notices.push({
@@ -225,7 +236,37 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                 the connection already appears here.
               </p>
             </div>
-            {githubConnected ? (
+            {appEnabled ? (
+              // GitHub App (ADR-007): read-only, on the repositories the user
+              // picks on GitHub. A plain link: the route redirects to GitHub.
+              <>
+                {installations.length > 0 ? (
+                  <p className="text-sm">
+                    Read-only access to repositories of:{" "}
+                    <span className="font-semibold text-(--ca-green-deep)">
+                      {installations.map((i) => i.accountLogin).join(", ")}
+                    </span>
+                  </p>
+                ) : githubConnected ? (
+                  <p className="text-sm text-(--ca-muted)">
+                    Connected as {user?.githubUsername ?? "GitHub"} with the old
+                    full access. Switch to read-only access on the repositories
+                    you choose.
+                  </p>
+                ) : (
+                  <p className="text-sm text-(--ca-muted)">
+                    GitHub is not connected yet. You choose which repositories
+                    codedriven can read; it can never write to them.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button nativeButton={false} render={<a href="/api/github/app/install" />}>
+                    {installations.length > 0 ? "Choose repositories" : "Connect GitHub (read-only)"}
+                  </Button>
+                  {githubConnected ? <DisconnectGitHubButton /> : null}
+                </div>
+              </>
+            ) : githubConnected ? (
               <>
                 <p className="text-sm">
                   Connected as:{" "}

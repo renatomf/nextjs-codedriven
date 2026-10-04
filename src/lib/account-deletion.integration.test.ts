@@ -6,6 +6,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   accounts,
   embeddingCache,
+  githubInstallations,
   llmCalls,
   projects,
   reportShares,
@@ -103,6 +104,7 @@ async function fullAccount() {
     embeddingModel: "m",
     embedding: axisEmbedding(2),
   });
+  await db.insert(githubInstallations).values({ userId, installationId: 9_000_001, accountLogin: "octo" });
   await assertRateLimit(`chat:${userId}`, 100, 60_000, "limit");
   await assertRateLimit(`login:1.2.3.4:${user.email}`, 100, 60_000, "limit");
 

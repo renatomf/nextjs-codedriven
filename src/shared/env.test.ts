@@ -26,6 +26,7 @@ describe("validateEnv", () => {
     const { disabledFeatures } = validateEnv(valid);
     expect(disabledFeatures).toEqual([
       "GitHub login and import",
+      "GitHub App (repository access)",
       "Google login",
       "billing",
       "error monitoring (Sentry)",
@@ -92,6 +93,7 @@ describe("validateEnv", () => {
     });
     expect(disabledFeatures).toEqual([
       "GitHub login and import",
+      "GitHub App (repository access)",
       "Google login",
       "error monitoring (Sentry)",
       "stuck project cleanup (cron)",

@@ -7,9 +7,12 @@ import { accounts, users } from "@/db/schema";
 import { db } from "@/lib/db";
 import {
   disconnectGitHub,
+  forgetGitHubInstallation,
   getAccountSettings,
   getGitHubConnection,
+  listGitHubInstallations,
   saveGitHubConnection,
+  saveGitHubInstallation,
 } from "@/modules/identity/server";
 import { createUser, deleteUsers } from "@/test/integration/factories";
 
@@ -88,5 +91,55 @@ describe("GitHub connection", () => {
     expect(await saveGitHubConnection(ghost, { encryptedToken: "x", login: "x" })).toBe(false);
     expect(await getAccountSettings(ghost)).toBeUndefined();
     expect(await db.select().from(users).where(eq(users.id, ghost))).toEqual([]);
+  });
+
+  describe("GitHub App installations (ADR-007)", () => {
+    it("links an installation once, refreshing the account name, for that user only", async () => {
+      const carol = await createUser();
+      const dave = await createUser();
+      created.push(carol, dave);
+
+      await saveGitHubInstallation(carol, { installationId: 101, accountLogin: "old-name" });
+      await saveGitHubInstallation(carol, { installationId: 101, accountLogin: "carol-gh" });
+      await saveGitHubInstallation(dave, { installationId: 202, accountLogin: "dave-gh" });
+
+      expect(await listGitHubInstallations(carol)).toEqual([{ installationId: 101, accountLogin: "carol-gh" }]);
+      expect(await listGitHubInstallations(dave)).toEqual([{ installationId: 202, accountLogin: "dave-gh" }]);
+    });
+
+    it("forgets only the user's own link", async () => {
+      const erin = await createUser();
+      const frank = await createUser();
+      created.push(erin, frank);
+      // An org installation shared by two members.
+      await saveGitHubInstallation(erin, { installationId: 303, accountLogin: "org" });
+      await saveGitHubInstallation(frank, { installationId: 303, accountLogin: "org" });
+
+      await forgetGitHubInstallation(erin, 303);
+
+      expect(await listGitHubInstallations(erin)).toEqual([]);
+      expect(await listGitHubInstallations(frank)).toEqual([{ installationId: 303, accountLogin: "org" }]);
+    });
+
+    it("counts as connected in settings, without a token", async () => {
+      const gina = await createUser();
+      created.push(gina);
+      expect((await getAccountSettings(gina))?.githubConnected).toBe(false);
+
+      await saveGitHubInstallation(gina, { installationId: 404, accountLogin: "gina-gh" });
+
+      expect((await getAccountSettings(gina))?.githubConnected).toBe(true);
+    });
+
+    it("disconnecting drops the user's installation links too", async () => {
+      const hank = await createUser();
+      created.push(hank);
+      await saveGitHubInstallation(hank, { installationId: 505, accountLogin: "hank-gh" });
+
+      await disconnectGitHub(hank);
+
+      expect(await listGitHubInstallations(hank)).toEqual([]);
+      expect((await getAccountSettings(hank))?.githubConnected).toBe(false);
+    });
   });
 });

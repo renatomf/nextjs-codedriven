@@ -577,6 +577,14 @@ maintainability) · **Low** (cleanup).
 - **Direction:** ADR: migrate to a **GitHub App** with `contents: read` only,
   per-repo installation and short-lived installation tokens.
 - **Phase:** Security.
+- **In progress (Phase 6, ADR-007 accepted after a spike):** step 1 of 3
+  ships the GitHub App connection: the installation is linked only after
+  GitHub confirms it with the user's own token, and each use gets a 1-hour
+  read-only token (scoped to the repository for downloads); the legacy
+  OAuth token stays as a fallback. Left: login scope down to
+  `read:user user:email` and uninstall on disconnect or account deletion
+  (step 2); revoke the old grants and drop `users.github_access_token`
+  (step 3).
 
 ### TD-16 — Two "connect GitHub" flows · Medium
 - **Where:** [actions/github.ts:62-65](../src/lib/actions/github.ts#L62-L65)

@@ -5,10 +5,26 @@ import { z } from "zod";
 
 import { decryptToken } from "@/lib/encryption";
 import { MAX_REPO_SIZE_BYTES } from "@/lib/limits";
-import { DomainError } from "@/shared/errors";
+import {
+  GITHUB_API,
+  GITHUB_TIMEOUT_MS,
+  GitHubError,
+  githubHeaders,
+  gitHubRepoSchema,
+  type GitHubRepo,
+} from "@/lib/github-api";
+import { mintInstallationToken } from "@/lib/github-app";
 
-const GITHUB_API = "https://api.github.com";
-const GITHUB_TIMEOUT_MS = 10_000;
+export {
+  GITHUB_API,
+  GITHUB_TIMEOUT_MS,
+  GitHubError,
+  GitHubNotConnectedError,
+  githubHeaders,
+  gitHubRepoSchema,
+  type GitHubRepo,
+} from "@/lib/github-api";
+
 const GITHUB_DOWNLOAD_TIMEOUT_MS = 60_000;
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 const OAUTH_STATE_PURPOSE = "github-oauth-state:v1";
@@ -20,30 +36,14 @@ export const GITHUB_OAUTH_NONCE_COOKIE =
     : "github_oauth_nonce";
 export const GITHUB_OAUTH_NONCE_MAX_AGE_S = OAUTH_STATE_TTL_MS / 1000;
 
-/** Errors whose message is safe to show to the user (no internals). */
-export class GitHubError extends DomainError {
-  name = "GitHubError";
-}
-
-/** Stored encrypted on `users.githubAccessToken`, bound to the owner's id. */
-export type GitHubCredentials = {
-  userId: string;
-  encryptedToken: string;
-};
-
-// Only the fields we use; anything else GitHub returns is dropped.
-const gitHubRepoSchema = z.object({
-  id: z.number(),
-  full_name: z.string(),
-  name: z.string(),
-  private: z.boolean(),
-  html_url: z.string(),
-  default_branch: z.string(),
-  pushed_at: z.string().nullable(),
-  size: z.number(), // KB according to GitHub API
-});
-
-export type GitHubRepo = z.infer<typeof gitHubRepoSchema>;
+/**
+ * How the server reads a user's repositories: a GitHub App installation
+ * (ADR-007, read-only, a 1-hour token per use) or, until the migration ends,
+ * the legacy OAuth token stored encrypted on `users.githubAccessToken`.
+ */
+export type GitHubCredentials =
+  | { installationId: number }
+  | { userId: string; encryptedToken: string };
 
 /** owner/repo as GitHub allows it; blocks `..`, extra slashes, query strings. */
 export const fullNameSchema = z
@@ -57,15 +57,6 @@ export const refSchema = z
   .max(255)
   .regex(/^[^\s~^:?*[\\]+$/)
   .refine((value) => !value.includes(".."));
-
-function githubHeaders(accessToken?: string): HeadersInit {
-  return {
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "codedriven",
-  };
-}
 
 export function getAppUrl() {
   const url = process.env.AUTH_URL;
@@ -221,8 +212,9 @@ export async function exchangeGitHubCode(code: string): Promise<{
   return { accessToken: tokenJson.access_token, login: profile.login };
 }
 
+/** Legacy OAuth listing (`/user/repos`); App installations list their own. */
 export async function listGitHubRepos(
-  credentials: GitHubCredentials,
+  credentials: { userId: string; encryptedToken: string },
 ): Promise<GitHubRepo[]> {
   const token = decryptToken(credentials.encryptedToken, credentials.userId);
   const repos: GitHubRepo[] = [];
@@ -261,6 +253,21 @@ export async function listGitHubRepos(
   }
 
   return repos;
+}
+
+/** True only when GitHub confirms the repository exists and has no content. */
+async function isEmptyRepository(token: string, owner: string, repo: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
+      { headers: githubHeaders(token), cache: "no-store", signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS) },
+    );
+    if (!res.ok) return false;
+    const body = (await res.json()) as { size?: unknown };
+    return body.size === 0;
+  } catch {
+    return false;
+  }
 }
 
 /** Reads the body up to `maxBytes`; aborts the download past that. */
@@ -312,7 +319,11 @@ export async function downloadGitHubZipball(
   const base = `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/zipball`;
   const url = parsedRef ? `${base}/${encodeURIComponent(parsedRef.data)}` : base;
 
-  const token = decryptToken(credentials.encryptedToken, credentials.userId);
+  // An App installation gets a token that can only read this repository.
+  const token =
+    "installationId" in credentials
+      ? await mintInstallationToken(credentials.installationId, { repository: repo })
+      : decryptToken(credentials.encryptedToken, credentials.userId);
 
   // GitHub answers with a redirect to a pre-signed codeload URL; fetch strips
   // the Authorization header on that cross-origin hop.
@@ -325,6 +336,11 @@ export async function downloadGitHubZipball(
 
   if (!res.ok) {
     if (res.status === 404) {
+      // An empty repository has no archive: GitHub still redirects, then
+      // codeload answers 404 (seen in the ADR-007 spike).
+      if (await isEmptyRepository(token, owner, repo)) {
+        throw new GitHubError("This repository is empty. Push at least one commit, then try again.");
+      }
       throw new GitHubError(
         "Repository not found or you do not have access to this private repo.",
       );

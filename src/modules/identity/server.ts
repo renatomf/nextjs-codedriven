@@ -19,3 +19,10 @@ export {
   verifyCredentials,
 } from "./infrastructure/drizzle-accounts";
 export { deleteAccountData } from "./infrastructure/drizzle-account-deletion";
+export {
+  forgetGitHubInstallation,
+  type GitHubInstallation,
+  installationForOwner,
+  listGitHubInstallations,
+  saveGitHubInstallation,
+} from "./infrastructure/drizzle-github-installations";

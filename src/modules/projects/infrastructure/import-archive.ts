@@ -8,9 +8,20 @@ import { detectFramework } from "@/lib/files/framework";
 import { deleteProjectFiles, persistProjectFiles } from "@/lib/files/storage";
 import { deleteObject, readObject, storageConfig } from "@/lib/storage/neon-storage";
 import { isOwnUploadKey } from "@/lib/storage/upload-keys";
-import { downloadGitHubZipball, GitHubError } from "@/lib/github";
+import {
+  downloadGitHubZipball,
+  type GitHubCredentials,
+  GitHubError,
+  GitHubNotConnectedError,
+} from "@/lib/github";
+import { GitHubInstallationGoneError } from "@/lib/github-app";
 import { refundAnalysisUsage, withQuota } from "@/modules/billing/server";
-import { getGitHubConnection } from "@/modules/identity/server";
+import {
+  forgetGitHubInstallation,
+  getGitHubConnection,
+  installationForOwner,
+  listGitHubInstallations,
+} from "@/modules/identity/server";
 
 import { AnalysisCanceledError } from "../domain/project";
 import { createImportingProject, setProjectProgress } from "./drizzle-project-lifecycle";
@@ -164,12 +175,14 @@ type GitHubSourceProject = {
 
 /**
  * What a GitHub project needs before its code can be fetched: the
- * repository's name and the owner's GitHub connection. Cheap, so callers run
- * it before charging the quota and answer at once.
+ * repository's name and how to read it. The GitHub App installation of the
+ * repository's owner comes first (ADR-007, read-only); the legacy OAuth
+ * token only while the migration lasts. Cheap, so callers run it before
+ * charging the quota and answer at once.
  */
 export async function assertGitHubSourceReady(
-  project: GitHubSourceProject,
-): Promise<{ fullName: string; encryptedToken: string }> {
+  project: Pick<GitHubSourceProject, "userId" | "name" | "repositoryUrl">,
+): Promise<{ fullName: string; credentials: GitHubCredentials }> {
   const fullName = githubFullName(project);
   if (!fullName) {
     throw new GitHubError(
@@ -177,14 +190,23 @@ export async function assertGitHubSourceReady(
     );
   }
 
-  const user = await getGitHubConnection(project.userId);
+  const installations = await listGitHubInstallations(project.userId);
+  const installation = installationForOwner(installations, fullName.split("/")[0]);
+  if (installation) {
+    return { fullName, credentials: { installationId: installation.installationId } };
+  }
 
-  if (!user?.githubAccessToken) {
+  const user = await getGitHubConnection(project.userId);
+  if (user?.githubAccessToken) {
+    return { fullName, credentials: { userId: project.userId, encryptedToken: user.githubAccessToken } };
+  }
+
+  if (installations.length > 0) {
     throw new GitHubError(
-      "Connect GitHub in Settings before re-analyzing this repository.",
+      "The GitHub App is not installed on this repository's account. Add it in Settings → Connect GitHub.",
     );
   }
-  return { fullName, encryptedToken: user.githubAccessToken };
+  throw new GitHubNotConnectedError("Connect GitHub in Settings before re-analyzing this repository.");
 }
 
 /**
@@ -199,7 +221,7 @@ export async function refreshGitHubSources(
 ): Promise<void> {
   if (project.source !== "github") return;
 
-  const { fullName, encryptedToken } = await assertGitHubSourceReady(project);
+  const { fullName, credentials } = await assertGitHubSourceReady(project);
   await setProjectProgress(project.userId, project.id, {
     step: "Fetching latest code from GitHub",
     percent: 10,
@@ -208,10 +230,16 @@ export async function refreshGitHubSources(
   });
 
   // Validates `fullName` and aborts past MAX_REPO_SIZE_BYTES.
-  const zipBuffer = await downloadGitHubZipball(
-    { userId: project.userId, encryptedToken },
-    fullName,
-  );
+  let zipBuffer: Buffer;
+  try {
+    zipBuffer = await downloadGitHubZipball(credentials, fullName);
+  } catch (error) {
+    // Uninstalled on GitHub: forget the link, so the next try asks to connect.
+    if (error instanceof GitHubInstallationGoneError && "installationId" in credentials) {
+      await forgetGitHubInstallation(project.userId, credentials.installationId);
+    }
+    throw error;
+  }
 
   await setProjectProgress(project.userId, project.id, {
     step: "Reading updated files",
