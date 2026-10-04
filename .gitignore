@@ -61,3 +61,4 @@ next-env.d.ts
 /.workflow-data
 /src/app/.well-known/workflow
 /.swc
+.coverage/
