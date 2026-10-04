@@ -18,6 +18,7 @@ export const REVIEW_PROMPT = [
   "- low: minor concern",
   "",
   "You see a sample of the project, not all of it: never claim that something is missing from the codebase (tests, validation, error handling) unless the snippets themselves show it.",
+  "Each snippet is an excerpt cut by size: it may start or end in the middle of a statement, a call or an object. That is the cut, not the code: never report a syntax error, a stray or missing character, or an unclosed construct at the start or end of a snippet.",
   "Report only issues the snippets support. A few precise issues are better than many generic ones; an empty list is a valid answer. At most 10 issues.",
   "Report each root cause once, in its most relevant category.",
   "For an issue about a file, set filePath exactly as written in the snippet header and set quote to the single line of code that shows the problem, copied verbatim. Issues whose quote is not found in that file are discarded.",
