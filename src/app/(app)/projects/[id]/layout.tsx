@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { ProjectStatusBadge } from "@/components/shared/project-status-badge";
 import { ProjectTabs, type ProjectTab } from "@/components/shared/project-tabs";
 import { auth } from "@/lib/auth";
 import { getProjectSummary } from "@/lib/projects";
+import { touchProject } from "@/modules/projects/server";
+import { logger } from "@/shared/logger";
 
 // Shared by every project page. Layouts are not re-rendered when switching
 // tabs (only the page segment is), so the header and tabs stay put. Each page
@@ -26,6 +29,15 @@ export default async function ProjectLayout({
 
   const project = await getProjectSummary(session.user.id, parsedId.data);
   if (!project) notFound();
+
+  // Opening the project counts as use (retention): written after the
+  // response, at most once a day, and never at the cost of the page.
+  const userId = session.user.id;
+  after(() =>
+    touchProject(userId, project.id).catch((error: unknown) => {
+      logger.warn("project.touch_failed", { err: error, projectId: project.id });
+    }),
+  );
 
   const inFlight = project.status === "processing" || project.status === "queued";
   const reportReady = project.healthScore !== null;
@@ -49,7 +61,12 @@ export default async function ProjectLayout({
     {
       label: "AI Chat",
       segment: "chat",
-      lockedReason: project.chunkCount > 0 ? undefined : "indexing",
+      lockedReason:
+        project.chunkCount > 0
+          ? undefined
+          : project.codeRemovedAt
+            ? "code removed"
+            : "indexing",
     },
   ];
 

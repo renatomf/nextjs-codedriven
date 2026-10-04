@@ -10,6 +10,7 @@ vi.mock("next/link", () => ({
 
 import { EXPLAIN_MAX_CHARS, RAG_TOP_K } from "@/lib/limits";
 import { REVIEW_BUDGET } from "@/modules/analysis";
+import { CODE_RETENTION_DAYS } from "@/modules/projects";
 
 import DataPage from "./page";
 
@@ -39,6 +40,17 @@ describe("data page", () => {
     render(<DataPage />);
 
     expect(screen.getByText("Code is sent as it is.")).toBeTruthy();
+  });
+
+  it("states the retention period the daily job uses", () => {
+    render(<DataPage />);
+
+    expect(
+      screen.getByText(new RegExp(`or ${CODE_RETENTION_DAYS} days without use`)),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(new RegExp(`${CODE_RETENTION_DAYS}\\s+days after you last opened`)),
+    ).toBeTruthy();
   });
 
   it("links to Groq's data policy", () => {

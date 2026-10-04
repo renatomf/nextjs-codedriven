@@ -11,6 +11,7 @@ import { generateProjectReport } from "@/lib/analysis/report";
 import { auth } from "@/lib/auth";
 import { assertRateLimit } from "@/lib/rate-limit";
 import { BillingLimitError } from "@/modules/billing";
+import { codeRemovedMessage } from "@/modules/projects";
 import { withQuota } from "@/modules/billing/server";
 import {
   assertGitHubSourceReady,
@@ -54,6 +55,8 @@ export async function retryProjectKnowledge(
 ): Promise<RetryState> {
   const project = await requireOwnedProject(formData);
   if (!project) return { error: "Project not found." };
+  // Rebuilding reuses the stored files: none left after retention.
+  if (project.codeRemovedAt) return { error: codeRemovedMessage(project.source) };
 
   try {
     await assertAiActionRateLimit("knowledge", project.userId);
@@ -87,6 +90,11 @@ export async function retryFullAnalysis(
 ): Promise<RetryState> {
   const project = await requireOwnedProject(formData);
   if (!project) return { error: "Project not found." };
+  // A ZIP project re-analyzes its stored files: none left after retention.
+  // GitHub projects download the code again, which brings it back.
+  if (project.source === "upload" && project.codeRemovedAt) {
+    return { error: codeRemovedMessage(project.source) };
+  }
 
   // GitHub projects: the repository and the connection are checked before
   // the quota, so these errors are answered at once and cost nothing.
@@ -170,6 +178,8 @@ export async function generateReportAction(
 ): Promise<RetryState> {
   const project = await requireOwnedProject(formData);
   if (!project) return { error: "Project not found." };
+  // The report is built from the stored code: none left after retention.
+  if (project.codeRemovedAt) return { error: codeRemovedMessage(project.source) };
 
   try {
     await assertAiActionRateLimit("report", project.userId);

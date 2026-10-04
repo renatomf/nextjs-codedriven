@@ -560,7 +560,12 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 - [ ] GitHub App com `contents: read`, instalação por repositório e tokens de
       curta duração (TD-15, ADR). Remove o escopo `repo` de escrita.
 - [ ] CSP com nonce, começando em `Report-Only` (TD-34).
-- [ ] Retenção: `project_files` e `code_chunks` apagados após N dias sem uso.
+- [x] Retenção: `project_files` e `code_chunks` apagados após N dias sem uso.
+      N = 90 (`CODE_RETENTION_DAYS`). "Uso" = abrir o projeto (gravado no
+      máximo 1×/dia, depois da resposta) ou importar o código. O cron diário
+      apaga arquivos, chunks e `embedding_cache`; o projeto e o relatório
+      ficam (`code_removed_at`). GitHub volta com "Analyze again"; ZIP, com
+      novo upload. Migração 0010 (`last_used_at`, `code_removed_at`).
 - [ ] Exclusão de conta de ponta a ponta: cascade + cancelamento no Stripe +
       teste provando que nada sobra (LGPD).
 - [x] Página de dados: o que vai para o Groq, por quanto tempo e onde fica

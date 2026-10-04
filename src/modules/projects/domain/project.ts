@@ -21,6 +21,7 @@ export type AnalysisStart =
   | "completed" // nothing to do
   | "running" // a live run owns it
   | "import-failed" // no files were ever stored: create a new project
+  | "code-removed" // retention removed the stored files: import them again
   | "claimable";
 
 /** Status of a Workflow run, as the Workflow SDK reports it. */
@@ -34,7 +35,12 @@ export type AnalysisRunStatus = "pending" | "running" | "completed" | "failed" |
  * a run, the stale window decides.
  */
 export function analysisStart(
-  project: { status: ProjectStatus; fileCount: number; updatedAt: Date },
+  project: {
+    status: ProjectStatus;
+    fileCount: number;
+    updatedAt: Date;
+    codeRemovedAt?: Date | null;
+  },
   now: Date,
   runStatus: AnalysisRunStatus | null = null,
 ): AnalysisStart {
@@ -48,6 +54,9 @@ export function analysisStart(
       return "running";
     }
   }
+  // A run that would analyze stored files, but there are none: a GitHub
+  // re-analysis that died before downloading, or a failed project removed.
+  if (project.codeRemovedAt) return "code-removed";
   if (project.status === "failed" && project.fileCount === 0) return "import-failed";
   return "claimable";
 }
@@ -64,6 +73,29 @@ export function stuckProjectMessage(fileCount: number): string {
   return fileCount === 0
     ? "The import did not finish. Please create the project again."
     : "The analysis stopped before finishing. Please try again.";
+}
+
+/**
+ * Retention (roadmap Phase 6): the code of a project not used for this long
+ * (files, chunks, vectors) is removed by the daily job; the project and its
+ * report stay. Stated on the public data page.
+ */
+export const CODE_RETENTION_DAYS = 90;
+
+/** Use is recorded at most this often (a page view is not a write each time). */
+export const LAST_USED_RESOLUTION_SECONDS = 24 * 60 * 60;
+
+/**
+ * Why an action that needs the stored code was refused, and how to get it
+ * back: GitHub projects download it again; a ZIP has to be uploaded again
+ * (it is not kept after import).
+ */
+export function codeRemovedMessage(source: "github" | "upload"): string {
+  const how =
+    source === "github"
+      ? "Use “Analyze again” to download it from GitHub."
+      : "Upload the ZIP again from New analysis.";
+  return `This project's code was removed after ${CODE_RETENTION_DAYS} days without use. ${how}`;
 }
 
 /** Thrown by the pipeline when the project was canceled (deleted) mid-run. */

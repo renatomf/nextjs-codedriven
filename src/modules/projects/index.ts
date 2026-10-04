@@ -8,6 +8,8 @@ export {
   analysisStart,
   type AnalysisRunStatus,
   type AnalysisStart,
+  CODE_RETENTION_DAYS,
+  codeRemovedMessage,
   type ProjectStatus,
   STUCK_AFTER_SECONDS,
   stuckProjectMessage,
