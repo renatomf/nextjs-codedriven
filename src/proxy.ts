@@ -1,12 +1,49 @@
-import { authConfig } from "@/lib/auth.config";
 import NextAuth from "next-auth";
+import { NextResponse } from "next/server";
 
-export default NextAuth(authConfig).auth;
+import { authConfig, isProtectedPath } from "@/lib/auth.config";
+import { buildCsp, newNonce } from "@/shared/csp";
+
+const { auth } = NextAuth(authConfig);
+
+/**
+ * Every page request: the session check for protected pages, then a fresh
+ * nonce and the Content-Security-Policy (TD-34), sent as Report-Only while
+ * the reports are reviewed. Next.js reads the policy from the request
+ * headers and puts the nonce on its own scripts.
+ */
+export default auth((request) => {
+  // With a handler, Auth.js no longer redirects on its own when
+  // `authorized` says no: the redirect is done here, as it would be.
+  const { pathname } = request.nextUrl;
+  if (isProtectedPath(pathname) && !request.auth) {
+    const signIn = new URL("/login", request.nextUrl);
+    signIn.searchParams.set("callbackUrl", request.nextUrl.href);
+    return NextResponse.redirect(signIn);
+  }
+
+  const nonce = newNonce();
+  const csp = buildCsp({
+    nonce,
+    isDev: process.env.NODE_ENV === "development",
+    sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    storageEndpoint: process.env.NEON_STORAGE_ENDPOINT,
+    environment: process.env.VERCEL_ENV,
+  });
+
+  const headers = new Headers(request.headers);
+  headers.set("x-nonce", nonce);
+  headers.set("Content-Security-Policy-Report-Only", csp);
+
+  const response = NextResponse.next({ request: { headers } });
+  response.headers.set("Content-Security-Policy-Report-Only", csp);
+  return response;
+});
 
 export const config = {
   matcher: [
-    "/dashboard/:path*", 
-    "/projects/:path*", 
-    "/settings/:path*"
+    // Pages only: not API routes, the workflow routes, Next.js assets or
+    // files with an extension (public/).
+    "/((?!api|\\.well-known|_next/static|_next/image|favicon\\.ico|.*\\.[a-zA-Z0-9]+$).*)",
   ],
 };

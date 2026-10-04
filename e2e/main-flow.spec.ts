@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import JSZip from "jszip";
 
+import { watchCspViolations } from "./csp";
+
 // Main user flow against the production build, a disposable Postgres and the
 // fake LLM (E2E_FAKE_LLM=1): register -> upload ZIP -> analysis (real
 // chunking + real embeddings) -> report -> chat. Needs the CI e2e setup
@@ -44,6 +46,8 @@ test("register, upload a project, get a report, share it and chat about it", asy
   browser,
 }) => {
   test.setTimeout(5 * 60_000); // first run downloads the embedding model
+  // The signed-in pages must not break once the CSP is enforced (TD-34).
+  const violations = await watchCspViolations(page);
 
   // 1. Register (lands on the dashboard, signed in).
   await page.goto("/register");
@@ -100,4 +104,7 @@ test("register, upload a project, get a report, share it and chat about it", asy
   await page.getByPlaceholder("Ask about this codebase...").fill("What does add do?");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText(FAKE_ANSWER)).toBeVisible({ timeout: 60_000 });
+
+  // 6. Nothing in the flow would be blocked by the Content-Security-Policy.
+  expect(violations).toEqual([]);
 });

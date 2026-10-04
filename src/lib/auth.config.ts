@@ -10,6 +10,13 @@ export function profileImage(provider: string, profile: unknown) {
   return typeof url === "string" && url.startsWith("https://") ? url : undefined;
 }
 
+/** Pages that need a session (the pages check it again on the server). */
+export function isProtectedPath(pathname: string): boolean {
+  return ["/dashboard", "/projects", "/settings"].some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export const authConfig = {
   providers: [
     Google({
@@ -36,13 +43,7 @@ export const authConfig = {
   },
   callbacks: {
     authorized({ auth, request }) {
-      const pathname = request.nextUrl.pathname;
-      const isProtected =
-        pathname.startsWith("/dashboard") ||
-        pathname.startsWith("/projects") ||
-        pathname.startsWith("/settings");
-
-      if (isProtected) return !!auth;
+      if (isProtectedPath(request.nextUrl.pathname)) return !!auth;
       return true;
     },
     async jwt({ token, user, account, profile }) {
