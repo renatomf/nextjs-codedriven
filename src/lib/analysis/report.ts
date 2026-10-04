@@ -1,5 +1,6 @@
 import { DomainError } from "@/shared/errors";
 import { logger } from "@/shared/logger";
+import { APICallError } from "ai";
 import { and, asc, eq } from "drizzle-orm";
 
 import { codeChunks, projects, reports, type StoredLlmReview } from "@/db/schema";
@@ -32,6 +33,11 @@ export type GeneratedReport = {
   /** Set when the report came out without the AI review (deterministic only). */
   aiReviewSkipped?: AiReviewSkip;
 };
+
+/** The provider refused our credentials (401/403): retrying cannot help. */
+function isProviderAuthError(error: unknown): boolean {
+  return APICallError.isInstance(error) && (error.statusCode === 401 || error.statusCode === 403);
+}
 
 /**
  * A new AI review, or why the report goes without one (graceful
@@ -72,7 +78,9 @@ async function reviewOrSkip(options: {
     );
   } catch (error) {
     await recordLlmCall({ ...llmCall, usage: null, latencyMs: performance.now() - llmStarted, ok: false });
-    if (!finalAttempt) throw error;
+    // A refused key fails the same way on every try (seen in production,
+    // 2026-10-03: an invalid Groq key was tried three times): degrade now.
+    if (!finalAttempt && !isProviderAuthError(error)) throw error;
     logger.error("analysis.llm_review_failed", { err: error, userId, projectId });
     return { skipped: "unavailable" };
   }
