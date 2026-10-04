@@ -1,7 +1,8 @@
 # Arquitetura atual
 
 Retrato de **como o sistema é hoje** (fim da Fase 3 do
-[roadmap-v2.md](roadmap-v2.md), com o que as Fases 7 e 4 acrescentaram): um monólito modular com Clean Architecture
+[roadmap-v2.md](roadmap-v2.md), com o que as Fases 7, 4 e 5 acrescentaram;
+a Fase 5 em [results-phase-5.md](results-phase-5.md)): um monólito modular com Clean Architecture
 e DDD aplicados só onde há regra de negócio ([ADR-001](decisions/001-modular-monolith.md)).
 O "antes" está em [architecture-baseline.md](architecture-baseline.md); a
 comparação medida, em [results-phase-3.md](results-phase-3.md). Convenções
@@ -13,7 +14,10 @@ Igual ao baseline: o app (Next.js na Vercel) fala com Neon Postgres +
 pgvector, Groq (LLM), Hugging Face Hub (modelo de embeddings no cold start),
 GitHub (OAuth e zipball), Google (OAuth) e Stripe (checkout e webhook
 assinado). Desde a Fase 4, também com o Sentry (erros e traces, sem PII nem
-código do usuário).
+código do usuário). Desde a Fase 5: Vercel Workflows (a análise e a
+importação rodam como runs duráveis, ADR-005) e Neon Object Storage (o ZIP
+enviado pelo navegador, apagado depois da importação, ADR-011), além do
+cron diário da Vercel (reaper).
 
 ## C4 — nível 2: contêineres e camadas
 
