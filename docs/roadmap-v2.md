@@ -77,7 +77,7 @@ caracterização da análise em snapshot). As Fases 4 a 6 não dependem da 7.
 - [ ] CI verde em todo PR, com testes de IDOR e o E2E do fluxo principal
 - [ ] Zero import de `@/lib/db` / `@/db/schema` em `src/app`
 - [ ] Regras de dependência entre camadas e módulos verificadas no CI
-- [ ] Análise rodando em job, com retry e sem projetos travados
+- [x] Análise rodando em job, com retry e sem projetos travados
 - [x] Relatório sai (só determinístico) mesmo com o LLM fora
 - [ ] Token de GitHub só com leitura (GitHub App)
 - [x] `npm run eval` com resultado versionado; nenhuma categoria do próprio
@@ -546,6 +546,12 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       uma reentrega depois de um cancelamento devolvia o premium (teste que
       falhava antes da correção). Dedupe por `event.id` barraria a
       duplicata, não a primeira entrega atrasada.
+- [x] Fechamento: [results-phase-5.md](results-phase-5.md) (antes × depois
+      com data e método, tempos de produção, incidentes),
+      [architecture.md](architecture.md) e
+      [retros/phase-5.md](retros/phase-5.md) (a escrever pelo autor). Não
+      medido: duração total da análise antes × depois e um projeto real
+      perto de 1.000 arquivos.
 
 ## Fase 6 — Segurança e dados
 
