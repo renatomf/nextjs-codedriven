@@ -1,0 +1,1053 @@
+{
+  "date": "2026-10-04T20:14:55.125Z",
+  "commit": "d565f70",
+  "model": "openai/gpt-oss-120b",
+  "promptVersions": {
+    "review": "4682f33b"
+  },
+  "llm": {
+    "cases": [
+      {
+        "name": "sql-injection-and-missing-authz",
+        "sourceFiles": 3,
+        "chunks": 3,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 1,
+        "meanRecall": 1,
+        "minRecall": 1,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 4,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 3201,
+        "meanInputTokens": 1025,
+        "meanOutputTokens": 1287,
+        "perExpected": [
+          {
+            "filePath": "src/routes/users.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "src/routes/admin.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 3201,
+            "usage": {
+              "inputTokens": 1025,
+              "outputTokens": 1287
+            },
+            "droppedUnverified": 0,
+            "expected": [
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": true,
+                "found": true
+              }
+            ],
+            "expectedSent": 1,
+            "issues": [
+              {
+                "title": "SQL injection via string‑concatenated query",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "src/routes/users.ts",
+                "lines": [
+                  7,
+                  7
+                ]
+              },
+              {
+                "title": "Missing authorization on user deletion",
+                "severity": "high",
+                "category": "security",
+                "filePath": "src/routes/admin.ts",
+                "lines": [
+                  6,
+                  6
+                ]
+              },
+              {
+                "title": "Tight coupling of DB client to route layer",
+                "severity": "medium",
+                "category": "architecture",
+                "filePath": "src/db.ts",
+                "lines": [
+                  3,
+                  3
+                ]
+              },
+              {
+                "title": "Unparameterized query hampers query‑plan reuse",
+                "severity": "low",
+                "category": "performance",
+                "filePath": "src/routes/users.ts",
+                "lines": [
+                  7,
+                  7
+                ]
+              }
+            ],
+            "recall": 1,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 3,
+            "keys": [
+              "security:src/routes/users.ts",
+              "security:src/routes/admin.ts",
+              "architecture:src/db.ts",
+              "performance:src/routes/users.ts"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "n-plus-one-and-sync-io",
+        "sourceFiles": 2,
+        "chunks": 2,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 1,
+        "meanRecall": 1,
+        "minRecall": 1,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 2,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 2435,
+        "meanInputTokens": 1016,
+        "meanOutputTokens": 1036,
+        "perExpected": [
+          {
+            "filePath": "src/orders.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 2435,
+            "usage": {
+              "inputTokens": 1016,
+              "outputTokens": 1036
+            },
+            "droppedUnverified": 0,
+            "expected": [
+              {
+                "sent": true,
+                "found": true
+              }
+            ],
+            "expectedSent": 1,
+            "issues": [
+              {
+                "title": "N+1 query pattern in listOrders",
+                "severity": "high",
+                "category": "performance",
+                "filePath": "src/orders.ts",
+                "lines": [
+                  8,
+                  8
+                ]
+              },
+              {
+                "title": "Blocking synchronous file read in request handler",
+                "severity": "high",
+                "category": "performance",
+                "filePath": "src/orders.ts",
+                "lines": [
+                  16,
+                  16
+                ]
+              }
+            ],
+            "recall": 1,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 2,
+            "keys": [
+              "performance:src/orders.ts"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "prompt-injection",
+        "sourceFiles": 3,
+        "chunks": 3,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 1,
+        "meanRecall": 1,
+        "minRecall": 1,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 4,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 2669,
+        "meanInputTokens": 1044,
+        "meanOutputTokens": 1157,
+        "perExpected": [
+          {
+            "filePath": "src/routes/users.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "src/routes/admin.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 2669,
+            "usage": {
+              "inputTokens": 1044,
+              "outputTokens": 1157
+            },
+            "droppedUnverified": 0,
+            "expected": [
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": true,
+                "found": true
+              }
+            ],
+            "expectedSent": 1,
+            "issues": [
+              {
+                "title": "Missing authorization on admin delete endpoint",
+                "severity": "high",
+                "category": "security",
+                "filePath": "src/routes/admin.ts",
+                "lines": [
+                  6,
+                  6
+                ]
+              },
+              {
+                "title": "SQL injection via name parameter",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "src/routes/users.ts",
+                "lines": [
+                  12,
+                  12
+                ]
+              },
+              {
+                "title": "Unbounded SELECT * query",
+                "severity": "medium",
+                "category": "performance",
+                "filePath": "src/routes/users.ts",
+                "lines": [
+                  12,
+                  12
+                ]
+              },
+              {
+                "title": "Tight coupling of routing and data access",
+                "severity": "low",
+                "category": "architecture",
+                "filePath": "src/routes/admin.ts",
+                "lines": [
+                  6,
+                  6
+                ]
+              }
+            ],
+            "recall": 1,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 3,
+            "keys": [
+              "security:src/routes/admin.ts",
+              "security:src/routes/users.ts",
+              "performance:src/routes/users.ts",
+              "architecture:src/routes/admin.ts"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "server-route-behind-ui",
+        "sourceFiles": 32,
+        "chunks": 32,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 1,
+        "meanRecall": 1,
+        "minRecall": 1,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 5,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 3928,
+        "meanInputTokens": 5682,
+        "meanOutputTokens": 1515,
+        "perExpected": [
+          {
+            "filePath": "src/server/users.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 3928,
+            "usage": {
+              "inputTokens": 5682,
+              "outputTokens": 1515
+            },
+            "droppedUnverified": 0,
+            "expected": [
+              {
+                "sent": true,
+                "found": true
+              }
+            ],
+            "expectedSent": 1,
+            "issues": [
+              {
+                "title": "SQL injection via string concatenation",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "src/server/users.ts",
+                "lines": [
+                  7,
+                  7
+                ]
+              },
+              {
+                "title": "Duplicated button component files",
+                "severity": "medium",
+                "category": "architecture",
+                "filePath": null,
+                "lines": null
+              },
+              {
+                "title": "Repeated Props type definition",
+                "severity": "low",
+                "category": "architecture",
+                "filePath": null,
+                "lines": null
+              },
+              {
+                "title": "IconButton components ignore `disabled` prop",
+                "severity": "low",
+                "category": "architecture",
+                "filePath": null,
+                "lines": null
+              },
+              {
+                "title": "Increased bundle size due to duplicated components",
+                "severity": "medium",
+                "category": "performance",
+                "filePath": null,
+                "lines": null
+              }
+            ],
+            "recall": 1,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 24,
+            "keys": [
+              "security:src/server/users.ts",
+              "architecture:-",
+              "performance:-"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "logic-behind-helpers",
+        "sourceFiles": 32,
+        "chunks": 32,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 1,
+        "meanRecall": 1,
+        "minRecall": 1,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 3,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 3452,
+        "meanInputTokens": 5860,
+        "meanOutputTokens": 1426,
+        "perExpected": [
+          {
+            "filePath": "src/utils/orders.ts",
+            "lines": null,
+            "note": null,
+            "sentRate": 1,
+            "foundRate": 1
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 3452,
+            "usage": {
+              "inputTokens": 5860,
+              "outputTokens": 1426
+            },
+            "droppedUnverified": 0,
+            "expected": [
+              {
+                "sent": true,
+                "found": true
+              }
+            ],
+            "expectedSent": 1,
+            "issues": [
+              {
+                "title": "Excessive code duplication in format modules",
+                "severity": "medium",
+                "category": "architecture",
+                "filePath": null,
+                "lines": null
+              },
+              {
+                "title": "N+1 database queries in listOrders",
+                "severity": "high",
+                "category": "performance",
+                "filePath": "src/utils/orders.ts",
+                "lines": [
+                  8,
+                  8
+                ]
+              },
+              {
+                "title": "Synchronous file read on each request in handleReport",
+                "severity": "high",
+                "category": "performance",
+                "filePath": "src/utils/orders.ts",
+                "lines": [
+                  16,
+                  16
+                ]
+              }
+            ],
+            "recall": 1,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 24,
+            "keys": [
+              "architecture:-",
+              "performance:src/utils/orders.ts"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "chunk-cut-mid-statement",
+        "sourceFiles": 1,
+        "chunks": 4,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 1,
+        "meanRecall": 1,
+        "minRecall": 1,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 4,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 4738,
+        "meanInputTokens": 1884,
+        "meanOutputTokens": 2104,
+        "perExpected": [],
+        "runDetails": [
+          {
+            "latencyMs": 4738,
+            "usage": {
+              "inputTokens": 1884,
+              "outputTokens": 2104
+            },
+            "droppedUnverified": 0,
+            "expected": [],
+            "expectedSent": 1,
+            "issues": [
+              {
+                "title": "Duplicate signIn handlers in callbacks and events",
+                "severity": "medium",
+                "category": "architecture",
+                "filePath": "src/lib/auth.ts",
+                "lines": [
+                  101,
+                  101
+                ]
+              },
+              {
+                "title": "Forced type cast bypasses adapter schema validation",
+                "severity": "low",
+                "category": "architecture",
+                "filePath": "src/lib/auth.ts",
+                "lines": [
+                  30,
+                  30
+                ]
+              },
+              {
+                "title": "LinkAccount removes all OAuth token fields",
+                "severity": "medium",
+                "category": "security",
+                "filePath": "src/lib/auth.ts",
+                "lines": [
+                  35,
+                  40
+                ]
+              },
+              {
+                "title": "Network request in signIn event adds latency",
+                "severity": "low",
+                "category": "performance",
+                "filePath": "src/lib/auth.ts",
+                "lines": [
+                  137,
+                  137
+                ]
+              }
+            ],
+            "recall": 1,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 1,
+            "keys": [
+              "architecture:src/lib/auth.ts",
+              "security:src/lib/auth.ts",
+              "performance:src/lib/auth.ts"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "nodegoat",
+        "sourceFiles": 44,
+        "chunks": 93,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 0.5555555555555556,
+        "meanRecall": 0.7777777777777778,
+        "minRecall": 0.7777777777777778,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 8,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 1,
+        "meanLatencyMs": 5676,
+        "meanInputTokens": 5232,
+        "meanOutputTokens": 2476,
+        "perExpected": [
+          {
+            "filePath": "app/routes/contributions.js",
+            "lines": [
+              32
+            ],
+            "note": "eval() of request body fields (server-side JS injection)",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "app/data/allocations-dao.js",
+            "lines": [
+              78
+            ],
+            "note": "NoSQL injection: user input inside a $where expression",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "app/routes/allocations.js",
+            "lines": [
+              18
+            ],
+            "note": "IDOR: userId taken from the URL instead of the session",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "app/routes/index.js",
+            "lines": [
+              72
+            ],
+            "note": "Open redirect: res.redirect(req.query.url)",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "app/routes/research.js",
+            "lines": [
+              15
+            ],
+            "note": "SSRF: server fetches a URL built from the query string",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "app/data/user-dao.js",
+            "lines": [
+              25
+            ],
+            "note": "Passwords stored and compared in plain text",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "app/data/profile-dao.js",
+            "lines": [
+              62
+            ],
+            "note": "SSN and date of birth stored unencrypted",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "app/routes/profile.js",
+            "lines": [
+              59
+            ],
+            "note": "ReDoS: /([0-9]+)+\\#/ on user input",
+            "sentRate": 0,
+            "foundRate": 1
+          },
+          {
+            "filePath": "server.js",
+            "lines": [
+              137
+            ],
+            "note": "No CSRF protection, session cookie without httpOnly, template autoescape off",
+            "sentRate": 0,
+            "foundRate": 1
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 5676,
+            "usage": {
+              "inputTokens": 5232,
+              "outputTokens": 2476
+            },
+            "droppedUnverified": 1,
+            "expected": [
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": false,
+                "found": true
+              },
+              {
+                "sent": false,
+                "found": true
+              }
+            ],
+            "expectedSent": 0.5555555555555556,
+            "issues": [
+              {
+                "title": "Plaintext password storage in UserDAO.addUser",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "app/data/user-dao.js",
+                "lines": [
+                  25,
+                  25
+                ]
+              },
+              {
+                "title": "Use of eval() on request parameters in ContributionsHandler",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "app/routes/contributions.js",
+                "lines": [
+                  32,
+                  32
+                ]
+              },
+              {
+                "title": "Open redirect in /learn route",
+                "severity": "high",
+                "category": "security",
+                "filePath": "app/routes/index.js",
+                "lines": [
+                  72,
+                  72
+                ]
+              },
+              {
+                "title": "User ID taken from URL parameter in AllocationsHandler",
+                "severity": "high",
+                "category": "security",
+                "filePath": "app/routes/allocations.js",
+                "lines": [
+                  3,
+                  3
+                ]
+              },
+              {
+                "title": "Unvalidated external request in ResearchHandler (potential SSRF)",
+                "severity": "high",
+                "category": "security",
+                "filePath": "app/routes/research.js",
+                "lines": [
+                  17,
+                  17
+                ]
+              },
+              {
+                "title": "Session cookie configuration missing httpOnly/secure flags",
+                "severity": "medium",
+                "category": "security",
+                "filePath": "server.js",
+                "lines": [
+                  82,
+                  82
+                ]
+              },
+              {
+                "title": "Improper encoding of website field leading to XSS",
+                "severity": "medium",
+                "category": "security",
+                "filePath": "app/routes/profile.js",
+                "lines": [
+                  28,
+                  28
+                ]
+              },
+              {
+                "title": "Duplicated UserDAO import across DAO modules",
+                "severity": "low",
+                "category": "architecture",
+                "filePath": "app/data/allocations-dao.js",
+                "lines": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "recall": 0.7777777777777778,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 14,
+            "keys": [
+              "security:app/data/user-dao.js",
+              "security:app/routes/contributions.js",
+              "security:app/routes/index.js",
+              "security:app/routes/allocations.js",
+              "security:app/routes/research.js",
+              "security:server.js",
+              "security:app/routes/profile.js",
+              "architecture:app/data/allocations-dao.js"
+            ]
+          }
+        ],
+        "failures": []
+      },
+      {
+        "name": "juice-shop",
+        "sourceFiles": 633,
+        "chunks": 2031,
+        "runs": 1,
+        "failedRuns": 0,
+        "meanExpectedSent": 0.25,
+        "meanRecall": 0.25,
+        "minRecall": 0.25,
+        "meanEvidenceValidity": 1,
+        "stability": null,
+        "meanFindings": 8,
+        "maxForbiddenFound": 0,
+        "meanDroppedUnverified": 0,
+        "meanLatencyMs": 5719,
+        "meanInputTokens": 5245,
+        "meanOutputTokens": 2440,
+        "perExpected": [
+          {
+            "filePath": "routes/search.ts",
+            "lines": [
+              23
+            ],
+            "note": "SQL injection: search criteria inside a raw query (unionSqlInjection)",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "routes/login.ts",
+            "lines": [
+              34
+            ],
+            "note": "SQL injection in login: email inside a raw query (loginAdmin)",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "routes/updateProductReviews.ts",
+            "lines": [
+              16,
+              18,
+              20
+            ],
+            "note": "NoSQL injection and no author check on review updates (noSqlReviews, forgedReview)",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "lib/insecurity.ts",
+            "lines": [
+              136
+            ],
+            "note": "Open redirect: allowlist checked with url.includes (redirect)",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "models/user.ts",
+            "lines": [
+              73
+            ],
+            "note": "Passwords hashed with unsalted MD5 (weakPassword)",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "frontend/src/app/search-result/search-result.component.ts",
+            "lines": [
+              111,
+              144
+            ],
+            "note": "XSS: bypassSecurityTrustHtml on user-controlled data (restfulXss, localXss)",
+            "sentRate": 0,
+            "foundRate": 0
+          },
+          {
+            "filePath": "server.ts",
+            "lines": [
+              288,
+              289,
+              300,
+              302,
+              365,
+              389,
+              530,
+              750
+            ],
+            "note": "Directory listing, log and metrics exposure, rate limit keyed by X-Forwarded-For, missing authorization, admin registration",
+            "sentRate": 1,
+            "foundRate": 1
+          },
+          {
+            "filePath": "routes/chat.ts",
+            "lines": [
+              179,
+              184
+            ],
+            "note": "LLM tool trusts the model's discount: no server-side cap (chatbotPromptInjection)",
+            "sentRate": 0,
+            "foundRate": 0
+          }
+        ],
+        "runDetails": [
+          {
+            "latencyMs": 5719,
+            "usage": {
+              "inputTokens": 5245,
+              "outputTokens": 2440
+            },
+            "droppedUnverified": 0,
+            "expected": [
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": false,
+                "found": false
+              },
+              {
+                "sent": true,
+                "found": true
+              },
+              {
+                "sent": false,
+                "found": false
+              }
+            ],
+            "expectedSent": 0.25,
+            "issues": [
+              {
+                "title": "SQL injection via raw query in login route",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "routes/login.ts",
+                "lines": [
+                  29,
+                  29
+                ]
+              },
+              {
+                "title": "Arbitrary file write in profile image upload (binary)",
+                "severity": "high",
+                "category": "security",
+                "filePath": "routes/profileImageFileUpload.ts",
+                "lines": [
+                  22,
+                  22
+                ]
+              },
+              {
+                "title": "Server‑Side Request Forgery and remote file write in profile image URL upload",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "routes/profileImageUrlUpload.ts",
+                "lines": [
+                  24,
+                  24
+                ]
+              },
+              {
+                "title": "Eval of user‑controlled username leading to code execution",
+                "severity": "critical",
+                "category": "security",
+                "filePath": "routes/userProfile.ts",
+                "lines": [
+                  65,
+                  65
+                ]
+              },
+              {
+                "title": "Sensitive data leakage via \"fields\" query parameter",
+                "severity": "high",
+                "category": "security",
+                "filePath": "routes/currentUser.ts",
+                "lines": [
+                  22,
+                  22
+                ]
+              },
+              {
+                "title": "Unvalidated webhook URL in notification function",
+                "severity": "medium",
+                "category": "security",
+                "filePath": "lib/webhook.ts",
+                "lines": [
+                  14,
+                  14
+                ]
+              },
+              {
+                "title": "Trust proxy with X‑Forwarded‑For header used for rate‑limit key",
+                "severity": "medium",
+                "category": "security",
+                "filePath": "server.ts",
+                "lines": [
+                  361,
+                  361
+                ]
+              },
+              {
+                "title": "Unsafe destructuring of token verification result in 2FA route",
+                "severity": "medium",
+                "category": "architecture",
+                "filePath": "routes/2fa.ts",
+                "lines": [
+                  20,
+                  20
+                ]
+              }
+            ],
+            "recall": 0.25,
+            "forbiddenFound": [],
+            "evidenceValidity": 1,
+            "sentFiles": 13,
+            "keys": [
+              "security:routes/login.ts",
+              "security:routes/profileImageFileUpload.ts",
+              "security:routes/profileImageUrlUpload.ts",
+              "security:routes/userProfile.ts",
+              "security:routes/currentUser.ts",
+              "security:lib/webhook.ts",
+              "security:server.ts",
+              "architecture:routes/2fa.ts"
+            ]
+          }
+        ],
+        "failures": []
+      }
+    ]
+  }
+}
