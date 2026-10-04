@@ -65,8 +65,12 @@ export function analysisFixtureFiles(): File[] {
   });
 
   // Critical-looking paths without tests: 9 of them (only 8 become issues).
+  // They have logic: files without it (constants, types) need no test.
   for (let n = 0; n < 9; n += 1) {
-    files.push({ relativePath: `src/auth/handler-${n}.ts`, content: "export const handle = 1;\n" });
+    files.push({
+      relativePath: `src/auth/handler-${n}.ts`,
+      content: "export function handle() {\n  return 1;\n}\n",
+    });
   }
 
   // Secrets: 11 hits (only 10 become issues), one per pattern kind.

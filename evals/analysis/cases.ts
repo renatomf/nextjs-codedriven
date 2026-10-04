@@ -61,6 +61,12 @@ const plantedProblems: EvalCase = {
     { relativePath: "src/billing/invoice.ts", content: small("invoice") },
     { relativePath: "src/util.ts", content: small("util") },
     { relativePath: "src/util.test.ts", content: test("util") },
+    // Low coverage is planted with untested logic. Until 2026-10-04 it came
+    // from counting big-module.ts and keys.ts, which hold only constants;
+    // files without logic no longer count, so two untested helpers keep the
+    // case at 3 of 8 logic files tested (38%, under the 40% threshold).
+    { relativePath: "src/format.ts", content: small("format") },
+    { relativePath: "src/parse.ts", content: small("parse") },
     {
       // A component with real logic (hooks, handlers) before its markup.
       relativePath: "src/components/Checkout.tsx",
@@ -160,9 +166,63 @@ const falsePositiveTraps: EvalCase = {
   expected: [],
 };
 
+/**
+ * A modular code base tested through each module's public API (index.ts /
+ * server.ts), with files that hold no logic (a port of types, a framework
+ * route that only re-exports handlers). Only the one critical file with logic
+ * and no test may be flagged (found on this repository: 8 false "critical area
+ * may lack tests", Testing 19, 2026-10-04).
+ */
+const testedThroughModuleApi: EvalCase = {
+  name: "tested-through-module-api",
+  description:
+    "Billing tested through its server.ts and index.ts facades; a types-only port and a re-export route need no test; one untested payment file with logic is a real finding.",
+  files: [
+    {
+      relativePath: "src/modules/billing/application/quota.ts",
+      content: "export function createQuota(limit: number) {\n  if (limit < 0) throw new Error(\"limit\");\n  return { limit };\n}\n",
+    },
+    {
+      relativePath: "src/modules/billing/domain/llm-switch.ts",
+      content: "export class LlmUnavailableError extends Error {}\n",
+    },
+    {
+      relativePath: "src/modules/billing/application/ports.ts",
+      content:
+        "export interface BillingRepository {\n  loadUserBilling(userId: string): Promise<{ plan: string }>;\n  onChange: (plan: string) => void;\n}\n",
+    },
+    {
+      relativePath: "src/modules/billing/server.ts",
+      content:
+        'import { createQuota } from "./application/quota";\nexport function billingFor(limit: number) {\n  return createQuota(limit);\n}\n',
+    },
+    {
+      relativePath: "src/modules/billing/index.ts",
+      content: 'export { LlmUnavailableError } from "./domain/llm-switch";\n',
+    },
+    {
+      relativePath: "src/app/api/auth/[...nextauth]/route.ts",
+      content: 'import { handlers } from "@/lib/auth";\n\nexport const { GET, POST } = handlers;\n',
+    },
+    {
+      relativePath: "src/modules/billing/quota.integration.test.ts",
+      content:
+        'import { billingFor } from "@/modules/billing/server";\nimport { LlmUnavailableError } from "@/modules/billing";\ntest("quota", () => billingFor(1));\n',
+    },
+    {
+      relativePath: "src/lib/payments/refund.ts",
+      content: "export function refund(amount: number) {\n  if (amount <= 0) throw new Error(\"amount\");\n  return amount;\n}\n",
+    },
+  ],
+  expected: [
+    { category: "testing", filePath: "src/lib/payments/refund.ts", title: /^Critical area may lack tests/ },
+  ],
+};
+
 export const ANALYSIS_CASES: EvalCase[] = [
   wellTestedLib,
   plantedProblems,
   falsePositiveTraps,
   testsInSeparateFolder,
+  testedThroughModuleApi,
 ];

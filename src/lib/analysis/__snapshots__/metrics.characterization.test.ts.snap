@@ -253,7 +253,7 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
     },
     {
       "category": "testing",
-      "description": "Only about 4% of source files appear to have nearby test files. This is a file-matching proxy, not runtime coverage.",
+      "description": "Only about 8% of source files appear to have nearby test files. This is a file-matching proxy, not runtime coverage.",
       "filePath": null,
       "rule": "low-test-coverage",
       "severity": "high",
@@ -515,10 +515,10 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
   "summaries": {
     "codeQuality": "Found 12 large file(s) and 14 complex function(s) using static heuristics.",
     "security": "Pattern scan found 11 potential hardcoded secret hit(s).",
-    "testing": "Matched test files for roughly 4% of source files (3 test files found).",
+    "testing": "Matched test files for roughly 8% of source files (3 test files found).",
   },
   "testFileCount": 3,
-  "testedSourceApproxPercent": 4,
+  "testedSourceApproxPercent": 8,
   "untestedCriticalPaths": [
     "src/auth/handler-0.ts",
     "src/auth/handler-1.ts",

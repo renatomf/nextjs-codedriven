@@ -37,7 +37,7 @@ describe("computeDeterministicMetrics", () => {
         relativePath: "src/auth.test.ts",
         content: "test('login', () => {});\n",
       },
-      { relativePath: "src/other.ts", content: "export const x = 1;\n" },
+      { relativePath: "src/other.ts", content: "export function x() {\n  return 1;\n}\n" },
     ]);
 
     expect(metrics.testFileCount).toBe(1);
@@ -139,8 +139,8 @@ describe("computeDeterministicMetrics", () => {
 
     it("counts a file imported by a test as tested (relative and @/ imports)", () => {
       const metrics = computeDeterministicMetrics([
-        { relativePath: "src/lib/auth/session.ts", content: "export const s = 1;\n" },
-        { relativePath: "src/lib/billing/index.ts", content: "export const b = 1;\n" },
+        { relativePath: "src/lib/auth/session.ts", content: "export function s() {\n  return 1;\n}\n" },
+        { relativePath: "src/lib/billing/index.ts", content: "export function b() {\n  return 1;\n}\n" },
         {
           relativePath: "tests/a.test.ts",
           content: 'import { s } from "@/lib/auth/session";\nimport { b } from "../src/lib/billing";\n',
@@ -153,9 +153,9 @@ describe("computeDeterministicMetrics", () => {
 
     it("matches critical areas on whole words of logic files only", () => {
       const metrics = computeDeterministicMetrics([
-        { relativePath: "src/lib/oauth-client.ts", content: "export const o = 1;\n" },
-        { relativePath: "src/components/auth/login-form.tsx", content: "export const f = 1;\n" },
-        { relativePath: "src/lib/authTokens.ts", content: "export const t = 1;\n" },
+        { relativePath: "src/lib/oauth-client.ts", content: "export function o() {\n  return 1;\n}\n" },
+        { relativePath: "src/components/auth/login-form.tsx", content: "export function f() {\n  return 1;\n}\n" },
+        { relativePath: "src/lib/authTokens.ts", content: "export function t() {\n  return 1;\n}\n" },
       ]);
 
       expect(metrics.untestedCriticalPaths).toEqual(["src/lib/authTokens.ts"]);
@@ -169,6 +169,113 @@ describe("computeDeterministicMetrics", () => {
       ]);
 
       expect(metrics.secretHits.map((hit) => hit.filePath)).toEqual(["src/keys.ts"]);
+    });
+
+    // Tests often reach a module through its public API (index.ts /
+    // server.ts, the facades): what a facade imports or re-exports is
+    // exercised too.
+    it("counts code a test reaches through a module facade as tested", () => {
+      const metrics = computeDeterministicMetrics([
+        {
+          relativePath: "src/modules/billing/application/quota.ts",
+          content: ["export function createQuota() {", "  return 1;", "}", ""].join("\n"),
+        },
+        {
+          relativePath: "src/modules/billing/domain/llm-switch.ts",
+          content: ["export class LlmUnavailableError extends Error {}", ""].join("\n"),
+        },
+        {
+          relativePath: "src/modules/billing/server.ts",
+          content: [
+            'import { createQuota } from "./application/quota";',
+            "export function billingFor() {",
+            "  return createQuota();",
+            "}",
+            "",
+          ].join("\n"),
+        },
+        {
+          relativePath: "src/modules/billing/index.ts",
+          content: ['export { LlmUnavailableError } from "./domain/llm-switch";', ""].join("\n"),
+        },
+        {
+          relativePath: "src/modules/billing/quota.test.ts",
+          content: [
+            'import { billingFor } from "@/modules/billing/server";',
+            'import { LlmUnavailableError } from "@/modules/billing";',
+            'test("q", () => billingFor());',
+            "",
+          ].join("\n"),
+        },
+      ]);
+
+      expect(metrics.untestedCriticalPaths).toEqual([]);
+      expect(metrics.testedSourceApproxPercent).toBe(100);
+    });
+
+    it("does not follow imports of ordinary files (only facades)", () => {
+      const metrics = computeDeterministicMetrics([
+        {
+          relativePath: "src/lib/payments/charge.ts",
+          content: [
+            'import { refund } from "./refund";',
+            "export function charge() {",
+            "  return refund();",
+            "}",
+            "",
+          ].join("\n"),
+        },
+        {
+          relativePath: "src/lib/payments/refund.ts",
+          content: ["export function refund() {", "  return 1;", "}", ""].join("\n"),
+        },
+        {
+          relativePath: "src/lib/payments/charge.test.ts",
+          content: ['import { charge } from "./charge";', 'test("c", () => charge());', ""].join("\n"),
+        },
+      ]);
+
+      expect(metrics.untestedCriticalPaths).toEqual(["src/lib/payments/refund.ts"]);
+    });
+
+    it("asks no tests of files without logic (types, re-exports, constant wiring)", () => {
+      const metrics = computeDeterministicMetrics([
+        {
+          relativePath: "src/modules/billing/application/ports.ts",
+          content: [
+            'import type { Plan } from "../domain/plan";',
+            "",
+            "/** Port: (plan) => void in a comment is not code. */",
+            "export interface BillingRepository {",
+            "  loadUserBilling(userId: string): Promise<{ plan: Plan }>;",
+            "  onChange: (plan: Plan) => void;",
+            "}",
+            "",
+            "export type Executor = { run: () => Promise<void> };",
+            "",
+          ].join("\n"),
+        },
+        {
+          relativePath: "src/app/api/auth/[...nextauth]/route.ts",
+          content: ['import { handlers } from "@/lib/auth";', "", "export const { GET, POST } = handlers;", ""].join(
+            "\n",
+          ),
+        },
+        {
+          relativePath: "src/lib/auth/session.ts",
+          content: [
+            "export function readSession(token: string) {",
+            '  if (!token) throw new Error("no");',
+            "  return token;",
+            "}",
+            "",
+          ].join("\n"),
+        },
+      ]);
+
+      // Only the file with logic is asked for a test, and only it counts.
+      expect(metrics.untestedCriticalPaths).toEqual(["src/lib/auth/session.ts"]);
+      expect(metrics.testedSourceApproxPercent).toBe(0);
     });
   });
 });
