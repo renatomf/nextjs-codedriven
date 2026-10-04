@@ -1,6 +1,6 @@
 # ADR-006 — Embeddings em runtime serverless
 
-- **Status:** proposta
+- **Status:** aceita (2026-10-04, pelo autor)
 - **Data:** 2026-10-04
 - **Fase do roadmap:** 5 — Ingestão assíncrona (TD-05, TD-46)
 
@@ -72,19 +72,36 @@ terceiro e sem custo?
    - Prós: uma linha.
    - Contras: recusa projetos reais que hoje cabem; esconde o problema.
 
-## Decisão (proposta)
+### Medição de chunks (2026-10-04)
+
+Extrator, filtros e chunker de produção, sem embedding, nos repositórios
+dos evals (teste temporário, não versionado):
+
+| Repositório | Arquivos JS/TS | Chunks | Chunks/arquivo |
+|---|---|---|---|
+| Juice Shop | 633 | 2.034 | 3,21 |
+| este repositório | 279 | 843 | 3,02 |
+| NodeGoat | 44 | 93 | 2,11 |
+
+Este repositório confere com o projeto real de produção (796 chunks em 274
+arquivos). O importador recusa acima de 1.000 arquivos, então o pior caso é
+1.000: ~3.100 chunks × ~0,12 s ≈ **~370 s**. O Juice Shop daria ~245 s (82%
+do limite). O corte fica perto de **800 arquivos**: entre ~800 e 1.000, um
+projeto aceito pela importação falharia na análise. A taxa por chunk é a de
+produção; chunks maiores (Juice Shop: ~1.160 caracteres em média) podem
+custar mais.
+
+## Decisão
 
 **Opção 1: modelo local na CPU, com o embedding dividido em lotes por step**
 (TD-46). O modelo local continua sendo a escolha: o cold start medido é de
 1,2 s, o retry do TD-01 cobre falhas do Hugging Face, e o TD-03 já tira o
-custo das reanálises. O que precisa mudar é só o embedding de projetos
-grandes caber em steps de 300 s.
+custo das reanálises. O que muda é o embedding de projetos grandes caber em
+steps de 300 s: a medição acima mostra que um step só não cabe para
+projetos entre ~800 e 1.000 arquivos, então os lotes são necessários, não
+só um alerta. Lote-alvo: ~1.000 chunks (~120 s, menos da metade do limite).
 
-Antes de implementar, medir de verdade (não por proporção) um projeto perto
-do limite no preview: chunks gerados por 1.000 arquivos e duração do
-`embeddings.embed`. Se couber em 300 s com folga, o TD-46 fica como risco
-monitorado (alerta no Sentry acima de, por exemplo, 200 s) em vez de
-mudança de código.
+Aceita em 2026-10-04 pelo autor.
 
 ## Trade-offs e consequências
 

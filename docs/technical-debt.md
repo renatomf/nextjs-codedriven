@@ -526,11 +526,13 @@ maintainability) · **Low** (cleanup).
   (production, 2026-10-04: p50 43.9 s for ~350–380 chunks). Real projects
   reach 796 chunks (274 files); at that ratio 1,000 files give ~2,900
   chunks, ~350 s — over the 300 s of a step, which would then fail its three
-  tries. Estimated by proportion, not measured; no real project passed 47 s.
-  Re-analyses of unchanged code are not affected (TD-03).
-- **Direction:** [ADR-006](decisions/006-embeddings-runtime.md): first
-  measure a project near the limit on the preview; if it does not fit with
-  margin, embed in batches across steps, each idempotent by `content_hash`,
+  tries. Chunks measured with the production extractor and chunker
+  (2026-10-04): Juice Shop 633 files → 2,034 chunks (~245 s, 82% of the
+  limit); this repository 279 → 843. At ~3.1 chunks per file, 1,000 files
+  give ~3,100 chunks, ~370 s: projects between ~800 and 1,000 files would
+  fail. Re-analyses of unchanged code are not affected (TD-03).
+- **Direction:** [ADR-006](decisions/006-embeddings-runtime.md) (accepted):
+  embed in batches of ~1,000 chunks across steps, each idempotent by `content_hash`,
   and swap the knowledge only at the end. Otherwise, alert above ~200 s.
 - **Phase:** Ingestion async (Phase 5) or right after.
 
