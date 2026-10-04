@@ -3,7 +3,6 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { users } from "@/db/schema";
 import { db } from "@/lib/db";
-import { encryptToken } from "@/lib/encryption";
 
 /**
  * Accounts: email sign-up, credential checks and what each sign-in records.
@@ -75,32 +74,28 @@ export async function dropUnverifiedPassword(userId: string): Promise<void> {
 }
 
 /**
- * What a sign-in records on the user. A GitHub token is stored encrypted and
- * bound to its owner, never in plain text.
+ * What a sign-in records on the user: the provider, the avatar and, for
+ * GitHub, the username. No OAuth token is stored (ADR-007).
  */
 export async function recordSignIn(
   userId: string,
   signIn: {
     provider: string;
     image?: string;
-    githubAccessToken?: string;
     githubUsername?: string;
   },
 ): Promise<void> {
   const data: {
     authProvider: string;
     image?: string;
-    githubAccessToken?: string;
     githubUsername?: string;
   } = {
     authProvider: signIn.provider === "credentials" ? "email" : signIn.provider,
     image: signIn.image,
   };
 
-  if (signIn.githubAccessToken) {
-    data.githubAccessToken = encryptToken(signIn.githubAccessToken, userId);
-    if (signIn.githubUsername) data.githubUsername = signIn.githubUsername;
-  }
+  // No token is stored at sign-in (ADR-007): only the GitHub username.
+  if (signIn.githubUsername) data.githubUsername = signIn.githubUsername;
 
   await db.update(users).set(data).where(eq(users.id, userId));
 }

@@ -57,9 +57,14 @@ const STORED = [
     until: "Deleted right after import; a leftover upload is removed by a daily cleanup",
   },
   {
-    data: "GitHub access token (encrypted with AES-256-GCM)",
+    data: "GitHub App installation id and account name (no token: a read-only token lasting 1 hour is created for each use)",
     where: "Neon Postgres",
     until: "You disconnect GitHub in Settings",
+  },
+  {
+    data: "Older GitHub connections only: an access token, encrypted with AES-256-GCM (being removed)",
+    where: "Neon Postgres",
+    until: "You disconnect GitHub in Settings, or the planned removal",
   },
   {
     data: "Report share links (only a hash of the link)",
@@ -101,7 +106,7 @@ const SERVICES = [
   },
   {
     name: "GitHub",
-    role: "Source of the repositories you choose to import.",
+    role: "Source of the repositories you choose. Access is through the codedriven GitHub App: read-only, only on the repositories you pick, and it can never write to them.",
   },
   {
     name: "Hugging Face",
@@ -224,7 +229,9 @@ export default function DataPage() {
                 <Link href="/settings" className="underline underline-offset-4">
                   Settings
                 </Link>{" "}
-                deletes the stored token.
+                removes the codedriven GitHub App from your account (unless
+                someone else in your organization still uses it) and deletes
+                what was stored. Deleting the account does the same.
               </li>
               <li>
                 Deleting your account in{" "}

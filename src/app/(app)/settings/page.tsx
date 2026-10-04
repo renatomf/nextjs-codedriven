@@ -13,7 +13,6 @@ import {
   type SettingsNotice,
 } from "@/components/settings/settings-toast";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { connectGitHubAccount } from "@/lib/actions/github";
 import { githubAppConfig } from "@/lib/github-app";
 import { auth } from "@/lib/auth";
 import { effectivePlanId } from "@/modules/billing";
@@ -232,8 +231,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
             <div>
               <h2 className="ca-title text-2xl">GitHub</h2>
               <p className="mt-1 text-sm text-(--ca-muted)">
-                Required to select a repository. If you signed in with GitHub,
-                the connection already appears here.
+                Required to select a repository. Signing in with GitHub does
+                not give access to your code: you connect it here, read-only.
               </p>
             </div>
             {appEnabled ? (
@@ -279,11 +278,9 @@ export default async function SettingsPage({ searchParams }: PageProps) {
             ) : (
               <>
                 <p className="text-sm text-(--ca-muted)">
-                  GitHub is not connected yet.
+                  GitHub repository access is not available in this
+                  environment.
                 </p>
-                <form action={connectGitHubAccount}>
-                  <Button type="submit">Connect GitHub</Button>
-                </form>
               </>
             )}
             {/* Its own block: the Disconnect/Connect button above is inline,

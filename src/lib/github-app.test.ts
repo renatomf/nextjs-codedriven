@@ -11,6 +11,7 @@ import {
   installationsOfUser,
   listInstallationRepos,
   mintInstallationToken,
+  uninstallInstallation,
 } from "@/lib/github-app";
 
 // GitHub App client (ADR-007) against a fake GitHub (fetch stubbed). The key
@@ -146,5 +147,30 @@ describe("installationsOfUser", () => {
 
     await expect(installationsOfUser("reused")).rejects.toThrow();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("uninstallInstallation", () => {
+  it("asks GitHub, as the App, to remove the installation", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await uninstallInstallation(42);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.github.com/app/installations/42");
+    expect(init.method).toBe("DELETE");
+    expect(init.headers.Authorization).toMatch(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/);
+  });
+
+  it("treats an installation already gone as done", async () => {
+    fetchMock.mockResolvedValue(json(404, { message: "Not Found" }));
+
+    await expect(uninstallInstallation(42)).resolves.toBeUndefined();
+  });
+
+  it("fails on any other refusal (the caller logs it)", async () => {
+    fetchMock.mockResolvedValue(json(500, { message: "boom" }));
+
+    await expect(uninstallInstallation(42)).rejects.toThrow(/HTTP 500/);
   });
 });

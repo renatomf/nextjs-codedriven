@@ -28,9 +28,11 @@ export const authConfig = {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
       allowDangerousEmailAccountLinking: true,
+      // Sign-in only identifies the user: repository access goes through the
+      // read-only GitHub App (ADR-007), never through this token.
       authorization: {
         params: {
-          scope: "read:user user:email repo",
+          scope: "read:user user:email",
         },
       },
     }),
