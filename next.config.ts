@@ -62,16 +62,17 @@ const nextConfig: NextConfig = {
     ],
   },
   poweredByHeader: false,
-  // Baseline security headers, enforced. The full Content-Security-Policy
-  // (scripts, styles, images) needs a nonce per request, so the proxy sends
-  // it, as Report-Only for now (src/proxy.ts, TD-34).
+  // Baseline security headers, enforced. No Content-Security-Policy here: on
+  // Vercel these headers also reach the page render, and Next.js reads the
+  // CSP nonce from that request header, so a static policy hid the proxy's
+  // nonce (2026-10-04). The proxy sends the CSP (src/proxy.ts, TD-34).
   headers() {
     return [
       {
         source: "/:path*",
         headers: [
-          // Clickjacking: the app is never embedded in an iframe.
-          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          // Clickjacking: the app is never embedded in an iframe. (The CSP's
+          // `frame-ancestors 'none'` is reported for now, enforced with it.)
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
