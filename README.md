@@ -14,18 +14,10 @@
 ![Tests](https://img.shields.io/badge/tests-730-success)
 ![ADRs](https://img.shields.io/badge/ADRs-11-informational)
 
-**Relatório de demonstração** (sem cadastro): [um relatório real, por link público só de leitura](https://nextjs-codedriven.vercel.app/r/dEVSu6Ax3931oUeMuQ8aBd-maFvYFt0vE3-WX2yHRpw). Mostra só o relatório, nunca o código-fonte, com segredos redigidos.
 
 ## Sobre o projeto
 
 **codedriven** é uma aplicação **Next.js 16 (App Router)** que faz o papel de um revisor sênior: importa um repositório, mede o código com regras determinísticas, pede a um LLM uma revisão de arquitetura, segurança e performance, e junta tudo numa nota por categoria com os problemas priorizados.
-
-O projeto nasceu de um tutorial ([AI-Code-Analyzer](https://github.com/AliSadeghi-dev/AI-Code-Analyzer)), congelado na tag `v1-tutorial`. A **v2** é o que este repositório tenta demonstrar: transformar um protótipo num sistema de produção **medindo antes e depois** de cada mudança. Isso aparece em:
-
-- [11 ADRs](docs/decisions/) com as decisões e as alternativas recusadas;
-- um [roadmap](docs/roadmap-v2.md) por fases, com escopo fechado e critérios de saída;
-- um [registro de dívida técnica](docs/technical-debt.md) que separa *resolvido*, *aceito* e *sei que existe*;
-- **evals** que impedem a análise de piorar sem ninguém perceber.
 
 ## Estudo de caso: o analisador deu 30 para o próprio código
 
