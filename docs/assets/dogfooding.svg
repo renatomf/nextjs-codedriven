@@ -1,36 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#6b7280">
-  <title>Deterministic health score of this repository, 53 to 69</title>
-  <text x="48" y="20" font-size="14" font-weight="600">Dogfooding: this repository's deterministic health score (53 → 69)</text>
+  <title>Deterministic health score of this repository, 53 to 78</title>
+  <text x="48" y="20" font-size="14" font-weight="600">Dogfooding: this repository's deterministic health score (53 → 78)</text>
   <text x="48" y="36">One point per committed eval result, by measurement date. Dashed: same measure under the v1 formula.</text>
   <line x1="48" x2="736" y1="248" y2="248" stroke="#9ca3af" stroke-opacity="0.25"/><text x="40" y="252" text-anchor="end">0</text>
   <line x1="48" x2="736" y1="198" y2="198" stroke="#9ca3af" stroke-opacity="0.25"/><text x="40" y="202" text-anchor="end">25</text>
   <line x1="48" x2="736" y1="148" y2="148" stroke="#9ca3af" stroke-opacity="0.25"/><text x="40" y="152" text-anchor="end">50</text>
   <line x1="48" x2="736" y1="98" y2="98" stroke="#9ca3af" stroke-opacity="0.25"/><text x="40" y="102" text-anchor="end">75</text>
   <line x1="48" x2="736" y1="48" y2="48" stroke="#9ca3af" stroke-opacity="0.25"/><text x="40" y="52" text-anchor="end">100</text>
-  <path d="M48.0,142.0 L110.5,142.0 L173.1,142.0 L235.6,128.0 L298.2,128.0 L360.7,128.0 L423.3,128.0 L485.8,128.0 L548.4,128.0 L610.9,128.0 L673.5,128.0 L736.0,128.0" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
-  <path d="M48.0,142.0 L110.5,120.0 L173.1,120.0 L235.6,112.0 L298.2,112.0 L360.7,110.0 L423.3,112.0 L485.8,112.0 L548.4,110.0 L610.9,110.0 L673.5,110.0 L736.0,110.0" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+  <path d="M48.0,142.0 L93.9,142.0 L139.7,142.0 L185.6,128.0 L231.5,128.0 L277.3,128.0 L323.2,128.0 L369.1,128.0 L414.9,128.0 L460.8,128.0 L506.7,128.0 L552.5,128.0 L598.4,136.0 L644.3,130.0 L690.1,130.0 L736.0,114.0" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+  <path d="M48.0,142.0 L93.9,120.0 L139.7,120.0 L185.6,112.0 L231.5,112.0 L277.3,110.0 L323.2,112.0 L369.1,112.0 L414.9,110.0 L460.8,110.0 L506.7,110.0 L552.5,110.0 L598.4,110.0 L644.3,102.0 L690.1,100.0 L736.0,92.0" fill="none" stroke="#2563eb" stroke-width="2.5"/>
   <circle cx="48.0" cy="142.0" r="4" fill="#2563eb"><title>a853a30 (2026-09-30T11:32): 53 (v1 formula 53), 22 findings</title></circle>
-  <circle cx="110.5" cy="120.0" r="4" fill="#2563eb"><title>898f501 (2026-09-30T11:58): 64 (v1 formula 53), 22 findings</title></circle>
-  <circle cx="173.1" cy="120.0" r="4" fill="#2563eb"><title>ab669bb (2026-09-30T12:06): 64 (v1 formula 53), 22 findings</title></circle>
-  <circle cx="235.6" cy="112.0" r="4" fill="#2563eb"><title>5b44239 (2026-09-30T12:10): 68 (v1 formula 60), 17 findings</title></circle>
-  <circle cx="298.2" cy="112.0" r="4" fill="#2563eb"><title>bf17f41 (2026-09-30T12:24): 68 (v1 formula 60), 17 findings</title></circle>
-  <circle cx="360.7" cy="110.0" r="4" fill="#2563eb"><title>c7dc7d6 (2026-09-30T13:08): 69 (v1 formula 60), 16 findings</title></circle>
-  <circle cx="423.3" cy="112.0" r="4" fill="#2563eb"><title>0fc7ac7 (2026-09-30T14:11): 68 (v1 formula 60), 17 findings</title></circle>
-  <circle cx="485.8" cy="112.0" r="4" fill="#2563eb"><title>44ed911 (2026-09-30T14:37): 68 (v1 formula 60), 17 findings</title></circle>
-  <circle cx="548.4" cy="110.0" r="4" fill="#2563eb"><title>ad9b8bf (2026-09-30T16:21): 69 (v1 formula 60), 16 findings</title></circle>
-  <circle cx="610.9" cy="110.0" r="4" fill="#2563eb"><title>452c2e7 (2026-09-30T16:31): 69 (v1 formula 60), 16 findings</title></circle>
-  <circle cx="673.5" cy="110.0" r="4" fill="#2563eb"><title>0a725c1 (2026-09-30T17:04): 69 (v1 formula 60), 16 findings</title></circle>
-  <circle cx="736.0" cy="110.0" r="4" fill="#2563eb"><title>11f6d36 (2026-09-30T17:36): 69 (v1 formula 60), 16 findings</title></circle>
+  <circle cx="93.9" cy="120.0" r="4" fill="#2563eb"><title>898f501 (2026-09-30T11:58): 64 (v1 formula 53), 22 findings</title></circle>
+  <circle cx="139.7" cy="120.0" r="4" fill="#2563eb"><title>ab669bb (2026-09-30T12:06): 64 (v1 formula 53), 22 findings</title></circle>
+  <circle cx="185.6" cy="112.0" r="4" fill="#2563eb"><title>5b44239 (2026-09-30T12:10): 68 (v1 formula 60), 17 findings</title></circle>
+  <circle cx="231.5" cy="112.0" r="4" fill="#2563eb"><title>bf17f41 (2026-09-30T12:24): 68 (v1 formula 60), 17 findings</title></circle>
+  <circle cx="277.3" cy="110.0" r="4" fill="#2563eb"><title>c7dc7d6 (2026-09-30T13:08): 69 (v1 formula 60), 16 findings</title></circle>
+  <circle cx="323.2" cy="112.0" r="4" fill="#2563eb"><title>0fc7ac7 (2026-09-30T14:11): 68 (v1 formula 60), 17 findings</title></circle>
+  <circle cx="369.1" cy="112.0" r="4" fill="#2563eb"><title>44ed911 (2026-09-30T14:37): 68 (v1 formula 60), 17 findings</title></circle>
+  <circle cx="414.9" cy="110.0" r="4" fill="#2563eb"><title>ad9b8bf (2026-09-30T16:21): 69 (v1 formula 60), 16 findings</title></circle>
+  <circle cx="460.8" cy="110.0" r="4" fill="#2563eb"><title>452c2e7 (2026-09-30T16:31): 69 (v1 formula 60), 16 findings</title></circle>
+  <circle cx="506.7" cy="110.0" r="4" fill="#2563eb"><title>0a725c1 (2026-09-30T17:04): 69 (v1 formula 60), 16 findings</title></circle>
+  <circle cx="552.5" cy="110.0" r="4" fill="#2563eb"><title>11f6d36 (2026-09-30T17:36): 69 (v1 formula 60), 16 findings</title></circle>
+  <circle cx="598.4" cy="110.0" r="4" fill="#2563eb"><title>ec714f3 (2026-10-04T15:13): 69 (v1 formula 56), 14 findings</title></circle>
+  <circle cx="644.3" cy="102.0" r="4" fill="#2563eb"><title>5ded353 (2026-10-04T15:20): 73 (v1 formula 59), 13 findings</title></circle>
+  <circle cx="690.1" cy="100.0" r="4" fill="#2563eb"><title>436f928 (2026-10-04T15:30): 74 (v1 formula 59), 14 findings</title></circle>
+  <circle cx="736.0" cy="92.0" r="4" fill="#2563eb"><title>0624932 (2026-10-04T21:44): 78 (v1 formula 67), 10 findings</title></circle>
   <text transform="translate(48.0,262) rotate(-40)" text-anchor="end">a853a30</text>
-  <text transform="translate(110.5,262) rotate(-40)" text-anchor="end">898f501</text>
-  <text transform="translate(173.1,262) rotate(-40)" text-anchor="end">ab669bb</text>
-  <text transform="translate(235.6,262) rotate(-40)" text-anchor="end">5b44239</text>
-  <text transform="translate(298.2,262) rotate(-40)" text-anchor="end">bf17f41</text>
-  <text transform="translate(360.7,262) rotate(-40)" text-anchor="end">c7dc7d6</text>
-  <text transform="translate(423.3,262) rotate(-40)" text-anchor="end">0fc7ac7</text>
-  <text transform="translate(485.8,262) rotate(-40)" text-anchor="end">44ed911</text>
-  <text transform="translate(548.4,262) rotate(-40)" text-anchor="end">ad9b8bf</text>
-  <text transform="translate(610.9,262) rotate(-40)" text-anchor="end">452c2e7</text>
-  <text transform="translate(673.5,262) rotate(-40)" text-anchor="end">0a725c1</text>
-  <text transform="translate(736.0,262) rotate(-40)" text-anchor="end">11f6d36</text>
+  <text transform="translate(93.9,262) rotate(-40)" text-anchor="end">898f501</text>
+  <text transform="translate(139.7,262) rotate(-40)" text-anchor="end">ab669bb</text>
+  <text transform="translate(185.6,262) rotate(-40)" text-anchor="end">5b44239</text>
+  <text transform="translate(231.5,262) rotate(-40)" text-anchor="end">bf17f41</text>
+  <text transform="translate(277.3,262) rotate(-40)" text-anchor="end">c7dc7d6</text>
+  <text transform="translate(323.2,262) rotate(-40)" text-anchor="end">0fc7ac7</text>
+  <text transform="translate(369.1,262) rotate(-40)" text-anchor="end">44ed911</text>
+  <text transform="translate(414.9,262) rotate(-40)" text-anchor="end">ad9b8bf</text>
+  <text transform="translate(460.8,262) rotate(-40)" text-anchor="end">452c2e7</text>
+  <text transform="translate(506.7,262) rotate(-40)" text-anchor="end">0a725c1</text>
+  <text transform="translate(552.5,262) rotate(-40)" text-anchor="end">11f6d36</text>
+  <text transform="translate(598.4,262) rotate(-40)" text-anchor="end">ec714f3</text>
+  <text transform="translate(644.3,262) rotate(-40)" text-anchor="end">5ded353</text>
+  <text transform="translate(690.1,262) rotate(-40)" text-anchor="end">436f928</text>
+  <text transform="translate(736.0,262) rotate(-40)" text-anchor="end">0624932</text>
 </svg>

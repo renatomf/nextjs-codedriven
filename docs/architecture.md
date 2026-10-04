@@ -62,7 +62,7 @@ rede ou modelo). O interior (`domain/`, `application/`, `infrastructure/`)
 | **billing** | planos, limites, cota (dia UTC, carência do `past_due`), `entitlementFor` | `createQuota` + porta `BillingRepository` | repositório Drizzle, `withQuota` (lock + checagem + uso numa transação), Stripe atrás de uma camada anticorrupção (`translate.ts`) |
 | **projects** | ciclo de vida (`analysisStart`, `ACTIVE_STATUSES`, `STALE_AFTER_SECONDS`), link público (`isShareActive`, `redactForPublic`) | — | todas as escritas de status num arquivo, queries das pages, importação (`importArchive`), links públicos (só o hash do token) |
 | **ingestion** | `EMBEDDING_DIMENSIONS` (fonte única), `ChunkDraft` | `storeKnowledge` + portas `Embedder` e `VectorStore` | ONNX (MiniLM q8, revisão fixada), pgvector |
-| **analysis** | `Finding` (com evidência opcional), uma `Rule` por heurística, `ScoringPolicy` (`linearPenaltyPolicy`) | — | a geração do relatório ainda está em `src/lib/analysis/report.ts` |
+| **analysis** | `Finding` (com evidência opcional), uma `Rule` por heurística, `ScoringPolicy` (`diminishingPenaltyPolicy`, ADR-010) | — | a geração do relatório ainda está em `src/lib/analysis/report.ts` |
 | **chat** | política do prompt (código como dado), extração da pergunta | — | busca de contexto via ingestion |
 | **identity** | — (dados e integração) | — | conta, instalações do GitHub App (só ids; páginas recebem um booleano), cadastro, credenciais, o que cada login registra, exclusão dos dados da conta |
 
@@ -240,8 +240,7 @@ infraestrutura usada por vários módulos, não regra de negócio de um só
 |---|---|---|
 | `db.ts` | cliente do Postgres (Drizzle + `pg`; TLS: ver TD-38) | todo acesso a dados passa por ele |
 | `auth.config.ts` | provedores e callbacks do NextAuth sem o banco | o `proxy.ts` usa esta parte, que não pode carregar o adapter |
-| `encryption.ts` | AES-256-GCM do token do GitHub, chave própria | usado pelo identity e pelo cliente do GitHub |
-| `github.ts` | cliente da API do GitHub (OAuth com `state`, repositórios, zipball) | integração externa |
+| `github.ts`, `github-app.ts`, `github-api.ts` | GitHub App (JWT, token de instalação, repositórios, desinstalação), `state` assinado do callback, zipball | integração externa |
 | `limits.ts` | limites e filtros da importação (pastas excluídas, arquivos sensíveis) e o top-k do RAG | usados pela extração, pela análise e pelo chat |
 | `utils.ts` | `cn()` das classes CSS | os componentes do shadcn importam `@/lib/utils` |
 | `projects.ts` | `cache()` do React sobre o resumo do projeto | cola do Next: o módulo projects não depende do React |
