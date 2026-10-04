@@ -85,12 +85,14 @@ describe("findingPenalty (ADR-010)", () => {
 });
 
 describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
+  // Tests exist but cover 0%: both policies start Testing at 40, so only
+  // the penalty differs.
   const measures: ProjectMeasures = {
     largeFiles: [],
     complexFunctions: [],
-    testFileCount: 0,
+    testFileCount: 1,
     sourceFileCount: 10,
-    testedSourceApproxPercent: 40,
+    testedSourceApproxPercent: 0,
     untestedCriticalPaths: [],
     secretHits: [],
   };
@@ -109,5 +111,40 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
     expect(diminishingPenaltyPolicy({ measures, findings })).toEqual(
       linearPenaltyPolicy({ measures, findings }),
     );
+  });
+});
+
+// ADR-010 review (2026-10-04): the Testing base was max(40, %), so a project
+// with no test at all scored 28 and 43% of files with tests started barely
+// above it. Now: no test file at all → 0; otherwise 40 + 0.6 × %, so every
+// point of coverage counts.
+describe("Testing base", () => {
+  const testingFor = (testedSourceApproxPercent: number, testFileCount = 1) =>
+    diminishingPenaltyPolicy({
+      measures: {
+        largeFiles: [],
+        complexFunctions: [],
+        testFileCount,
+        sourceFileCount: 10,
+        testedSourceApproxPercent,
+        untestedCriticalPaths: [],
+        secretHits: [],
+      },
+      findings: [],
+    }).categoryScores.testing;
+
+  it("is 0 when the project has no test file at all", () => {
+    expect(testingFor(0, 0)).toBe(0);
+  });
+
+  it("starts at 40 with tests and reaches 100 at full coverage", () => {
+    expect(testingFor(0)).toBe(40);
+    expect(testingFor(50)).toBe(70);
+    expect(testingFor(100)).toBe(100);
+  });
+
+  it("rewards every point of coverage (no flat floor)", () => {
+    expect(testingFor(20)).toBeGreaterThan(testingFor(0));
+    expect(testingFor(43)).toBeGreaterThan(testingFor(20));
   });
 });

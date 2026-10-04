@@ -319,9 +319,19 @@ maintainability) · **Low** (cleanup).
   the characterization snapshots. **Done in Phase 7:** React components
   sized by their logic, not their markup; "critical area" = logic file with
   the whole keyword in its path; files imported by tests count as tested;
-  the penalty is diminishing (ADR-010). **Still open:** indirect tests
-  (a test that reaches a file through another module) need the full import
-  graph (v2.1 Code Intelligence).
+  the penalty is diminishing (ADR-010). **Done (2026-10-04):** a test that
+  goes through a module's public API (`index.ts` / `server.ts`) counts for
+  what the facade imports or re-exports (facades followed, ordinary files
+  not), and files without logic (types, re-exports, constant wiring) need
+  no test and leave the percentage. Found on this repository's report
+  (Testing 19 while a repo with no test scored 28); eval
+  `2026-10-04-ec714f3`: new case `tested-through-module-api` 0.17 → 1.00
+  precision, all cases 1.00/1.00, this repository's deterministic Testing
+  19 → 30 (critical "may lack tests" 8 → 4, the 4 left are only covered by
+  E2E). **Still open:** a test that reaches a file through an ordinary
+  import needs the full import graph (v2.1 Code Intelligence); the Testing
+  base was revised in ADR-010 (no test file → 0; otherwise 40 + 0.6 × %;
+  this repository 30 → 51, eval `2026-10-04-5ded353`).
 
 ### TD-42 — Chat retrieval misses questions asked in Portuguese · Medium
 - **Where:** [onnx-embedder.ts](../src/modules/ingestion/infrastructure/onnx-embedder.ts)

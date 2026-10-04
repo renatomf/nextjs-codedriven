@@ -67,14 +67,19 @@ function scoreWith(
   return clampScore(base - total);
 }
 
-/** Base per category, adjusted by a few measures (unchanged since v1). */
+/**
+ * Base per category, adjusted by a few measures. Testing (ADR-010 review,
+ * 2026-10-04): no test file at all → 0; otherwise 40 + 0.6 × the share of
+ * logic files with tests, so every point of coverage counts. The other
+ * bases are unchanged since v1.
+ */
 function categoryBases(measures: ProjectMeasures): CategoryScores {
   return {
     architecture: 88,
     security: measures.secretHits.length > 0 ? 70 : 90,
     performance: 86,
     codeQuality: measures.largeFiles.length + measures.complexFunctions.length > 8 ? 72 : 85,
-    testing: Math.max(40, measures.testedSourceApproxPercent),
+    testing: measures.testFileCount === 0 ? 0 : 40 + 0.6 * measures.testedSourceApproxPercent,
   };
 }
 

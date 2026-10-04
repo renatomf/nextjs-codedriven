@@ -100,6 +100,76 @@ function resolveImport(testPath: string, specifier: string): string | null {
   return stripExt(parts.join("/"));
 }
 
+/** A path without extension and without a trailing `/index`: how imports name it. */
+function moduleKey(path: string): string {
+  return stripExt(path).replace(/\/index$/, "");
+}
+
+/** A module's public API (`index.ts` / `server.ts`): tests reach the module through it. */
+function isFacade(filePath: string): boolean {
+  return /(^|\/)(index|server)\.[jt]sx?$/i.test(filePath);
+}
+
+/** Comments and string contents removed, so they cannot look like code. */
+function codeOnly(content: string): string {
+  return content
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1")
+    .replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g, '""');
+}
+
+/** Removes top-level `interface` / `type` declarations, whatever they span. */
+function withoutTypeDeclarations(code: string): string {
+  const declaration = /(^|\n)[ \t]*(?:export[ \t]+)?(?:declare[ \t]+)?(interface|type)[ \t]+\w/g;
+  let out = "";
+  let from = 0;
+  for (let match = declaration.exec(code); match; match = declaration.exec(code)) {
+    if (match.index < from) continue;
+    out += code.slice(from, match.index);
+    let depth = 0;
+    let end = code.length;
+    for (let i = match.index + match[0].length; i < code.length; i += 1) {
+      const ch = code[i];
+      // The `>` of an arrow (`=>`) closes nothing.
+      if (ch === ">" && code[i - 1] === "=") continue;
+      if ("{([<".includes(ch)) depth += 1;
+      else if ("})]>".includes(ch)) {
+        depth -= 1;
+        // An interface ends with its body's closing brace.
+        if (depth === 0 && ch === "}" && match[2] === "interface") {
+          end = i + 1;
+          break;
+        }
+      } else if (depth === 0 && (ch === ";" || ch === "\n") && match[2] === "type") {
+        // A type alias ends at `;`, or at a line break outside any bracket
+        // that does not continue the type (`|`, `&`, `=` on the next line).
+        const rest = code.slice(i + 1).trimStart();
+        if (ch === ";" || !/^[|&=]/.test(rest)) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+    from = end;
+    declaration.lastIndex = end;
+  }
+  return out + code.slice(from);
+}
+
+/**
+ * Whether a file has logic worth a test: functions, classes or control
+ * flow. Type declarations, imports, re-exports and constant wiring (e.g.
+ * `export const { GET, POST } = handlers;`) have none.
+ */
+function hasLogic(content: string): boolean {
+  const code = withoutTypeDeclarations(codeOnly(content))
+    .replace(/(^|\n)\s*import[^;\n]*(?:;|\n)/g, "$1")
+    .replace(/(^|\n)\s*export\s+(?:type\s+)?(?:\*|\{[^}]*\})(?:\s+as\s+\w+)?\s+from\s+""\s*;?/g, "$1");
+  return /=>|\bfunction\b|\bclass\b|\b(?:if|for|while|switch|catch)\s*\(|\btry\s*\{|\bnew\s+\w|\bawait\b|\breturn\b|\bthrow\b/.test(
+    code,
+  );
+}
+
 function findComplexFunctions(
   filePath: string,
   content: string,
@@ -192,6 +262,30 @@ export function computeDeterministicMetrics(
       if (resolved) importedByTests.add(resolved.replace(/\/index$/, ""));
     }
   }
+  // A test that goes through a module's public API (index.ts / server.ts)
+  // exercises what that facade imports or re-exports; facades reached that
+  // way are followed too. Ordinary files are not followed: importing a file
+  // does not test everything it uses.
+  const facadeImports = new Map<string, string[]>();
+  for (const file of sourceFiles) {
+    if (!isFacade(file.relativePath)) continue;
+    const targets: string[] = [];
+    for (const [, specifier] of file.content.matchAll(IMPORT_SPECIFIER)) {
+      const resolved = resolveImport(file.relativePath, specifier);
+      if (resolved) targets.push(moduleKey(resolved));
+    }
+    // `server.ts` and `index.ts` of one folder answer to different keys.
+    facadeImports.set(stripExt(file.relativePath).replace(/\/index$/, ""), targets);
+  }
+  const pending = [...importedByTests];
+  while (pending.length > 0) {
+    const key = pending.pop()!;
+    for (const target of facadeImports.get(key) ?? []) {
+      if (importedByTests.has(target)) continue;
+      importedByTests.add(target);
+      pending.push(target);
+    }
+  }
   const isTested = (filePath: string) => {
     const base = stripExt(filePath);
     return (
@@ -201,18 +295,21 @@ export function computeDeterministicMetrics(
     );
   };
 
-  const matchedSources = sourceFiles.filter((file) => isTested(file.relativePath)).length;
+  // Only files with logic are expected to have tests (not types, re-exports
+  // or constant wiring).
+  const logicSources = sourceFiles.filter((file) => hasLogic(file.content));
+  const matchedSources = logicSources.filter((file) => isTested(file.relativePath)).length;
 
   const testedSourceApproxPercent =
-    sourceFiles.length === 0
+    logicSources.length === 0
       ? 0
-      : Math.round((matchedSources / sourceFiles.length) * 100);
+      : Math.round((matchedSources / logicSources.length) * 100);
 
   // Security/payment logic (not screens: .jsx/.tsx components render, the
   // checks run in .ts/.js), matched on whole words of the path, so
   // `oauth-icons.ts` is not an "auth" area.
   const criticalKeywords = ["auth", "payment", "billing", "password", "token"];
-  const untestedCriticalPaths = sourceFiles
+  const untestedCriticalPaths = logicSources
     .filter((file) => {
       if (/\.[jt]sx$/i.test(file.relativePath)) return false;
       const words = pathWords(file.relativePath);

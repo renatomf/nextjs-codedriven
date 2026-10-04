@@ -7,9 +7,9 @@ exports[`generateProjectReport (characterization) > scores the project and store
     "codeQuality": 33,
     "performance": 84,
     "security": 24,
-    "testing": 4,
+    "testing": 9,
   },
-  "healthScore": 44,
+  "healthScore": 45,
 }
 `;
 
@@ -32,6 +32,6 @@ exports[`generateProjectReport (characterization) > scores the project and store
   "codeQuality": "Found 12 large file(s) and 14 complex function(s) using static heuristics.",
   "performance": "No hot spots.",
   "security": "Pattern scan found 11 potential hardcoded secret hit(s). Input is validated.",
-  "testing": "Matched test files for roughly 4% of source files (3 test files found).",
+  "testing": "Matched test files for roughly 8% of source files (3 test files found).",
 }
 `;
