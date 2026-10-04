@@ -55,7 +55,7 @@ export default async function ProjectLayout({
       segment: "issues",
       lockedReason: reportLock,
       count: reportReady ? project.issueCount : undefined,
-      alert: project.criticalCount > 0,
+      alert: project.issueCount > 0,
     },
     { label: "Explorer", segment: "explorer" },
     {

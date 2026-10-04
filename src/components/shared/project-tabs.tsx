@@ -12,7 +12,7 @@ export type ProjectTab = {
   /** Why the tab is not available yet. Locked tabs stay in place, dimmed. */
   lockedReason?: string;
   count?: number;
-  /** Highlights the count (e.g. there are critical issues). */
+  /** Highlights the count in red (there are issues to look at). */
   alert?: boolean;
 };
 

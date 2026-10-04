@@ -50,7 +50,7 @@ describe("ProjectTabs issue count", () => {
     expect(issuesCount().className).toContain("group-hover/tab:text-[#050505]");
   });
 
-  it("keeps critical issues red, border and number, current or not", () => {
+  it("keeps the count red, border and number, when highlighted, current or not", () => {
     for (const segment of ["issues", null]) {
       mocks.segment = segment;
       render(<ProjectTabs projectId="p" tabs={tabs(true)} />);

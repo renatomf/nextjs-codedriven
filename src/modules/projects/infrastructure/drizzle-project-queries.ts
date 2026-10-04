@@ -72,7 +72,6 @@ export async function getProjectSummary(userId: string, projectId: string) {
       healthScore: reports.healthScore,
       chunkCount: sql<number>`(select count(*) from ${codeChunks} where ${codeChunks.projectId} = ${projects.id})`.mapWith(Number),
       issueCount: sql<number>`coalesce(jsonb_array_length(${reports.issues}), 0)`.mapWith(Number),
-      criticalCount: sql<number>`(select count(*) from jsonb_array_elements(coalesce(${reports.issues}, '[]'::jsonb)) as issue where issue->>'severity' = 'critical')`.mapWith(Number),
     })
     .from(projects)
     .leftJoin(reports, eq(reports.projectId, projects.id))
