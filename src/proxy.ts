@@ -39,11 +39,11 @@ export default auth((request) => {
   headers.set("Content-Security-Policy", csp);
   headers.delete("Content-Security-Policy-Report-Only");
 
+  // No other Content-Security-Policy on the response: response headers also
+  // reach the render (seen in CI and on Vercel), and a policy without this
+  // nonce hid it from Next.js. Framing stays blocked by X-Frame-Options.
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy-Report-Only", csp);
-  // Enforced already: pages are never framed (clickjacking). The rest of
-  // the policy is enforced once the reports are clean.
-  response.headers.set("Content-Security-Policy", "frame-ancestors 'none'");
   return response;
 });
 

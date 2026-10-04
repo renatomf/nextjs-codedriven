@@ -71,8 +71,8 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Clickjacking: the app is never embedded in an iframe (pages also
-          // get `frame-ancestors 'none'` from the proxy).
+          // Clickjacking: the app is never embedded in an iframe. (The CSP's
+          // `frame-ancestors 'none'` is reported for now, enforced with it.)
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

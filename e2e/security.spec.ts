@@ -20,9 +20,10 @@ test.describe("content security policy", () => {
       const response = await page.goto(path);
       await page.waitForLoadState("networkidle");
 
-      // Framing is blocked for real, not only reported.
-      expect(response?.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+      // Framing is blocked for real by X-Frame-Options. No enforced policy
+      // without the nonce: Next.js would read the nonce from it.
       expect(response?.headers()["x-frame-options"]).toBe("DENY");
+      expect(response?.headers()["content-security-policy"]).toBeUndefined();
 
       const policy = response?.headers()["content-security-policy-report-only"];
       expect(policy).toContain("script-src 'self' 'nonce-");
