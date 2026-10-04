@@ -112,7 +112,9 @@ Página de progresso (`useAnalysisProgress`) → `POST /api/projects/:id/analyze
 → `analysisStart` decide e `claimAnalysis` faz o claim atômico (projects) →
 `enqueueAnalysis` dispara o `analysisWorkflow` e a rota responde na hora; a
 página lê o progresso que os steps gravam (`/status`). Steps
-(`analysis-workflow.ts`): conhecimento → relatório → conclusão, só ids
+(`analysis-workflow.ts`): [GitHub ou upload →] embedding em lotes de até
+1.000 chunks, um step cada, guardados em `embedding_cache` (ADR-006) →
+conhecimento (troca de uma vez, sem embedar) → relatório → conclusão, só ids
 entre eles; erro do usuário e cancelamento encerram (`FatalError`), o resto
 tem 2 retries com mensagem genérica; um run que morre sem gravar a falha
 termina em `failRunningAnalysis`. Dentro dos steps, o pipeline: chunking (Tree-sitter) → `storeKnowledge` (ingestion) → métricas

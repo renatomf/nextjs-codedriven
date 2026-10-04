@@ -535,6 +535,14 @@ maintainability) · **Low** (cleanup).
   embed in batches of ~1,000 chunks across steps, each idempotent by `content_hash`,
   and swap the knowledge only at the end. Otherwise, alert above ~200 s.
 - **Phase:** Ingestion async (Phase 5) or right after.
+- **Done (Phase 5):** the workflow runs `embedKnowledgeBatch` steps of up to
+  1,000 chunks (~120 s each) until none is missing (guard: 10 batches), then
+  the knowledge step swaps everything in without embedding. Batches are kept
+  in `embedding_cache` (migration 0009: project, content hash, model,
+  vector; owner-checked, deleted with the project) and cleared in the swap's
+  transaction. A retried batch skips what it already kept; if a batch fails
+  for good, the previous knowledge stays. Chunks are recomputed from the
+  stored files in each step: no code passes through Workflow.
 
 ---
 

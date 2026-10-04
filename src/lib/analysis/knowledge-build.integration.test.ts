@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { codeChunks, projects } from "@/db/schema";
+import { codeChunks, embeddingCache, projects } from "@/db/schema";
 import { db } from "@/lib/db";
 import { persistProjectFiles } from "@/lib/files/storage";
 import { axisEmbedding, createUser, deleteUsers } from "@/test/integration/factories";
@@ -19,7 +19,7 @@ vi.mock("@/modules/ingestion/infrastructure/onnx-embedder", () => ({
   embedQuery: vi.fn(),
 }));
 
-import { buildProjectKnowledge } from "@/lib/analysis/pipeline";
+import { buildProjectKnowledge, embedKnowledgeBatch } from "@/lib/analysis/pipeline";
 import { AnalysisCanceledError } from "@/lib/analysis/progress";
 import { searchProjectChunks } from "@/modules/ingestion/server";
 
@@ -143,6 +143,35 @@ describe("buildProjectKnowledge", () => {
     // The reused vectors still answer the search as before.
     const [best] = await searchProjectChunks(owner, projectId, axisEmbedding(0), 1);
     expect(best.content).toBe(before[0].content);
+  });
+
+  // ADR-006 / TD-46: the embedding runs in its own steps; the knowledge step
+  // then only swaps the knowledge in.
+  it("embeds in a batch step, then the knowledge step swaps without embedding", async () => {
+    const projectId = await projectWithFiles();
+
+    expect(await embedKnowledgeBatch(owner, projectId)).toBe(0);
+    const embeddedInBatch = mocks.embedTexts.mock.calls.flat(2).length;
+    expect(embeddedInBatch).toBeGreaterThan(0);
+    expect(await db.$count(embeddingCache, eq(embeddingCache.projectId, projectId))).toBe(embeddedInBatch);
+    mocks.embedTexts.mockClear();
+
+    await buildProjectKnowledge(owner, projectId);
+
+    expect(mocks.embedTexts).not.toHaveBeenCalled();
+    expect((await chunksOf(projectId)).length).toBeGreaterThan(0);
+    // The kept batch became the knowledge.
+    expect(await db.$count(embeddingCache, eq(embeddingCache.projectId, projectId))).toBe(0);
+  });
+
+  it("never embeds a batch for another user's project", async () => {
+    const projectId = await projectWithFiles();
+    const intruder = await createUser();
+    created.push(intruder);
+
+    await expect(embedKnowledgeBatch(intruder, projectId)).rejects.toBeInstanceOf(AnalysisCanceledError);
+    expect(mocks.embedTexts).not.toHaveBeenCalled();
+    expect(await db.$count(embeddingCache, eq(embeddingCache.projectId, projectId))).toBe(0);
   });
 
   it("fails with a user-facing message when there is nothing to analyze", async () => {

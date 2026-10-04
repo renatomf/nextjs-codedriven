@@ -518,15 +518,16 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       cron diário que marca como falha o projeto parado em `processing` há
       mais de 1 h, exceto run vivo no Workflow. Importação no job (TD-10):
       GitHub (PR #106) e ZIP via object storage (ADR-011, PR #112).
-- [ ] Parsing fora da thread da request (TD-09); modelo de embeddings com
+- [x] Parsing fora da thread da request (TD-09); modelo de embeddings com
       retry e cache resolvidos (TD-01; TD-05 com ADR).
       Progresso: parsing da análise num step do workflow (TD-09 parcial,
       PR #95); TD-01 feito (carga com retry e falha que não fica em cache).
       [ADR-006](decisions/006-embeddings-runtime.md) aceito com números
       de produção: modelo local na CPU (cold start 1,2 s; embedding ~44 s
       por análise; reanálise sem mudança reaproveita tudo, TD-03). Medição
-      de chunks: projeto com mais de ~800 arquivos estoura os 300 s de um
-      step. Falta: embedding em lotes por step (TD-46).
+      de chunks: projeto com mais de ~800 arquivos estouraria os 300 s de um
+      step; o embedding agora roda em lotes de 1.000 chunks por step, com a
+      troca do conhecimento no fim (TD-46, migração 0009).
 - [x] **Degradação graciosa:** com o LLM fora ou sem cota, o relatório sai só
       determinístico, sinalizado como tal. Feito: kill switch desligado,
       orçamento diário de tokens gasto ou provedor falhando na **última**

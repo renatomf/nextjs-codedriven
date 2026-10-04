@@ -64,6 +64,13 @@
       "when": 1791070829605,
       "tag": "0008_code_chunk_content_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791073212112,
+      "tag": "0009_embedding_cache",
+      "breakpoints": true
     }
   ]
 }

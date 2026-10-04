@@ -320,6 +320,23 @@ export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
   project: one(projects, { fields: [projectFiles.projectId], references: [projects.id] }),
 }));
 
+// Vectors embedded in batches across workflow steps (ADR-006, TD-46), kept
+// until the last step swaps the project's knowledge at once and clears
+// them. Keyed like the reuse in code_chunks: same text, same model.
+export const embeddingCache = pgTable(
+  "embedding_cache",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    contentHash: text("content_hash").notNull(),
+    embeddingModel: text("embedding_model").notNull(),
+    embedding: vector("embedding", { dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("embedding_cache_key").on(t.projectId, t.contentHash, t.embeddingModel)],
+).enableRLS();
+
 export const codeChunksRelations = relations(codeChunks, ({ one }) => ({
   project: one(projects, { fields: [codeChunks.projectId], references: [projects.id] }),
 }));

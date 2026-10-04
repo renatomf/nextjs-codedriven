@@ -62,6 +62,25 @@ async function fetchUploadedZipStep(
 }
 fetchUploadedZipStep.maxRetries = STEP_MAX_RETRIES;
 
+/** One batch of the embedding (ADR-006): returns how many chunks are left. */
+async function embedBatchStep(userId: string, projectId: string): Promise<number> {
+  "use step";
+  let remaining = 0;
+  await stage("embed", userId, projectId, async (finalAttempt) => {
+    const { embedKnowledgeBatch } = await import("./pipeline");
+    remaining = await embedKnowledgeBatch(userId, projectId, { finalAttempt });
+  });
+  return remaining;
+}
+embedBatchStep.maxRetries = STEP_MAX_RETRIES;
+
+/**
+ * Batches per run: 10 × 1,000 chunks, three times what the 1,000-file import
+ * limit produces (~3,100). A guard, not a target: anything left is embedded
+ * by the knowledge step.
+ */
+const MAX_EMBED_BATCHES = 10;
+
 async function buildKnowledgeStep(userId: string, projectId: string): Promise<void> {
   "use step";
   await stage("knowledge", userId, projectId, async (finalAttempt) => {
@@ -120,6 +139,11 @@ export async function analysisWorkflow(
     }
     if (options.uploadKey) {
       await fetchUploadedZipStep(userId, projectId, options.uploadKey, options.importUsageId);
+    }
+    // Large projects embed across several steps of 300 s each (ADR-006).
+    let remaining = await embedBatchStep(userId, projectId);
+    for (let batch = 1; remaining > 0 && batch < MAX_EMBED_BATCHES; batch += 1) {
+      remaining = await embedBatchStep(userId, projectId);
     }
     await buildKnowledgeStep(userId, projectId);
     await generateReportStep(userId, projectId);
