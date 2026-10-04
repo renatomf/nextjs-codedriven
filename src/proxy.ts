@@ -31,9 +31,14 @@ export default auth((request) => {
     environment: process.env.VERCEL_ENV,
   });
 
+  // Request headers, read by the render only. Next.js takes the nonce from
+  // `content-security-policy` before `-report-only`, and on Vercel the
+  // request already carries one (the static `frame-ancestors` policy, no
+  // script-src): without overwriting it, no script got the nonce.
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
-  headers.set("Content-Security-Policy-Report-Only", csp);
+  headers.set("Content-Security-Policy", csp);
+  headers.delete("Content-Security-Policy-Report-Only");
 
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy-Report-Only", csp);
