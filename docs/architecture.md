@@ -1,8 +1,9 @@
 # Arquitetura atual
 
 Retrato de **como o sistema é hoje** (fim da Fase 3 do
-[roadmap-v2.md](roadmap-v2.md), com o que as Fases 7, 4 e 5 acrescentaram;
-a Fase 5 em [results-phase-5.md](results-phase-5.md)): um monólito modular com Clean Architecture
+[roadmap-v2.md](roadmap-v2.md), com o que as Fases 7, 4, 5 e 6 acrescentaram;
+a Fase 5 em [results-phase-5.md](results-phase-5.md), a 6 em
+[results-phase-6.md](results-phase-6.md)): um monólito modular com Clean Architecture
 e DDD aplicados só onde há regra de negócio ([ADR-001](decisions/001-modular-monolith.md)).
 O "antes" está em [architecture-baseline.md](architecture-baseline.md); a
 comparação medida, em [results-phase-3.md](results-phase-3.md). Convenções
@@ -12,12 +13,13 @@ dos módulos em [modules.md](modules.md); linguagem em [glossary.md](glossary.md
 
 Igual ao baseline: o app (Next.js na Vercel) fala com Neon Postgres +
 pgvector, Groq (LLM), Hugging Face Hub (modelo de embeddings no cold start),
-GitHub (OAuth e zipball), Google (OAuth) e Stripe (checkout e webhook
+GitHub (login OAuth só com perfil e email; repositórios por um GitHub App
+só de leitura, ADR-007), Google (OAuth) e Stripe (checkout e webhook
 assinado). Desde a Fase 4, também com o Sentry (erros e traces, sem PII nem
 código do usuário). Desde a Fase 5: Vercel Workflows (a análise e a
 importação rodam como runs duráveis, ADR-005) e Neon Object Storage (o ZIP
 enviado pelo navegador, apagado depois da importação, ADR-011), além do
-cron diário da Vercel (reaper).
+cron diário da Vercel (reaper, que desde a Fase 6 também aplica a retenção).
 
 ## C4 — nível 2: contêineres e camadas
 
@@ -62,7 +64,7 @@ rede ou modelo). O interior (`domain/`, `application/`, `infrastructure/`)
 | **ingestion** | `EMBEDDING_DIMENSIONS` (fonte única), `ChunkDraft` | `storeKnowledge` + portas `Embedder` e `VectorStore` | ONNX (MiniLM q8, revisão fixada), pgvector |
 | **analysis** | `Finding` (com evidência opcional), uma `Rule` por heurística, `ScoringPolicy` (`linearPenaltyPolicy`) | — | a geração do relatório ainda está em `src/lib/analysis/report.ts` |
 | **chat** | política do prompt (código como dado), extração da pergunta | — | busca de contexto via ingestion |
-| **identity** | — (dados e integração) | — | conta, conexão com o GitHub (páginas só recebem um booleano), cadastro, credenciais, o que cada login registra |
+| **identity** | — (dados e integração) | — | conta, instalações do GitHub App (só ids; páginas recebem um booleano), cadastro, credenciais, o que cada login registra, exclusão dos dados da conta |
 
 **Portas** só onde há duas implementações ou um teste precisa de fake:
 `Embedder`, `VectorStore` e `BillingRepository`. `LlmProvider` nasce com o
@@ -85,11 +87,13 @@ Ollama (v2.2); `AnalysisRunner`, com a fila (Fase 5).
 
 ### Importação (GitHub ou ZIP)
 
-**GitHub (no job, ADR-005):** server action (sessão, zod, duplicado,
-conexão) → `startGitHubImport` (projects): `withQuota` cria o projeto e
+**GitHub (no job, ADR-005; acesso pelo GitHub App, ADR-007):** server
+action (sessão, zod, duplicado, instalação do dono do repositório) →
+`startGitHubImport` (projects): `withQuota` cria o projeto e
 registra o uso → `startAnalysisRun` dispara o `analysisWorkflow` com
 `fetchFromGitHub` e a action responde na hora. O primeiro step
-(`fetchGitHubSourcesStage`) baixa o zipball, extrai e grava os arquivos
+(`fetchGitHubSourcesStage`) pede um token de instalação de 1 h, só de
+leitura e restrito ao repositório, baixa o zipball, extrai e grava os arquivos
 (projeto continua `processing`), e o workflow segue para a análise. O
 GitHub recusar ou falhar devolve a análise (como antes, quando o download
 vinha antes da cota); arquivo sem nada para analisar continua cobrado. A
@@ -196,8 +200,21 @@ assinatura e busca o estado atual da assinatura no Stripe (idempotente).
   dados do usuário filtra por `userId`, com testes de IDOR em Postgres real
   (projetos, arquivos, chunks, relatório, links públicos, conexão com o
   GitHub).
-- Tokens do GitHub cifrados (AES-256-GCM, vinculados ao dono); páginas só
-  recebem um booleano.
+- Nenhuma credencial do usuário guardada (Fase 6, ADR-007): o GitHub App
+  lê só os repositórios escolhidos, com token de 1 h gerado a cada uso; o
+  banco guarda só o id da instalação, ligado ao usuário depois de o GitHub
+  confirmar, com o token do próprio usuário, que a instalação é dele. O
+  login com GitHub pede só perfil e email e não guarda o token.
+- CSP com nonce por request, gerada no proxy (`src/shared/csp.ts`), em
+  `Report-Only` com relatórios no Sentry (TD-34); `X-Frame-Options: DENY`
+  em todas as rotas. Na Vercel, os headers de resposta chegam à renderização:
+  toda `Content-Security-Policy` precisa do mesmo nonce.
+- Retenção: código de projeto sem uso há 90 dias é apagado pelo cron (o
+  projeto e o relatório ficam). Exclusão de conta de ponta a ponta: Stripe
+  (customer apagado) → uploads → GitHub App desinstalado onde ninguém mais o
+  usa → linhas do banco numa transação; teste prova que nenhuma tabela guarda
+  o id ou o email depois. Página pública `/data` diz o que vai para o Groq
+  (Zero Data Retention ligado), o que fica guardado e por quanto tempo.
 - Senhas só como hash bcrypt; senha não verificada descartada quando um
   provedor OAuth prova o e-mail; tempo de login igual para e-mail
   inexistente.
