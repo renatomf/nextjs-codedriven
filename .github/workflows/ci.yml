@@ -173,7 +173,6 @@ jobs:
       AUTH_SECRET: e2e-only-auth-secret-not-used-anywhere-else
       AUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: "true"
-      ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       NEXT_PUBLIC_PLAN_PREMIUM_PRICE_LABEL: "$0/mo"
       E2E_FAKE_LLM: "1"
       E2E_MAIN_FLOW: "1"

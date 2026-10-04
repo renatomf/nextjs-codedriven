@@ -92,6 +92,13 @@
       "when": 1791122343322,
       "tag": "0012_clear_legacy_github_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791122784913,
+      "tag": "0013_drop_github_access_token",
+      "breakpoints": true
     }
   ]
 }

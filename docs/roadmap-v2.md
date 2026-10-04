@@ -557,15 +557,17 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 
 **Obrigatório**
 
-- [ ] GitHub App com `contents: read`, instalação por repositório e tokens de
+- [x] GitHub App com `contents: read`, instalação por repositório e tokens de
       curta duração (TD-15, ADR). Remove o escopo `repo` de escrita.
       ADR-007 aceita (spike #126). Etapa 1/3: conexão pelo App, com o token
       antigo como reserva ([runbook](runbooks/github-app.md)). Etapa 2/3:
       login com escopo mínimo e sem guardar token; conexão só pelo App;
       desconectar/apagar a conta desinstala o App onde ninguém mais o usa.
       Etapa 3a: o token antigo não é mais lido (sem reserva, rotas antigas
-      removidas, TD-16 fechado) e a migração 0012 o apaga. Falta 3b: remover
-      a coluna `github_access_token` e a criptografia do token.
+      removidas, TD-16 fechado) e a migração 0012 o apaga. Etapa 3b: a
+      migração 0013 remove a coluna; saem a criptografia do token e o
+      `ENCRYPTION_KEY` (TD-19 obsoleto). Nenhuma credencial do usuário fica
+      guardada.
 - [x] CSP com nonce, começando em `Report-Only` (TD-34). O proxy gera um
       nonce por request e manda a política em `Report-Only`; violações vão
       para o Sentry. O E2E falha com qualquer violação nas páginas públicas

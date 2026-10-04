@@ -587,8 +587,11 @@ maintainability) · **Low** (cleanup).
   from the installations no other user linked. Step 3a: the legacy token is
   no longer read anywhere (no fallback, no `/user/repos` listing, the old
   connect routes are gone) and migration 0012 clears the stored tokens; the
-  author revokes the OAuth grant on GitHub. Left (step 3b, contract): drop
-  `users.github_access_token`, and the token encryption with it.
+  author revokes the OAuth grant on GitHub.
+- **Done (Phase 6, step 3b):** migration 0013 drops
+  `users.github_access_token`; the token encryption (`lib/encryption.ts`) and
+  `ENCRYPTION_KEY` are removed. No credential of the user is stored any more:
+  only GitHub App installation ids, and a 1-hour read-only token per use.
 
 ### TD-16 — Two "connect GitHub" flows · Medium
 - **Where:** [actions/github.ts:62-65](../src/lib/actions/github.ts#L62-L65)
@@ -642,6 +645,10 @@ maintainability) · **Low** (cleanup).
   rotation today means breaking every stored token.
 - **Direction:** keyring by version + re-encrypt job.
 - **Phase:** Security.
+- **Obsolete (Phase 6):** the only encrypted data was the GitHub OAuth token,
+  removed with TD-15 (ADR-007). The encryption module and `ENCRYPTION_KEY`
+  are gone; nothing is left to rotate. The GitHub App's private key is
+  rotated on GitHub ([runbook](runbooks/github-app.md)).
 
 ### TD-20 — Protected routes listed twice · Low
 - **Where:** [auth.config.ts:32-35](../src/lib/auth.config.ts#L32-L35),

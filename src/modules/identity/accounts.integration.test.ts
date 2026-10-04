@@ -1,8 +1,8 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import { compare } from "bcryptjs";
 import { eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { users } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -17,10 +17,8 @@ import { createUser, deleteUsers } from "@/test/integration/factories";
 // Account security on a real Postgres: passwords stored only as bcrypt
 // hashes, one account per email even under concurrency, credentials that
 // fail the same way for unknown emails and OAuth-only accounts, unverified
-// passwords dropped when a provider proves the email, and the GitHub token
-// stored encrypted and bound to its owner.
-
-vi.stubEnv("ENCRYPTION_KEY", randomBytes(32).toString("base64"));
+// passwords dropped when a provider proves the email, and sign-ins that
+// store no OAuth token (ADR-007).
 
 const emails: string[] = [];
 const created: string[] = [];
@@ -143,7 +141,7 @@ describe("recordSignIn", () => {
     });
 
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    expect(user).toMatchObject({ authProvider: "github", githubUsername: "octo", githubAccessToken: null });
+    expect(user).toMatchObject({ authProvider: "github", githubUsername: "octo" });
   });
 
   it("records an email sign-in as the email provider, without touching GitHub", async () => {
@@ -153,6 +151,6 @@ describe("recordSignIn", () => {
     await recordSignIn(userId, { provider: "credentials" });
 
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    expect(user).toMatchObject({ authProvider: "email", githubAccessToken: null });
+    expect(user).toMatchObject({ authProvider: "email", githubUsername: null });
   });
 });
