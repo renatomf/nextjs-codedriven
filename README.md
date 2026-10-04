@@ -12,7 +12,7 @@
 ![Auth.js](https://img.shields.io/badge/Auth-Auth.js_v5-7C3AED)
 ![Stripe](https://img.shields.io/badge/Billing-Stripe-635BFF?logo=stripe)
 ![Tests](https://img.shields.io/badge/tests-730-success)
-![ADRs](https://img.shields.io/badge/ADRs-8-informational)
+![ADRs](https://img.shields.io/badge/ADRs-11-informational)
 
 
 ## Sobre o projeto
@@ -252,9 +252,12 @@ As decisões ficam em [`docs/decisions/`](docs/decisions/), cada uma com context
 | [001](docs/decisions/001-modular-monolith.md) | Monólito modular com Clean Architecture e DDD seletivos |
 | [002](docs/decisions/002-module-convention.md) | Convenção dos módulos e regras de arquitetura no CI |
 | [003](docs/decisions/003-quota.md) | Cota de uso do plano: lock, checagem e uso numa transação; falha nossa devolve |
+| [004](docs/decisions/004-llm-cost-limits.md) | Custo do LLM: orçamento diário de tokens por plano, teto por chamada, kill switch no banco |
 | [005](docs/decisions/005-job-runner.md) | Vercel Workflows como job runner da importação e da análise |
 | [006](docs/decisions/006-embeddings-runtime.md) | Embeddings em runtime serverless (ONNX em CPU, cache por hash) |
 | [007](docs/decisions/007-github-app.md) | GitHub App só de leitura no lugar do OAuth App com escopo `repo` |
+| [008](docs/decisions/008-data-retention.md) | Retenção de 90 dias para o código e exclusão de conta de ponta a ponta |
+| [009](docs/decisions/009-evals.md) | Evals em dois níveis: determinístico obrigatório e LLM real quando a análise muda |
 | [010](docs/decisions/010-score-formula.md) | Fórmula da nota: achados agrupados, penalidade decrescente, testes calibrados |
 | [011](docs/decisions/011-zip-upload-storage.md) | ZIP enviado direto ao object storage até o job processá-lo |
 
