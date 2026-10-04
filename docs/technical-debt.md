@@ -581,10 +581,11 @@ maintainability) · **Low** (cleanup).
   ships the GitHub App connection: the installation is linked only after
   GitHub confirms it with the user's own token, and each use gets a 1-hour
   read-only token (scoped to the repository for downloads); the legacy
-  OAuth token stays as a fallback. Left: login scope down to
-  `read:user user:email` and uninstall on disconnect or account deletion
-  (step 2); revoke the old grants and drop `users.github_access_token`
-  (step 3).
+  OAuth token stays as a fallback. Step 2: sign-in asks only
+  `read:user user:email` and stores no token; "Connect GitHub" goes through
+  the App only; disconnecting or deleting the account uninstalls the App
+  from the installations no other user linked. Left (step 3): revoke the old
+  grants and drop `users.github_access_token`.
 
 ### TD-16 — Two "connect GitHub" flows · Medium
 - **Where:** [actions/github.ts:62-65](../src/lib/actions/github.ts#L62-L65)

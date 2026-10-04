@@ -7,7 +7,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { startAnalysisRun } from "@/lib/analysis/analysis-job";
-import { auth, signIn } from "@/lib/auth";
+import { uninstallGitHubAppFor } from "@/lib/github-uninstall";
+import { auth } from "@/lib/auth";
 import { fullNameSchema, GitHubNotConnectedError, refSchema } from "@/lib/github";
 import { MAX_REPO_SIZE_BYTES, MAX_UPLOAD_BYTES, UPLOAD_TOO_BIG_MESSAGE } from "@/lib/limits";
 import { assertRateLimit } from "@/lib/rate-limit";
@@ -83,15 +84,13 @@ async function requireUser() {
   return session.user;
 }
 
-/** Link GitHub via Auth.js (same callback URL as login). */
-export async function connectGitHubAccount() {
-  await requireUser();
-  await signIn("github", { redirectTo: "/settings?github=connected" });
-}
 
 export async function disconnectGitHub() {
   const user = await requireUser();
 
+  // Removes the App from the accounts only this user linked (ADR-007), then
+  // forgets the links and any legacy token.
+  await uninstallGitHubAppFor(user.id);
   await forgetGitHubConnection(user.id);
 
   revalidatePath("/settings");

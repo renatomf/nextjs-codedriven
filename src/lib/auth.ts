@@ -137,15 +137,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account, profile }) {
       if (!user.id || !account) return;
 
+      // The sign-in token is used here, in memory, and never stored: it only
+      // reads the profile (ADR-007). Repository access is the GitHub App's.
       const github =
         account.provider === "github" && account.access_token
-          ? {
-              githubAccessToken: account.access_token,
-              githubUsername: await fetchGithubUsername(account.access_token),
-            }
+          ? { githubUsername: await fetchGithubUsername(account.access_token) }
           : {};
 
-      // The GitHub token is encrypted by recordSignIn before it is stored.
       await recordSignIn(user.id, {
         provider: account.provider,
         image: profileImage(account.provider, profile),

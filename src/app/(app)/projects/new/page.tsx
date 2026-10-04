@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { connectGitHubAccount } from "@/lib/actions/github";
 import { auth } from "@/lib/auth";
 import { GitHubError, listGitHubRepos } from "@/lib/github";
 import { githubAppConfig, GitHubInstallationGoneError, listInstallationRepos } from "@/lib/github-app";
@@ -93,9 +92,10 @@ export default async function NewProjectPage() {
                     Connect GitHub (read-only)
                   </Button>
                 ) : (
-                  <form action={connectGitHubAccount}>
-                    <Button type="submit">Connect GitHub</Button>
-                  </form>
+                  <p className="text-sm text-(--ca-muted)">
+                    GitHub repository access is not available here. Upload a
+                    ZIP instead.
+                  </p>
                 )
               ) : repoError ? (
                 <div className="space-y-3">

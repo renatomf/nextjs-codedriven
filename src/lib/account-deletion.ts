@@ -1,6 +1,7 @@
 import "server-only";
 
 import { closeBillingAccount } from "@/modules/billing/server";
+import { uninstallGitHubAppFor } from "@/lib/github-uninstall";
 import { deleteAccountData } from "@/modules/identity/server";
 import { deleteObject, staleObjects, storageConfig } from "@/lib/storage/neon-storage";
 import { UPLOADS_PREFIX } from "@/lib/storage/upload-keys";
@@ -29,7 +30,8 @@ async function deleteUploads(userId: string): Promise<void> {
  * 1. Stripe first: if it fails, nothing is deleted, so no subscription is
  *    left charging an account that no longer exists.
  * 2. Pending uploads: best effort; the daily reaper deletes any left.
- * 3. The database rows, in one transaction (the user and everything it owns).
+ * 3. GitHub App installations only this user linked: best effort.
+ * 4. The database rows, in one transaction (the user and everything it owns).
  */
 export async function deleteAccount(userId: string): Promise<boolean> {
   await closeBillingAccount(userId);
@@ -39,6 +41,10 @@ export async function deleteAccount(userId: string): Promise<boolean> {
   } catch (error) {
     logger.warn("account.uploads_not_deleted", { err: error, userId });
   }
+
+  // GitHub App installations only this user linked: best effort, before the
+  // links go with the user row (ADR-007).
+  await uninstallGitHubAppFor(userId);
 
   const deleted = await deleteAccountData(userId);
   if (deleted) logger.info("account.deleted", { userId });

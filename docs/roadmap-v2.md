@@ -560,9 +560,10 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 - [ ] GitHub App com `contents: read`, instalação por repositório e tokens de
       curta duração (TD-15, ADR). Remove o escopo `repo` de escrita.
       ADR-007 aceita (spike #126). Etapa 1/3: conexão pelo App, com o token
-      antigo como reserva ([runbook](runbooks/github-app.md)). Faltam: escopo
-      mínimo no login e desinstalar ao desconectar/apagar a conta (2/3);
-      revogar e apagar os tokens antigos (3/3).
+      antigo como reserva ([runbook](runbooks/github-app.md)). Etapa 2/3:
+      login com escopo mínimo e sem guardar token; conexão só pelo App;
+      desconectar/apagar a conta desinstala o App onde ninguém mais o usa.
+      Falta: revogar e apagar os tokens antigos (3/3).
 - [x] CSP com nonce, começando em `Report-Only` (TD-34). O proxy gera um
       nonce por request e manda a política em `Report-Only`; violações vão
       para o Sentry. O E2E falha com qualquer violação nas páginas públicas

@@ -23,6 +23,7 @@ export {
   forgetGitHubInstallation,
   type GitHubInstallation,
   installationForOwner,
+  installationsOnlyLinkedBy,
   listGitHubInstallations,
   saveGitHubInstallation,
 } from "./infrastructure/drizzle-github-installations";

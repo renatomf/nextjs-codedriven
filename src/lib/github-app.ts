@@ -161,3 +161,21 @@ export async function installationsOfUser(code: string): Promise<Array<{ id: num
   }
   return found;
 }
+
+/**
+ * Removes the App from an account (disconnect, account deletion): GitHub
+ * then keeps no access for codedriven there. An installation already gone
+ * counts as done.
+ */
+export async function uninstallInstallation(installationId: number): Promise<void> {
+  const config = requireConfig();
+  const res = await fetch(`${GITHUB_API}/app/installations/${installationId}`, {
+    method: "DELETE",
+    headers: githubHeaders(appJwt(config)),
+    cache: "no-store",
+    signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`GitHub refused to uninstall the App (HTTP ${res.status})`);
+  }
+}

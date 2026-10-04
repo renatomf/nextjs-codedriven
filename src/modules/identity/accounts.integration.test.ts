@@ -6,7 +6,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { users } from "@/db/schema";
 import { db } from "@/lib/db";
-import { decryptToken } from "@/lib/encryption";
 import {
   createEmailAccount,
   dropUnverifiedPassword,
@@ -133,22 +132,18 @@ describe("dropUnverifiedPassword", () => {
 });
 
 describe("recordSignIn", () => {
-  it("stores the GitHub token encrypted and bound to its owner", async () => {
+  it("records a GitHub sign-in with the username and never a token (ADR-007)", async () => {
     const userId = await createUser();
     created.push(userId);
 
     await recordSignIn(userId, {
       provider: "github",
       image: "https://avatars.example/u.png",
-      githubAccessToken: "gho_plain_token_value",
       githubUsername: "octo",
     });
 
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    expect(user.githubAccessToken).not.toContain("gho_plain_token_value");
-    expect(decryptToken(user.githubAccessToken!, userId)).toBe("gho_plain_token_value");
-    expect(() => decryptToken(user.githubAccessToken!, randomUUID())).toThrow();
-    expect(user).toMatchObject({ authProvider: "github", githubUsername: "octo" });
+    expect(user).toMatchObject({ authProvider: "github", githubUsername: "octo", githubAccessToken: null });
   });
 
   it("records an email sign-in as the email provider, without touching GitHub", async () => {
