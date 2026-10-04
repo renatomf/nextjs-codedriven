@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
-import { getAppUrl, GITHUB_OAUTH_NONCE_COOKIE, verifyGitHubOAuthState } from "@/lib/github";
+import { GITHUB_OAUTH_NONCE_COOKIE, verifyGitHubOAuthState } from "@/lib/github";
 import { installationsOfUser } from "@/lib/github-app";
 import { saveGitHubInstallation } from "@/modules/identity/server";
 import { logger, requestIdFrom } from "@/shared/logger";
@@ -22,8 +22,10 @@ type CallbackResult =
   | "installation_not_yours"
   | "exchange_failed";
 
-function redirectToSettings(result: CallbackResult) {
-  const url = new URL("/settings", getAppUrl());
+// Our own fixed paths on the origin that served the request: previews have
+// no AUTH_URL, and nothing from the query string chooses the target.
+function redirectToSettings(request: NextRequest, result: CallbackResult) {
+  const url = new URL("/settings", request.nextUrl.origin);
   if (result === "connected") url.searchParams.set("github", "connected");
   else url.searchParams.set("github_error", result);
 
@@ -43,13 +45,13 @@ function redirectToSettings(result: CallbackResult) {
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", getAppUrl()));
+    return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
   }
 
   const params = request.nextUrl.searchParams;
   // An org member asked an admin to approve the install: nothing to link yet.
   if (params.get("setup_action") === "request") {
-    return redirectToSettings("approval_requested");
+    return redirectToSettings(request, "approval_requested");
   }
 
   const parsed = callbackSchema.safeParse({
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest) {
     state: params.get("state"),
     installationId: params.get("installation_id"),
   });
-  if (!parsed.success) return redirectToSettings("missing_code");
+  if (!parsed.success) return redirectToSettings(request, "missing_code");
 
   // Signed by us, fresh, this browser's nonce and the logged-in user (CSRF,
   // linking someone else's installation to this account).
@@ -65,23 +67,23 @@ export async function GET(request: NextRequest) {
     sessionUserId: session.user.id,
     nonce: request.cookies.get(GITHUB_OAUTH_NONCE_COOKIE)?.value,
   });
-  if (!validState) return redirectToSettings("invalid_state");
+  if (!validState) return redirectToSettings(request, "invalid_state");
 
   try {
     const mine = await installationsOfUser(parsed.data.code);
     const installation = mine.find((i) => i.id === parsed.data.installationId);
     if (!installation) {
       logger.warn("github.installation_not_yours", { requestId: requestIdFrom(request.headers) });
-      return redirectToSettings("installation_not_yours");
+      return redirectToSettings(request, "installation_not_yours");
     }
 
     await saveGitHubInstallation(session.user.id, {
       installationId: installation.id,
       accountLogin: installation.accountLogin,
     });
-    return redirectToSettings("connected");
+    return redirectToSettings(request, "connected");
   } catch (error) {
     logger.error("github.app_callback_failed", { err: error, requestId: requestIdFrom(request.headers) });
-    return redirectToSettings("exchange_failed");
+    return redirectToSettings(request, "exchange_failed");
   }
 }

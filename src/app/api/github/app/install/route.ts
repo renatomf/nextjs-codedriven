@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import {
   createGitHubOAuthState,
-  getAppUrl,
   GITHUB_OAUTH_NONCE_COOKIE,
   GITHUB_OAUTH_NONCE_MAX_AGE_S,
 } from "@/lib/github";
@@ -16,14 +15,17 @@ import { logger } from "@/shared/logger";
  * bound to the user and to this browser (nonce cookie); the callback checks
  * both, then checks with GitHub that the installation is the user's.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  // Our own paths on the origin that served the request (previews have no
+  // AUTH_URL).
+  const origin = new URL(request.url).origin;
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", getAppUrl()));
+    return NextResponse.redirect(new URL("/login", origin));
   }
 
   if (!githubAppConfig()) {
-    const url = new URL("/settings", getAppUrl());
+    const url = new URL("/settings", origin);
     url.searchParams.set("github_error", "app_not_configured");
     return NextResponse.redirect(url);
   }
@@ -43,7 +45,7 @@ export async function GET() {
     return response;
   } catch (error) {
     logger.error("github.app_install_failed", { err: error });
-    const url = new URL("/settings", getAppUrl());
+    const url = new URL("/settings", origin);
     url.searchParams.set("github_error", "oauth_error");
     return NextResponse.redirect(url);
   }

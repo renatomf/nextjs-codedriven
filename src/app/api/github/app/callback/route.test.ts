@@ -15,7 +15,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/github", () => ({
-  getAppUrl: () => "https://app.test",
   GITHUB_OAUTH_NONCE_COOKIE: "github_oauth_nonce",
   verifyGitHubOAuthState: mocks.verifyState,
 }));
@@ -30,8 +29,8 @@ import { GET } from "./route";
 
 const USER = "11111111-1111-4111-8111-111111111111";
 
-function callback(query: Record<string, string>) {
-  const url = new URL("https://app.test/api/github/app/callback");
+function callback(query: Record<string, string>, origin = "https://app.test") {
+  const url = new URL(`${origin}/api/github/app/callback`);
   for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
   return new NextRequest(url, { headers: { cookie: "github_oauth_nonce=nonce-1" } });
 }
@@ -116,6 +115,12 @@ describe("GitHub App callback", () => {
 
     expect(outcome(response)).toBe("exchange_failed");
     expect(response.headers.get("location")).not.toContain("secret-detail");
+  });
+
+  it("redirects back to the deployment that served it (previews have no AUTH_URL)", async () => {
+    const response = await GET(callback(valid, "https://preview-branch.vercel.app"));
+
+    expect(response.headers.get("location")).toBe("https://preview-branch.vercel.app/settings?github=connected");
   });
 
   it("rejects a malformed installation id", async () => {
