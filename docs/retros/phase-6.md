@@ -2,7 +2,7 @@
 
 - **Período:** 2026-10-04 (página de dados, PR #118) a 2026-10-04 (PR #130)
 - **Estimado × real:** … (a tabela de planejamento do roadmap não tinha estimativa)
-- **Números:** [results-phase-6.md](../results-phase-6.md)
+- **Números:** [results/phase-6.md](../results/phase-6.md)
 
 <!--
 Fatos para ajudar a lembrar (apague depois de escrever):

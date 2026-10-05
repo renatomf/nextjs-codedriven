@@ -164,7 +164,7 @@
 
 /* Dark theme = the landing's night surfaces: page on --ca-night, panels one
    step up (--ca-night-2), hovers/slabs on --ca-night-3, mint as the accent.
-   The landing itself is forced light (see theme-provider.tsx). */
+   The landing itself is forced light (see components/app/theme-provider.tsx). */
 .dark {
   --ca-ink: #fafafa;
   --ca-muted: #999999;

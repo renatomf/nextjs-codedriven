@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/app/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 // Self-hosted (latin subset, from Fontsource 5.3.0; OFL licenses in
