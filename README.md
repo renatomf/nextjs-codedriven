@@ -31,7 +31,7 @@ A nota **determinística** deixa as categorias do LLM no valor-base, para ser co
 ## Principais funcionalidades
 
 - **Importação** de repositório do GitHub (por um GitHub App só de leitura) ou de ZIP até 100 MB, enviado direto do navegador para o object storage. A extração é endurecida contra zip-slip, symlinks e zip bombs, e arquivos de segredo nunca são lidos.
-- **Relatório de saúde** com métricas determinísticas e a revisão do LLM, com nota por categoria: arquitetura, segurança, performance, qualidade de código e testes.
+- **Relatório de saúde** com métricas determinísticas e a revisão do LLM, com nota por categoria (arquitetura, segurança, qualidade de código e testes) e achados de performance, que ainda não têm nota.
 - **Evidência ou descarte:** todo achado do LLM precisa citar uma linha que exista no arquivo apontado; se a linha não existir, o achado é descartado.
 - **Painel de problemas** com filtros e **explorador de código** com explicação por arquivo.
 - **Chat com o codebase:** chunking com Tree-sitter, embeddings locais (MiniLM, ONNX) no pgvector, respostas em streaming com as fontes.
@@ -324,7 +324,7 @@ O [`.env.example`](.env.example) documenta cada variável e diz quais são opcio
 O [registro de dívida técnica](docs/technical-debt.md) tem a lista completa, com gravidade e destino. As que mais afetam a leitura das notas:
 
 - **A IA vê uma amostra**, não o projeto inteiro: até 16 mil caracteres, espalhados por pastas.
-- **Nem todas as bases das categorias são calibradas** (TD-50). Testing é medida contra a cobertura real, e qualidade de código contra o ESLint `max-lines-per-function`, pela fatia de funções longas. Arquitetura, segurança e performance partem de um valor fixo menos os achados: arquitetura, por exemplo, não passa de 88 nem sem achados. O plano de calibração, com metas medidas, está no TD-50.
+- **Nem todas as bases das categorias são calibradas** (TD-50). Testing é medida contra a cobertura real, e qualidade de código contra o ESLint `max-lines-per-function`, pela fatia de funções longas. Arquitetura e segurança partem de um valor fixo menos os achados: arquitetura, por exemplo, não passa de 88 nem sem achados. Performance não tem sinal medido: mostra os achados, sem nota, e fica fora da nota geral. O plano de calibração, com metas medidas, está no TD-50.
 - **"Função complexa" é contada em linhas** (pela AST), não em complexidade ciclomática.
 - **CSP em `Report-Only`** até os relatórios do Sentry ficarem limpos (TD-34).
 - **Camada gratuita:** Vercel Hobby (funções de até 300 s, no máximo 1.000 arquivos por projeto) e Groq gratuito (limite diário de tokens).

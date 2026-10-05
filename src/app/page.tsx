@@ -47,7 +47,7 @@ const FLOW = [
 const OUTCOMES = [
   {
     title: "Health report",
-    text: "Architecture, security, performance, quality, and testing — scored clearly.",
+    text: "Architecture, security, quality and testing scored clearly, plus performance findings.",
   },
   {
     title: "Grounded chat",
@@ -384,8 +384,8 @@ export default function HomePage() {
                 </span>
               </p>
               <p className="mt-5 max-w-sm text-sm leading-relaxed text-[#999]">
-                Health score with architecture, security, performance, quality,
-                and testing.
+                Health score from architecture, security, quality and testing,
+                plus performance findings.
               </p>
             </div>
 

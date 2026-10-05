@@ -44,6 +44,10 @@ const CATEGORY_ICONS: Record<
   testing: FlaskConical,
 };
 
+// TD-50 item 4: a category without a measured signal (Performance) keeps its
+// findings and summary but has no score.
+const NOT_SCORED = "Not scored";
+
 /**
  * The health report body: score, category summaries, roadmap and top
  * issues, one server-renderable section each. Used by the owner's report
@@ -147,8 +151,9 @@ function ScoreOverview({
             </span>
           </div>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-(--ca-muted)">
-            Average of five category scores. Use the roadmap below to
-            decide what to fix first.
+            Average of the scored categories. Performance has findings but
+            no score yet: nothing measures it reliably. Use the roadmap below
+            to decide what to fix first.
           </p>
           <div className="mt-5 h-1.5 max-w-md overflow-hidden bg-(--ca-line)">
             <div
@@ -189,7 +194,7 @@ function ScoreOverview({
                       scoreTextClass(tone),
                     )}
                   >
-                    {score ?? "—"}
+                    {score ?? <span className="text-sm font-normal text-(--ca-muted)">{NOT_SCORED}</span>}
                   </p>
                   <div className="mt-2 h-1 overflow-hidden bg-(--ca-line)">
                     <div
@@ -251,7 +256,7 @@ function CategoryCards({
                       scoreChipClass(tone),
                     )}
                   >
-                    {score ?? "—"}/100
+                    {score == null ? NOT_SCORED : `${score}/100`}
                   </span>
                 </div>
                 <p className="mt-2 text-[15px] leading-relaxed text-foreground/80">

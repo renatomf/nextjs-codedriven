@@ -182,3 +182,24 @@ determinística deste repositório 78 → 86; casos anotados 1,00 / 1,00.
 - Arquivo grande deixou de pesar na nota: um arquivo com muitas funções
   curtas não é, por si, um problema. Continua listado.
 - `@typescript-eslint/parser` virou devDependency explícita (só no eval).
+
+## Revisão — Performance sai da nota geral (2026-10-05, TD-50 item 4)
+
+**Contexto.** A nota de Performance era uma base fixa (86) menos os achados
+do LLM. Nenhum detector determinístico mede performance, e o LLM vê uma
+amostra e varia entre execuções (TD-43): a nota não dizia nada que os
+achados já não dissessem, e puxava a média para 86 em todo projeto.
+
+**Decisão.** Performance continua sendo revisada, e os achados e o resumo
+aparecem no relatório, mas sem nota. A nota geral passa a ser a média das
+quatro categorias com nota (`SCORED_CATEGORIES`: Architecture, Security,
+Code Quality, Testing). Relatórios salvos antes continuam com a nota de
+Performance e a média antiga de cinco; a tela mostra "Not scored" quando
+não há nota.
+
+**Resultado** (eval de análise, parte determinística): nota geral deste
+repositório 86 → 87. Num relatório real com Performance 80, a média vai de
+75 para 73.
+
+**Revisar** quando houver um sinal medido de performance (por exemplo,
+consultas em loop detectadas pela AST, ou tamanho de bundle).

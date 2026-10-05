@@ -507,7 +507,9 @@ maintainability) · **Low** (cleanup).
      runs: NodeGoat and Juice Shop below 40, a sound repository above 75.
      Plausible here: 75-85.
   4. Performance: no measured signal, so it leaves the health score; its
-     findings stay in the report without a number.
+     findings stay in the report without a number. Done (2026-10-05,
+     ADR-010 review): the health score averages the four scored
+     categories; this repository 86 → 87 (deterministic).
   5. Architecture: import cycles and files with high fan-in and fan-out,
      from the import graph the Testing estimate already follows; thresholds
      in an ADR. Plausible here: 80-90 (`lint:arch` reports 0 violations).

@@ -107,14 +107,41 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
     ).toBe(16);
   });
 
-  it("keeps the v1 scores when nothing repeats (except Code Quality, measured since TD-50)", () => {
+  it("keeps the v1 scores when nothing repeats (except what TD-50 changed: Code Quality, Performance)", () => {
     const findings = [untested("src/a.ts"), finding({ category: "security", severity: "critical" })];
-    const withoutCodeQuality = (scores: Record<string, number>) =>
-      Object.fromEntries(Object.entries(scores).filter(([category]) => category !== "codeQuality"));
+    const unchanged = (scores: Record<string, number | undefined>) =>
+      Object.fromEntries(Object.entries(scores).filter(([category]) => !["codeQuality", "performance"].includes(category)));
 
-    expect(withoutCodeQuality(diminishingPenaltyPolicy({ measures, findings }).categoryScores)).toEqual(
-      withoutCodeQuality(linearPenaltyPolicy({ measures, findings }).categoryScores),
+    expect(unchanged(diminishingPenaltyPolicy({ measures, findings }).categoryScores)).toEqual(
+      unchanged(linearPenaltyPolicy({ measures, findings }).categoryScores),
     );
+  });
+});
+
+// TD-50 item 4: Performance has no measured signal, so it has findings but
+// no score, and the health score averages the four scored categories.
+describe("Performance", () => {
+  const measures: ProjectMeasures = {
+    largeFiles: [],
+    complexFunctions: [],
+    functionCount: 10,
+    longFunctionCount: 1,
+    testFileCount: 1,
+    sourceFileCount: 10,
+    testedSourceApproxPercent: 50,
+    untestedCriticalPaths: [],
+    secretHits: [],
+  };
+
+  it("is not scored and stays out of the health score, whatever its findings", () => {
+    const slow = finding({ category: "performance", severity: "critical", title: "N+1 query" });
+    const without = diminishingPenaltyPolicy({ measures, findings: [] });
+    const withSlow = diminishingPenaltyPolicy({ measures, findings: [slow] });
+
+    expect(without.categoryScores).not.toHaveProperty("performance");
+    expect(withSlow).toEqual(without);
+    const { architecture, security, codeQuality, testing } = without.categoryScores;
+    expect(without.healthScore).toBe(Math.round((architecture + security + codeQuality + testing) / 4));
   });
 });
 
