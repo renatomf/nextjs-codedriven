@@ -1,3 +1,4 @@
+import type { DependencyScan } from "./dependencies";
 import type { Finding } from "./finding";
 import { isTestFile, pathWords } from "./paths";
 import { DETERMINISTIC_RULES, type ProjectMeasures } from "./rules";
@@ -160,6 +161,20 @@ function hasLogic(content: string): boolean {
   );
 }
 
+/** What the report says about the dependency scan (ADR-012), after the secrets. */
+function dependencySummary(scan: DependencyScan): string {
+  switch (scan.status) {
+    case "scanned":
+      return ` ${scan.vulnerable.length} of ${scan.dependencyCount} production dependencies have known advisories (OSV).`;
+    case "no-lockfile":
+      return " No npm lockfile: dependency versions, and their advisories, are unknown.";
+    case "unavailable":
+      return " The advisory database did not answer: dependencies were not checked this time.";
+    case "not-scanned":
+      return "";
+  }
+}
+
 /**
  * Compute code-quality, testing, and simple security signals without an LLM.
  * `functions` are the sizes measured on the syntax tree (`measureFunctions`
@@ -168,6 +183,7 @@ function hasLogic(content: string): boolean {
 export function computeDeterministicMetrics(
   files: SourceFile[],
   functions: FunctionSize[],
+  dependencyScan: DependencyScan,
 ): DeterministicMetrics {
   const sourceFiles = files.filter((file) => !isTestFile(file.relativePath));
   const testFiles = files.filter((file) => isTestFile(file.relativePath));
@@ -299,6 +315,7 @@ export function computeDeterministicMetrics(
     testedSourceApproxPercent,
     untestedCriticalPaths,
     secretHits,
+    dependencyScan,
   };
   const issues = DETERMINISTIC_RULES.flatMap((rule) =>
     rule.findings(measures).map((finding) => ({ ...finding, rule: rule.id })),
@@ -310,7 +327,7 @@ export function computeDeterministicMetrics(
     summaries: {
       codeQuality: `${longFunctionCount} of ${sourceFunctions.length} function(s) have more than ${LONG_FUNCTION_LINES} lines (${complexFunctions.length} with ${COMPLEX_FUNCTION_LINES}+); ${largeFiles.length} large file(s).`,
       testing: `Matched test files for roughly ${testedSourceApproxPercent}% of source files (${testFiles.length} test files found).`,
-      security: `Pattern scan found ${secretHits.length} potential hardcoded secret hit(s).`,
+      security: `Pattern scan found ${secretHits.length} potential hardcoded secret hit(s).${dependencySummary(dependencyScan)}`,
     },
   };
 }

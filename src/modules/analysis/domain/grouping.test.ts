@@ -97,6 +97,7 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
     testedSourceApproxPercent: 0,
     untestedCriticalPaths: [],
     secretHits: [],
+    dependencyScan: { status: "not-scanned" },
   };
   const eight = Array.from({ length: 8 }, (_, i) => untested(`f${i}`));
 
@@ -135,6 +136,7 @@ describe("Testing base", () => {
         testedSourceApproxPercent,
         untestedCriticalPaths: [],
         secretHits: [],
+        dependencyScan: { status: "not-scanned" },
       },
       findings: [],
     }).categoryScores.testing;
@@ -171,6 +173,7 @@ describe("Code Quality base", () => {
         testedSourceApproxPercent: 0,
         untestedCriticalPaths: [],
         secretHits: [],
+        dependencyScan: { status: "not-scanned" },
       },
       findings,
     }).categoryScores.codeQuality;

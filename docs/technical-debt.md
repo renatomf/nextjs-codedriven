@@ -505,6 +505,13 @@ maintainability) · **Low** (cleanup).
   3. Security: dependency vulnerabilities from the lockfile (OSV) as an
      objective signal; diminishing penalty as in ADR-010. Gate over 3
      runs: NodeGoat and Juice Shop below 40, a sound repository above 75.
+     Progress (2026-10-05, ADR-012): domain, OSV client and eval
+     measurement. Production dependencies only, transitive ones one
+     severity level lower, only public-registry packages sent to OSV.
+     Deterministic Security: this repository 81 (the two TD-52 advisories),
+     NodeGoat 58 (40 of 380 packages vulnerable), Juice Shop 90 (no
+     lockfile, so no signal). Next: table, ingestion and report; then the
+     3-run gate with the LLM.
      Plausible here: 75-85.
   4. Performance: no measured signal, so it leaves the health score; its
      findings stay in the report without a number.

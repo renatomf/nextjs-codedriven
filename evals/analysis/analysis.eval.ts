@@ -9,19 +9,29 @@ import { expect, it } from "vitest";
 import { chunkProjectFiles } from "@/lib/analysis/chunking";
 import { buildReviewRequest } from "@/lib/analysis/report-llm";
 import { computeProjectMetrics, type DeterministicMetrics, type SourceFile } from "@/lib/analysis/metrics";
+import { scanDependencies } from "@/lib/analysis/osv";
 import {
   buildReportFindings,
+  type DependencyScan,
   diminishingPenaltyPolicy,
   linearPenaltyPolicy,
   LONG_FUNCTION_LINES,
   estimateRequestTokens,
+  parseNpmLockfile,
   REVIEW_BUDGET,
   REVIEW_MAX_REQUEST_TOKENS,
   sampleForReview,
 } from "@/modules/analysis";
 import { isTestFile } from "@/modules/analysis/domain/paths";
 
-import { loadRepo, loadThisRepository, REPO_CASES, type RepoCase } from "../repos/repos";
+import {
+  loadLockfile,
+  loadRepo,
+  loadThisRepository,
+  loadThisRepositoryLockfile,
+  REPO_CASES,
+  type RepoCase,
+} from "../repos/repos";
 import { ANALYSIS_CASES } from "./cases";
 import { scoreCase } from "./score";
 
@@ -65,6 +75,30 @@ async function eslintLongFunctionPercent(files: SourceFile[]): Promise<number> {
 
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
+/** Dependencies with known advisories, from the root lockfile (ADR-012). */
+async function dependencyScanOf({ lockfile, manifest }: { lockfile?: string; manifest?: string }): Promise<DependencyScan> {
+  const dependencies = lockfile ? parseNpmLockfile(lockfile, manifest) : null;
+  return dependencies ? scanDependencies(dependencies) : { status: "no-lockfile" };
+}
+
+/** The deterministic Security score and what the dependency scan found (TD-50 item 3). */
+function security(metrics: DeterministicMetrics) {
+  const scan = metrics.dependencyScan;
+  const { categoryScores } = diminishingPenaltyPolicy({
+    measures: metrics,
+    findings: buildReportFindings(metrics.issues, []),
+  });
+  return {
+    score: categoryScores.security,
+    dependencyScan: scan.status,
+    dependencies: scan.status === "scanned" ? scan.dependencyCount : null,
+    vulnerableDependencies:
+      scan.status === "scanned"
+        ? scan.vulnerable.map((d) => `${d.name}@${d.version}${d.direct ? "" : " (transitive)"}: ${d.advisories.map((a) => `${a.id} ${a.severity}`).join(", ")}`)
+        : [],
+  };
+}
+
 /** The deterministic Code Quality score next to its reference (TD-50). */
 async function codeQuality(files: SourceFile[], metrics: DeterministicMetrics) {
   const { categoryScores } = diminishingPenaltyPolicy({
@@ -90,7 +124,7 @@ const requestTokens = (projectName: string, sample: ReturnType<typeof chunkProje
 
 async function realRepository(repoCase: RepoCase) {
   const files = await loadRepo(repoCase);
-  const metrics = computeProjectMetrics(files);
+  const metrics = computeProjectMetrics(files, await dependencyScanOf(await loadLockfile(repoCase)));
   const chunks = chunkProjectFiles(files).sort(
     (a, b) => a.filePath.localeCompare(b.filePath) || (a.startLine ?? 0) - (b.startLine ?? 0),
   );
@@ -127,6 +161,7 @@ async function realRepository(repoCase: RepoCase) {
     expectedTotal: expected.length,
     expected,
     codeQuality: await codeQuality(files, metrics),
+    security: security(metrics),
     issues: metrics.issues.map(({ title, severity, category, filePath }) => ({
       title,
       severity,
@@ -139,7 +174,7 @@ async function realRepository(repoCase: RepoCase) {
 async function thisRepository() {
   const files = await loadThisRepository();
 
-  const metrics = computeProjectMetrics(files);
+  const metrics = computeProjectMetrics(files, await dependencyScanOf(loadThisRepositoryLockfile()));
   // As the report shows them: grouped (ADR-010).
   const findings = buildReportFindings(metrics.issues, []);
   const current = diminishingPenaltyPolicy({ measures: metrics, findings });
@@ -176,6 +211,7 @@ async function thisRepository() {
     // LLM in the product, so here they stay at their base score. `v1` is the
     // linear policy, kept for comparison.
     codeQuality: await codeQuality(files, metrics),
+    security: security(metrics),
     deterministicCategoryScores: current.categoryScores,
     deterministicHealthScore: current.healthScore,
     v1DeterministicCategoryScores: v1.categoryScores,
@@ -242,10 +278,10 @@ it("measures the deterministic analysis", async () => {
           `${c.falsePositives.length} false positive(s), ${c.missed.length} missed`,
       ),
       `  total: precision ${result.analysis.totals.precision.toFixed(2)}, recall ${result.analysis.totals.recall.toFixed(2)}`,
-      `  this repository: ${result.analysis.thisRepository.findings} findings in ${result.analysis.thisRepository.reportFindings} report lines, deterministic health ${result.analysis.thisRepository.deterministicHealthScore} (v1: ${result.analysis.thisRepository.v1DeterministicHealthScore}), ${codeQualityLine(result.analysis.thisRepository.codeQuality)}`,
+      `  this repository: ${result.analysis.thisRepository.findings} findings in ${result.analysis.thisRepository.reportFindings} report lines, deterministic health ${result.analysis.thisRepository.deterministicHealthScore} (v1: ${result.analysis.thisRepository.v1DeterministicHealthScore}), ${codeQualityLine(result.analysis.thisRepository.codeQuality)}, ${securityLine(result.analysis.thisRepository.security)}`,
       ...result.analysis.realRepositories.map(
         (r) =>
-          `  ${r.name}: ${r.sourceFiles} files, ${r.chunks} chunks, ${r.findings} findings; annotated lines in the review sample: ${r.expectedInSample}/${r.expectedTotal}; ${codeQualityLine(r.codeQuality)}`,
+          `  ${r.name}: ${r.sourceFiles} files, ${r.chunks} chunks, ${r.findings} findings; annotated lines in the review sample: ${r.expectedInSample}/${r.expectedTotal}; ${codeQualityLine(r.codeQuality)}; ${securityLine(r.security)}`,
       ),
       `  review sample: ${result.analysis.thisRepository.reviewSample.chunks} chunks from ${result.analysis.thisRepository.reviewSample.files} files in ${result.analysis.thisRepository.reviewSample.directories} directories (${result.analysis.thisRepository.reviewSample.testFiles} test files)`,
     ].join("\n"),
@@ -269,6 +305,13 @@ it("measures the deterministic analysis", async () => {
     ...result.analysis.realRepositories.map((r) => ({ name: r.name, tokens: r.reviewSample.requestTokens })),
   ]) {
     expect(tokens, `${name}: estimated review request tokens`).toBeLessThanOrEqual(REVIEW_MAX_REQUEST_TOKENS);
+  }
+  // TD-50 item 3: with the dependencies scanned, NodeGoat (old, vulnerable
+  // dependencies) scores below this repository on deterministic Security.
+  const nodegoat = result.analysis.realRepositories.find((r) => r.name === "nodegoat");
+  const self = result.analysis.thisRepository;
+  if (nodegoat?.security.dependencyScan === "scanned" && self.security.dependencyScan === "scanned") {
+    expect(nodegoat.security.score, "Security: NodeGoat vs this repository").toBeLessThan(self.security.score);
   }
   // TD-50: Code Quality ranks the repositories as ESLint's long-function
   // share does (fewer long functions, higher score).
@@ -298,6 +341,9 @@ type CodeQuality = { score: number; longFunctionPercent: number; eslintLongFunct
 
 const codeQualityLine = (c: CodeQuality) =>
   `Code Quality ${c.score} (${c.longFunctionPercent}% of functions over ${LONG_FUNCTION_LINES} lines; ESLint ${c.eslintLongFunctionPercent}%)`;
+
+const securityLine = (s: { score: number; dependencyScan: string; dependencies: number | null; vulnerableDependencies: string[] }) =>
+  `Security ${s.score} (dependencies: ${s.dependencyScan === "scanned" ? `${s.vulnerableDependencies.length} of ${s.dependencies} vulnerable` : s.dependencyScan})`;
 
 type EvalResult = {
   commit: string;
