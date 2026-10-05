@@ -71,7 +71,7 @@ análise), não na ingestão (ficariam velhos).
   para o OSV. Um pacote de registro privado ou de git revelaria o nome de
   código interno a um terceiro.
 
-**Resultado medido** (eval `2026-10-05`, parte determinística): Security
+**Resultado medido** (eval `2026-10-05-6b7fe3e`, parte determinística): Security
 deste repositório 90 → **81**, NodeGoat 90 → **58**, Juice Shop 90 (sem
 lockfile). O eval exige NodeGoat abaixo deste repositório quando os dois
 forem varridos.
