@@ -7,13 +7,16 @@ import { ESLint } from "eslint";
 import { expect, it } from "vitest";
 
 import { chunkProjectFiles } from "@/lib/analysis/chunking";
+import { buildReviewRequest } from "@/lib/analysis/report-llm";
 import { computeProjectMetrics, type DeterministicMetrics, type SourceFile } from "@/lib/analysis/metrics";
 import {
   buildReportFindings,
   diminishingPenaltyPolicy,
   linearPenaltyPolicy,
   LONG_FUNCTION_LINES,
+  estimateRequestTokens,
   REVIEW_BUDGET,
+  REVIEW_MAX_REQUEST_TOKENS,
   sampleForReview,
 } from "@/modules/analysis";
 import { isTestFile } from "@/modules/analysis/domain/paths";
@@ -81,6 +84,10 @@ async function codeQuality(files: SourceFile[], metrics: DeterministicMetrics) {
  * what the deterministic analysis finds and which annotated lines reach the
  * LLM reviewer's sample (the model can only report what it receives).
  */
+/** Estimated tokens of the review request for a sample (TD-50 item 2). */
+const requestTokens = (projectName: string, sample: ReturnType<typeof chunkProjectFiles>) =>
+  estimateRequestTokens(buildReviewRequest({ projectName, framework: null, chunks: [] }, sample));
+
 async function realRepository(repoCase: RepoCase) {
   const files = await loadRepo(repoCase);
   const metrics = computeProjectMetrics(files);
@@ -113,6 +120,7 @@ async function realRepository(repoCase: RepoCase) {
     reviewSample: {
       chunks: sample.length,
       files: new Set(sample.map((c) => c.filePath)).size,
+      requestTokens: requestTokens(repoCase.name, sample),
       filePaths: [...new Set(sample.map((c) => c.filePath))],
     },
     expectedInSample: expected.filter((e) => e.inSample).length,
@@ -155,6 +163,7 @@ async function thisRepository() {
     reviewSample: {
       chunks: sample.length,
       chars: sample.reduce((sum, c) => sum + Math.min(c.content.length, REVIEW_BUDGET.chunkChars), 0),
+      requestTokens: requestTokens("nextjs-codedriven", sample),
       files: sampledFiles.length,
       directories: new Set(sampledFiles.map(directory)).size,
       testFiles: sampledFiles.filter((f) => /\.(test|spec)\.|(^|\/)(e2e|tests?|__tests__)\//.test(f)).length,
@@ -253,6 +262,13 @@ it("measures the deterministic analysis", async () => {
     expect(repo.expectedInSample, `${repo.name}: annotated lines in the review sample`).toBeGreaterThanOrEqual(
       GATE.minExpectedInSample[repo.name] ?? 0,
     );
+  }
+  // TD-50 item 2: no review request above Groq's per-request limit.
+  for (const { name, tokens } of [
+    { name: "this repository", tokens: result.analysis.thisRepository.reviewSample.requestTokens },
+    ...result.analysis.realRepositories.map((r) => ({ name: r.name, tokens: r.reviewSample.requestTokens })),
+  ]) {
+    expect(tokens, `${name}: estimated review request tokens`).toBeLessThanOrEqual(REVIEW_MAX_REQUEST_TOKENS);
   }
   // TD-50: Code Quality ranks the repositories as ESLint's long-function
   // share does (fewer long functions, higher score).

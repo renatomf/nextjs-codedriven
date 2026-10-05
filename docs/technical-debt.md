@@ -525,6 +525,20 @@ maintainability) · **Low** (cleanup).
   (`isTestFile` does not know `.eval.ts`), so their long `it` callbacks are
   reported; reclassifying them changes Testing, left for the Testing
   review.
+- **Done, item 2 (2026-10-05):** TD-44, and the review's token budget.
+  Measured with tiny or quota-rejected requests (no tokens spent): Groq's
+  per-minute check does not count `max_completion_tokens` (6332 vs 6355
+  "Requested" for max 1000 vs 8000), and its estimate matches the billed
+  input within 3% (NodeGoat 5545 vs 5384). Cause: the sample's 16k budget
+  counted code only, while each of up to 24 snippets adds its path and ~134
+  characters of markers, and the instructions ~2.7k: the worst case was
+  ~8k tokens. Now `maxChars` (19k) counts the whole snippet block, the
+  project name in the prompt is capped (it is untrusted and outside the
+  data blocks), a unit test pins the worst case under 7500 estimated
+  tokens (characters / 3, conservative: 3.3-3.8 measured) and the analysis
+  eval gates every real repository's request. Samples lose about one chunk
+  (this repository 15 → 13, NodeGoat 15 → 14, Juice Shop 13 → 12); the
+  annotated lines that reach the sample are unchanged (5/9, 2/8).
 
 ### TD-51 — The LLM review still reports two false positives on this repository · Low
 - **Where:** [review-prompt.ts](../src/modules/analysis/domain/review-prompt.ts),
