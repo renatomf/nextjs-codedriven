@@ -14,7 +14,11 @@
 ![Tests](https://img.shields.io/badge/tests-730-success)
 ![ADRs](https://img.shields.io/badge/ADRs-11-informational)
 
-**Acesse:** [nextjs-codedriven.vercel.app](https://nextjs-codedriven.vercel.app)
+**Acesse:** [nextjs-codedriven.vercel.app](https://nextjs-codedriven.vercel.app) · [relatório deste repositório](https://nextjs-codedriven.vercel.app/r/ppJZrjkotodAiwr3EJXiDjQ6b7WbtQpz4aFOgxWZj7I) (link público, sem login)
+
+![Relatório de saúde deste repositório no codedriven, modo claro](docs/assets/app-light.png)
+
+![Relatório de saúde deste repositório no codedriven, modo escuro](docs/assets/app-dark.png)
 
 ## Sobre o projeto
 
