@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "What codedriven sends to the AI model, what it stores, where and for how long.",
 };
 
-const REVIEWED_ON = "2026-10-04";
+const REVIEWED_ON = "2026-10-05";
 const GROQ_POLICY_URL = "https://console.groq.com/docs/your-data";
 // Global and Inference APIs ZDR turned on in the Groq console (Data Controls).
 const ZDR_ENABLED_ON = "2026-10-04";
@@ -45,6 +45,11 @@ const STORED = [
     data: "Project files, code pieces and their vectors (embeddings)",
     where: "Neon Postgres",
     until: `You delete the project, or ${CODE_RETENTION_DAYS} days without use (opening the project or analyzing it counts as use). The project and its report stay; analyzing again brings the code back.`,
+  },
+  {
+    data: "Names and versions of the project's production npm dependencies, read from its package-lock.json (the lockfile itself is not stored)",
+    where: "Neon Postgres",
+    until: "Removed with the project files (same rules as above)",
   },
   {
     data: "Reports and the AI review",
@@ -102,6 +107,10 @@ const SERVICES = [
   {
     name: "GitHub",
     role: "Source of the repositories you choose. Access is through the codedriven GitHub App: read-only, only on the repositories you pick, and it can never write to them.",
+  },
+  {
+    name: "OSV (osv.dev, by Google)",
+    role: "Checks the project's dependencies for known vulnerabilities when a report is generated. Receives only the names and versions of packages from the public npm registry; never code, and never packages from private registries or git.",
   },
   {
     name: "Hugging Face",
@@ -211,13 +220,13 @@ export default function DataPage() {
             </h2>
             <ul className="list-disc space-y-2 pl-5 text-sm">
               <li>
-                Deleting a project removes its files, code pieces, vectors,
+                Deleting a project removes its files, dependency list, code pieces, vectors,
                 reports and share links at once.
               </li>
               <li>
                 Code you stop using is removed on its own: {CODE_RETENTION_DAYS}{" "}
                 days after you last opened or analyzed a project, a daily job
-                deletes its files, code pieces and vectors.
+                deletes its files, dependency list, code pieces and vectors.
               </li>
               <li>
                 Disconnecting GitHub in{" "}

@@ -94,7 +94,7 @@ describe("another user with the owner's project id", () => {
     await expect(
       persistProjectFiles(bob, aliceProject, [
         { relativePath: "src/evil.ts", content: "evil", sizeBytes: 4 },
-      ]),
+      ], null),
     ).rejects.toThrow("Project not found");
 
     const stored = await db

@@ -15,6 +15,7 @@ import {
   GitHubNotConnectedError,
 } from "@/lib/github";
 import { GitHubInstallationGoneError } from "@/lib/github-app";
+import type { Dependency } from "@/modules/analysis";
 import { refundAnalysisUsage, withQuota } from "@/modules/billing/server";
 import {
   forgetGitHubInstallation,
@@ -120,6 +121,7 @@ async function storeExtractedFiles(
     sourceFiles: ExtractedFile[];
     allRelativePaths: string[];
     skippedLargeFiles: string[];
+    dependencies: Dependency[] | null;
   },
   nextStatus: "queued" | "processing" = "queued",
 ) {
@@ -131,7 +133,7 @@ async function storeExtractedFiles(
     isSourceFile(file.relativePath),
   );
 
-  await persistProjectFiles(userId, projectId, extracted.sourceFiles);
+  await persistProjectFiles(userId, projectId, extracted.sourceFiles, extracted.dependencies);
 
   await setProjectProgress(userId, projectId, {
     step: "Files ready for analysis",

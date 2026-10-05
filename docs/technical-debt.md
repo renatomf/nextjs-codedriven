@@ -510,8 +510,11 @@ maintainability) · **Low** (cleanup).
      severity level lower, only public-registry packages sent to OSV.
      Deterministic Security: this repository 81 (the two TD-52 advisories),
      NodeGoat 58 (40 of 380 packages vulnerable), Juice Shop 90 (no
-     lockfile, so no signal). Next: table, ingestion and report; then the
-     3-run gate with the LLM.
+     lockfile, so no signal). Production wiring done too: table
+     `project_dependencies` (migration 0014), root lockfile read at import
+     (never stored, 10 MB limit), OSV scan at report time, removed with the
+     code by retention, `/data` lists OSV. Projects imported earlier stay
+     "not scanned" until re-analyzed. Next: the 3-run gate with the LLM.
      Plausible here: 75-85.
   4. Performance: no measured signal, so it leaves the health score; its
      findings stay in the report without a number.

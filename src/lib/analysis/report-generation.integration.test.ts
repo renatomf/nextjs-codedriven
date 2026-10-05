@@ -92,7 +92,7 @@ async function analyzedProject(chunkCount = 3) {
   await persistProjectFiles(
     owner,
     project.id,
-    analysisFixtureFiles().map((file) => ({ ...file, sizeBytes: file.content.length })),
+    analysisFixtureFiles().map((file) => ({ ...file, sizeBytes: file.content.length })), null,
   );
   for (let i = 0; i < chunkCount; i += 1) {
     await db.insert(codeChunks).values({

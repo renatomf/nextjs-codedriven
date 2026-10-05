@@ -31,7 +31,7 @@ exports[`generateProjectReport (characterization) > scores the project and store
   "architecture": "Layers are mixed.",
   "codeQuality": "14 of 24 function(s) have more than 50 lines (14 with 80+); 12 large file(s).",
   "performance": "No hot spots.",
-  "security": "Pattern scan found 11 potential hardcoded secret hit(s). Input is validated.",
+  "security": "Pattern scan found 11 potential hardcoded secret hit(s). No npm lockfile: dependency versions, and their advisories, are unknown. Input is validated.",
   "testing": "Matched test files for roughly 8% of source files (3 test files found).",
 }
 `;

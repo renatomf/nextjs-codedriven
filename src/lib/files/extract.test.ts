@@ -217,3 +217,37 @@ describe("extractFromZipBuffer", () => {
     if (!result.ok) expect(result.error).toMatch(/No JavaScript\/TypeScript/);
   });
 });
+
+// ADR-012: the root npm lockfile is read for the dependency scan, never stored.
+describe("extractFromZipBuffer: dependencies", () => {
+  const lockfile = JSON.stringify({
+    lockfileVersion: 3,
+    packages: {
+      "": { dependencies: { express: "^4" } },
+      "node_modules/express": { version: "4.17.1" },
+      "node_modules/vitest": { version: "1.0.0", dev: true },
+    },
+  });
+
+  it("lists the production dependencies of the root lockfile without storing it", async () => {
+    const result = await extractOk({ "src/a.ts": "export {};", "package.json": "{}", "package-lock.json": lockfile });
+
+    expect(result.dependencies).toEqual([{ name: "express", version: "4.17.1", direct: true }]);
+    expect(paths(result.sourceFiles)).not.toContain("package-lock.json");
+  });
+
+  it("has no dependencies without a root lockfile (a nested one does not count)", async () => {
+    const result = await extractOk({ "src/a.ts": "export {};", "packages/app/package-lock.json": lockfile });
+
+    expect(result.dependencies).toBeNull();
+  });
+
+  it("reads the lockfile at the root of a stripped GitHub archive", async () => {
+    const result = await extractOk(
+      { "repo-abc/src/a.ts": "export {};", "repo-abc/package-lock.json": lockfile },
+      { stripRoot: true },
+    );
+
+    expect(result.dependencies).toHaveLength(1);
+  });
+});

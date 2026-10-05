@@ -9,10 +9,14 @@ import {
 import {
   MAX_FILE_COUNT,
   MAX_FILE_SIZE_BYTES,
+  MAX_LOCKFILE_BYTES,
   MAX_REPO_SIZE_BYTES,
   MAX_ZIP_ENTRIES,
 } from "@/lib/limits";
+import { parseNpmLockfile, type Dependency } from "@/modules/analysis";
 import JSZip from "jszip";
+
+const LOCKFILE_NAMES = new Set(["package-lock.json", "npm-shrinkwrap.json"]);
 
 export type ExtractionResult =
   | {
@@ -22,6 +26,8 @@ export type ExtractionResult =
       /** Decompressed bytes actually read. */
       totalBytes: number;
       skippedLargeFiles: string[];
+      /** Production dependencies from the root npm lockfile; null without one (ADR-012). */
+      dependencies: Dependency[] | null;
     }
   | {
       ok: false;
@@ -228,12 +234,22 @@ export async function extractFromZipBuffer(
       };
     }
 
+    // ADR-012: the root lockfile (always skipped as a file) is read only to
+    // list the production dependencies. One too large or unreadable counts
+    // as missing.
+    const lockfileEntry = candidates.find((item) => LOCKFILE_NAMES.has(item.relativePath));
+    const lockfileBytes = lockfileEntry ? await readEntryLimited(lockfileEntry.entry, MAX_LOCKFILE_BYTES) : null;
+    const lockfileText = lockfileBytes ? decodeText(lockfileBytes) : null;
+    const manifest = sourceFiles.find((file) => file.relativePath === "package.json")?.content;
+    const dependencies = lockfileText ? parseNpmLockfile(lockfileText, manifest) : null;
+
     return {
       ok: true,
       sourceFiles,
       allRelativePaths,
       totalBytes,
       skippedLargeFiles,
+      dependencies,
     };
   } catch {
     // Corrupt entry data (bad CRC, truncated stream, ...)

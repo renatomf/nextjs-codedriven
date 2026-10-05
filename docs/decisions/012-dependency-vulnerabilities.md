@@ -57,8 +57,10 @@ análise), não na ingestão (ficariam velhos).
 
 - Lockfile npm (v1, v2 e v3) lido na ingestão; só dependências de
   **produção** (as de desenvolvimento não vão para o deploy). Tabela nova.
-  O PR desta ADR traz o domínio, o cliente do OSV e a medição; a migration,
-  a ingestão e o relatório vêm no PR seguinte.
+  O primeiro PR trouxe o domínio, o cliente do OSV e a medição; o segundo,
+  a migration, a ingestão, o relatório e a página `/data`. O lockfile é lido
+  só na raiz do arquivo (até 10 MB) e nunca é guardado; projetos importados
+  antes ficam "não varridos" até a próxima análise.
 - Um achado de Security por pacote vulnerável (regra `vulnerable-dependency`),
   com a severidade do pior aviso. **Transitiva pesa um nível abaixo**
   (alta vira média): muitas vezes o código do projeto nem alcança a parte

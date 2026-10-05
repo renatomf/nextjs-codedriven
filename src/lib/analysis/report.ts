@@ -6,6 +6,8 @@ import { and, asc, eq } from "drizzle-orm";
 import { codeChunks, projects, reports, type StoredLlmReview } from "@/db/schema";
 import { structuredLanguageModelId } from "@/lib/ai/llm";
 import { computeProjectMetrics } from "@/lib/analysis/metrics";
+import { scanDependencies } from "@/lib/analysis/osv";
+import { loadProjectDependencies } from "@/lib/files/storage";
 import { loadProjectSourceFiles } from "@/lib/analysis/project-files";
 import { reviewInputHash, runLlmHealthReview } from "@/lib/analysis/report-llm";
 import type {
@@ -15,7 +17,7 @@ import type {
   ReportIssue,
 } from "@/lib/analysis/report-types";
 import { db } from "@/lib/db";
-import { buildReportFindings, diminishingPenaltyPolicy } from "@/modules/analysis";
+import { buildReportFindings, diminishingPenaltyPolicy, type DependencyScan } from "@/modules/analysis";
 import { BillingLimitError, LlmUnavailableError } from "@/modules/billing";
 import { assertLlmBudget, assertLlmEnabled, recordLlmCall } from "@/modules/billing/server";
 import { setProjectStatus } from "@/modules/projects/server";
@@ -104,6 +106,18 @@ export type StageOptions = {
 };
 
 /**
+ * Known advisories of the project's production dependencies (ADR-012). A
+ * project imported before the lockfile was read is "not-scanned" until it is
+ * re-analyzed; OSV failing makes it "unavailable", never a failed report.
+ */
+async function projectDependencyScan(userId: string, projectId: string): Promise<DependencyScan> {
+  const stored = await loadProjectDependencies(userId, projectId);
+  if (!stored) return { status: "not-scanned" };
+  if (!stored.lockfileFound) return { status: "no-lockfile" };
+  return scanDependencies(stored.dependencies);
+}
+
+/**
  * Generate and persist the project health report. `userId` must come from the
  * server session; the project is only touched if it belongs to that user.
  */
@@ -128,8 +142,9 @@ export async function generateProjectReport(
 
   try {
     const files = await loadProjectSourceFiles(userId, projectId);
+    const dependencyScan = await traced("report.dependencies", {}, () => projectDependencyScan(userId, projectId));
     const metrics = await traced("report.metrics", { files: files.length }, async () =>
-      computeProjectMetrics(files),
+      computeProjectMetrics(files, dependencyScan),
     );
 
     const chunks = await db

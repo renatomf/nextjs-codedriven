@@ -2,13 +2,14 @@ import "server-only";
 
 import { and, asc, eq, exists, sql } from "drizzle-orm";
 
-import { projectFiles, projects } from "@/db/schema";
+import { projectDependencies, projectFiles, projects } from "@/db/schema";
 import { db, type Db } from "@/lib/db";
 import {
   isSafeRelativePath,
   normalizePath,
   type ExtractedFile,
 } from "@/lib/files/filters";
+import type { Dependency } from "@/modules/analysis";
 
 /**
  * Extracted files live in `project_files` (Postgres) local `.data/` folder: serverless disks are ephemeral and not
@@ -27,6 +28,9 @@ export type ProjectManifestEntry = {
 // one huge statement (up to MAX_FILE_COUNT × MAX_FILE_SIZE_BYTES).
 const INSERT_BATCH_MAX_ROWS = 200;
 const INSERT_BATCH_MAX_BYTES = 4 * 1024 * 1024;
+
+// 4 columns per row: far below the parameter limit.
+const DEPENDENCY_BATCH_ROWS = 1_000;
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -70,14 +74,23 @@ export async function persistProjectFiles(
   userId: string,
   projectId: string,
   files: ExtractedFile[],
+  dependencies: Dependency[] | null,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const [project] = await tx
       .update(projects)
-      .set({ lastUsedAt: sql`now()`, codeRemovedAt: null })
+      .set({ lastUsedAt: sql`now()`, codeRemovedAt: null, lockfileFound: dependencies !== null })
       .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
       .returning({ id: projects.id });
     if (!project) throw new Error("Project not found");
+
+    // ADR-012: the lockfile's production dependencies, replaced with the files.
+    await tx.delete(projectDependencies).where(eq(projectDependencies.projectId, projectId));
+    for (let i = 0; i < (dependencies?.length ?? 0); i += DEPENDENCY_BATCH_ROWS) {
+      await tx
+        .insert(projectDependencies)
+        .values(dependencies!.slice(i, i + DEPENDENCY_BATCH_ROWS).map((d) => ({ projectId, ...d })));
+    }
 
     await tx.delete(projectFiles).where(eq(projectFiles.projectId, projectId));
 
@@ -174,4 +187,26 @@ export async function deleteProjectFiles(
         exists(ownedProject(db, userId, projectId)),
       ),
     );
+}
+
+/**
+ * The project's production dependencies for the advisory scan (ADR-012):
+ * null when the lockfile was never read (imported before ADR-012), an empty
+ * `dependencies` with `lockfileFound: false` when the project has none.
+ */
+export async function loadProjectDependencies(
+  userId: string,
+  projectId: string,
+): Promise<{ lockfileFound: boolean; dependencies: Dependency[] } | null> {
+  const [project] = await db
+    .select({ lockfileFound: projects.lockfileFound })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+    .limit(1);
+  if (!project || project.lockfileFound === null) return null;
+  const dependencies = await db
+    .select({ name: projectDependencies.name, version: projectDependencies.version, direct: projectDependencies.direct })
+    .from(projectDependencies)
+    .where(eq(projectDependencies.projectId, projectId));
+  return { lockfileFound: project.lockfileFound, dependencies };
 }

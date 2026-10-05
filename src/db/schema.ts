@@ -164,10 +164,30 @@ export const projects = pgTable(
     // removed and cleared when it is imported again.
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }).defaultNow().notNull(),
     codeRemovedAt: timestamp("code_removed_at", { withTimezone: true }),
+    // Whether the last import found a root npm lockfile (ADR-012): null when
+    // it was never read (imported before ADR-012, or code removed).
+    lockfileFound: boolean("lockfile_found"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [index("projects_user_id_idx").on(t.userId)],
+).enableRLS();
+
+// Production dependencies from the project's npm lockfile (ADR-012), for the
+// advisory scan at report time. Replaced on every import, removed with the code.
+export const projectDependencies = pgTable(
+  "project_dependencies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    version: text("version").notNull(),
+    direct: boolean("direct").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("project_dependencies_project_id_idx").on(t.projectId)],
 ).enableRLS();
 
 // Extracted files of a project (replaces the tutorial's local .data/ folder,

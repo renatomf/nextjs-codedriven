@@ -15,6 +15,8 @@ export const UPLOAD_TOO_BIG_MESSAGE =
 /** JS/TS files per repository (the files that are read and analyzed). */
 export const MAX_FILE_COUNT = 1000;
 export const MAX_FILE_SIZE_BYTES = 500 * 1024; // 500 KB
+/** The root npm lockfile, read for the dependency scan and never stored (ADR-012). */
+export const MAX_LOCKFILE_BYTES = 10 * 1024 * 1024; // 10 MB
 /** Raw ZIP entries (before filtering); bounds work on hostile archives. */
 export const MAX_ZIP_ENTRIES = 50_000;
 
