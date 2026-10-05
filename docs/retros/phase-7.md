@@ -4,7 +4,7 @@
   de 2026-10-04 (PR #132) a 2026-10-05 (PR #136)
 - **Estimado × real:** sem estimativa prévia; real de 1 dia (PRs #55 a #76) e mais 2 dias de
   ajustes (#132 a #136)
-- **Números:** README (tabela "Antes × Depois"), ADR-010 e `evals/results/`
+- **Números:** [results/before-after.md](../results/before-after.md), ADR-010 e `evals/results/`
 
 1. **O que funcionou:** primeiro o harness, depois as melhorias, sempre
    contra um baseline versionado. Cada mudança de prompt passou a ter antes

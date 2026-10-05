@@ -92,8 +92,10 @@ caracterização da análise em snapshot). As Fases 4 a 6 não dependem da 7.
       repo zerada por ruído (2026-09-30, `c75ebff`: Code Quality 0 → 67,
       Testing 0 → 16; Testing segue baixo pelo limite do proxy de testes,
       v2.1)
-- [x] `baseline.md` × números atuais publicados no README (tabela "Antes ×
-      Depois (2026-10-04)", #137)
+- [x] `baseline.md` × números atuais publicados (tabela "Antes × Depois
+      (2026-10-04)", #137; desde 2026-10-05 em
+      [results/before-after.md](results/before-after.md), e o README abre
+      com o app)
 
 ---
 
