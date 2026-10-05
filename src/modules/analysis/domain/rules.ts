@@ -1,4 +1,5 @@
 import type { Finding } from "./finding";
+import { HIGH_FAN_OUT, type ImportGraphMeasures } from "./import-graph";
 
 /** What the deterministic scan measured in a project (see `measureProject`). */
 export type ProjectMeasures = {
@@ -12,7 +13,7 @@ export type ProjectMeasures = {
   testedSourceApproxPercent: number;
   untestedCriticalPaths: string[];
   secretHits: Array<{ filePath: string; line: number; hint: string }>;
-};
+} & ImportGraphMeasures;
 
 /**
  * One heuristic of the deterministic analysis: turns measures into findings.
@@ -109,6 +110,39 @@ export const hardcodedSecretRule: Rule = {
     })),
 };
 
+export const importCycleRule: Rule = {
+  id: "import-cycle",
+  group: {
+    title: "Import cycles",
+    description:
+      "Files that import each other in a loop: none can change, be tested or be understood on its own. Break the cycle with a shared module or by inverting a dependency.",
+  },
+  findings: ({ importCycles }) =>
+    importCycles.slice(0, 10).map((cycle) => ({
+      title: `Import cycle (${cycle.length} files)`,
+      description: `These files import each other in a loop: ${cycle.slice(0, 6).join(", ")}${cycle.length > 6 ? ", …" : ""}.`,
+      severity: cycle.length > 5 ? "high" : "medium",
+      category: "architecture",
+      filePath: cycle[0],
+    })),
+};
+
+export const highFanOutRule: Rule = {
+  id: "high-fan-out",
+  group: {
+    title: "Files that import too many modules",
+    description: `Files (not module facades) importing more than ${HIGH_FAN_OUT} project modules: hubs that know too much and change with everything. Split them by responsibility.`,
+  },
+  findings: ({ highFanOutModules }) =>
+    highFanOutModules.slice(0, 10).map((hub) => ({
+      title: `File imports ${hub.fanOut} modules`,
+      description: `This file imports ${hub.fanOut} project modules (more than ${HIGH_FAN_OUT}): it knows too much about the rest of the code.`,
+      severity: hub.fanOut >= 50 ? "high" : "medium",
+      category: "architecture",
+      filePath: hub.filePath,
+    })),
+};
+
 /** In report order. */
 export const DETERMINISTIC_RULES: Rule[] = [
   largeFileRule,
@@ -116,4 +150,6 @@ export const DETERMINISTIC_RULES: Rule[] = [
   lowTestCoverageRule,
   untestedCriticalPathRule,
   hardcodedSecretRule,
+  importCycleRule,
+  highFanOutRule,
 ];

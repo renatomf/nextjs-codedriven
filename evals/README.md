@@ -119,6 +119,8 @@ and the run fails if a change makes the analysis worse (`GATE` in
 [analysis/analysis.eval.ts](analysis/analysis.eval.ts)):
 
 - annotated cases: precision and recall stay at 1.00;
+- deterministic Architecture (import graph, ADR-013): Juice Shop scores
+  below this repository;
 - real repositories: at least as many annotated vulnerable lines in the LLM
   review sample as the last improvement reached (NodeGoat: 5 of 9; Juice
   Shop: 2 of 8);

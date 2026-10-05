@@ -15,6 +15,7 @@ on:
       - "!src/modules/analysis/domain/scoring.ts"
       - "!src/modules/analysis/domain/grouping.ts"
       - "!src/modules/analysis/**/*.test.ts"
+      - "!src/modules/analysis/domain/import-graph.ts"
       # The chunks the review sample is drawn from, and how repositories are read.
       - "src/lib/analysis/chunking.ts"
       - "src/lib/analysis/syntax-tree.ts"

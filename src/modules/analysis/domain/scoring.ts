@@ -69,20 +69,29 @@ function scoreWith(
 
 /** Code Quality points per percentage point of functions over `LONG_FUNCTION_LINES` (ADR-010, TD-50). */
 const LONG_FUNCTION_WEIGHT = 4;
+/** Architecture points per percentage point of modules in cycles, or of hubs (ADR-013). */
+const GRAPH_WEIGHT = 4;
+
+const percentOf = (part: number, whole: number) => (whole === 0 ? 0 : (100 * part) / whole);
 
 /**
  * Base per category, adjusted by a few measures. Testing (ADR-010 review,
  * 2026-10-04): no test file at all → 0; otherwise 40 + 0.6 × the share of
  * logic files with tests, so every point of coverage counts. Code Quality
  * (2026-10-05): 100 − 4 × the share of functions longer than ESLint's
- * default, so a quarter of them reaches 0. The other bases are unchanged
- * since v1.
+ * default, so a quarter of them reaches 0. Architecture (ADR-013): 100 −
+ * 4 × the share of modules in import cycles − 4 × the share of hubs (files
+ * importing more than HIGH_FAN_OUT modules). Security is unchanged since v1.
  */
 function categoryBases(measures: ProjectMeasures): CategoryScores {
-  const longFunctionPercent =
-    measures.functionCount === 0 ? 0 : (100 * measures.longFunctionCount) / measures.functionCount;
+  const longFunctionPercent = percentOf(measures.longFunctionCount, measures.functionCount);
+  const inCycles = percentOf(
+    measures.importCycles.reduce((sum, cycle) => sum + cycle.length, 0),
+    measures.moduleCount,
+  );
+  const hubs = percentOf(measures.highFanOutModules.length, measures.moduleCount);
   return {
-    architecture: 88,
+    architecture: 100 - GRAPH_WEIGHT * inCycles - GRAPH_WEIGHT * hubs,
     security: measures.secretHits.length > 0 ? 70 : 90,
     performance: 86,
     codeQuality: 100 - LONG_FUNCTION_WEIGHT * longFunctionPercent,
@@ -91,12 +100,13 @@ function categoryBases(measures: ProjectMeasures): CategoryScores {
 }
 
 /**
- * Deterministic Code Quality findings (long functions, large files) stay in
- * the report but are not charged again: the Code Quality base already
- * measures function length (TD-50). LLM findings are always charged.
+ * Deterministic Code Quality and Architecture findings stay in the report
+ * but are not charged again: their category bases already measure them
+ * (function length, TD-50; the import graph, ADR-013). LLM findings are
+ * always charged.
  */
 function isCharged(finding: Finding): boolean {
-  return !(finding.category === "codeQuality" && finding.rule);
+  return !((finding.category === "codeQuality" || finding.category === "architecture") && finding.rule);
 }
 
 function healthOf(categoryScores: CategoryScores): number {

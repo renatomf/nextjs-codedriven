@@ -75,6 +75,8 @@ exports[`computeProjectMetrics (characterization) > produces the same metrics, i
     },
   ],
   "functionCount": 24,
+  "highFanOutModules": [],
+  "importCycles": [],
   "issues": [
     {
       "category": "codeQuality",
@@ -456,6 +458,7 @@ exports[`computeProjectMetrics (characterization) > produces the same metrics, i
     },
   ],
   "longFunctionCount": 14,
+  "moduleCount": 25,
   "secretHits": [
     {
       "filePath": "src/config.ts",

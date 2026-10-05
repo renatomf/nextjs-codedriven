@@ -97,6 +97,9 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
     testedSourceApproxPercent: 0,
     untestedCriticalPaths: [],
     secretHits: [],
+    moduleCount: 0,
+    importCycles: [],
+    highFanOutModules: [],
   };
   const eight = Array.from({ length: 8 }, (_, i) => untested(`f${i}`));
 
@@ -107,10 +110,10 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
     ).toBe(16);
   });
 
-  it("keeps the v1 scores when nothing repeats (except Code Quality, measured since TD-50)", () => {
+  it("keeps the v1 scores when nothing repeats (except what TD-50 measures now: Code Quality, Architecture)", () => {
     const findings = [untested("src/a.ts"), finding({ category: "security", severity: "critical" })];
     const withoutCodeQuality = (scores: Record<string, number>) =>
-      Object.fromEntries(Object.entries(scores).filter(([category]) => category !== "codeQuality"));
+      Object.fromEntries(Object.entries(scores).filter(([category]) => !["codeQuality", "architecture"].includes(category)));
 
     expect(withoutCodeQuality(diminishingPenaltyPolicy({ measures, findings }).categoryScores)).toEqual(
       withoutCodeQuality(linearPenaltyPolicy({ measures, findings }).categoryScores),
@@ -135,6 +138,9 @@ describe("Testing base", () => {
         testedSourceApproxPercent,
         untestedCriticalPaths: [],
         secretHits: [],
+        moduleCount: 0,
+        importCycles: [],
+        highFanOutModules: [],
       },
       findings: [],
     }).categoryScores.testing;
@@ -171,6 +177,9 @@ describe("Code Quality base", () => {
         testedSourceApproxPercent: 0,
         untestedCriticalPaths: [],
         secretHits: [],
+        moduleCount: 0,
+        importCycles: [],
+        highFanOutModules: [],
       },
       findings,
     }).categoryScores.codeQuality;
