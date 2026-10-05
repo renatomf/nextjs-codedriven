@@ -62,3 +62,13 @@ next-env.d.ts
 /src/app/.well-known/workflow
 /.swc
 .coverage/
+
+# Vitest cache (JSON reporter output)
+/.vitest/
+
+# graphify (local knowledge-graph output)
+/graphify-out/
+
+# editors and OS
+.idea/
+Thumbs.db

@@ -37,7 +37,7 @@ Em vez de ajustar a nota até ela ficar bonita, a v2 tratou o analisador como um
 | Testing deste repositório | 0 (relatório de 2026-09-29) | **80** | Heurística calibrada contra a cobertura real do v8 ([ADR-010](docs/decisions/010-score-formula.md)): 66% medido, 63% real |
 | Achados falsos do LLM | sem medição | casos proibidos no eval | O LLM eval roda o modelo real e falha se um falso positivo conhecido voltar |
 | Testes | 43 unitários | **543 unitários, 180 de integração (Postgres real), 7 E2E** | Vitest e Playwright no CI |
-| Onde a análise roda | dentro da request (até 300 s) | Vercel Workflow com retry por etapa | E2E na build de produção ([resultados da Fase 5](docs/results-phase-5.md)) |
+| Onde a análise roda | dentro da request (até 300 s) | Vercel Workflow com retry por etapa | E2E na build de produção ([resultados da Fase 5](docs/results/phase-5.md)) |
 | Função com o runtime ONNX | 247,8 MiB (a 2,2 MiB do limite) | 36,0 MiB | Tamanho da função na Vercel |
 | Embeddings de código sem mudança | todos de novo (~44 s) | reaproveitados por hash | Log de produção: 344 de 344 reaproveitados |
 | Credenciais do usuário guardadas | token OAuth com acesso de escrita a todos os repositórios | **nenhuma**: GitHub App só de leitura, token de 1 h | [ADR-007](docs/decisions/007-github-app.md) |
@@ -302,7 +302,7 @@ nextjs-codedriven/
   - **achados proibidos**, os falsos positivos conhecidos que não podem voltar.
 
   Cada versão do prompt fica registrada com o resultado que a mediu ([`evals/prompts.lock.json`](evals/prompts.lock.json)).
-- **Medição antes de otimizar:** todo número da documentação tem data e método ([baseline](docs/baseline.md), resultados das fases [3](docs/results-phase-3.md), [5](docs/results-phase-5.md) e [6](docs/results-phase-6.md)).
+- **Medição antes de otimizar:** todo número da documentação tem data e método ([baseline](docs/baseline.md), resultados das fases [3](docs/results/phase-3.md), [5](docs/results/phase-5.md) e [6](docs/results/phase-6.md)).
 
 ## Scripts disponíveis
 

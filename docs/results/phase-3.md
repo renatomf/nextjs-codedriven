@@ -1,17 +1,17 @@
 # Resultados da Fase 3 — antes × depois
 
-Comparação com o [baseline.md](baseline.md) (2026-09-29, commit `185894f`).
+Comparação com o [baseline.md](../baseline.md) (2026-09-29, commit `185894f`).
 Mesmas regras: cada número tem data e método; o que não foi medido aparece
 como **não medido**.
 
 Data: **2026-09-30** · commit da `main`: `29353ac` (PR #50) · arquitetura em
-[architecture.md](architecture.md).
+[architecture.md](../architecture.md).
 
 ## Código (`npm run measure:code`)
 
 Método: o baseline descreve o script mas não o versionou; este foi
 reescrito a partir da descrição e agora está em
-[scripts/measure-code.mjs](../scripts/measure-code.mjs), para a próxima
+[scripts/measure-code.mjs](../../scripts/measure-code.mjs), para a próxima
 comparação ser exata. "Teste" = `*.test.ts(x)` e `src/test/`.
 
 | Métrica | Antes | Depois | Meta da Fase 3 |
@@ -29,7 +29,7 @@ Os 7 arquivos de fora dos módulos com acesso ao banco: `src/db/schema.ts` e
 `src/lib/db.ts` (a própria infraestrutura), `src/lib/auth.ts` (adapter do
 NextAuth), `src/lib/rate-limit.ts`, `src/lib/files/storage.ts`,
 `src/lib/analysis/report.ts` e `src/lib/actions/analysis.ts` (ver
-"O que ainda não está nos módulos" em [architecture.md](architecture.md)).
+"O que ainda não está nos módulos" em [architecture.md](../architecture.md)).
 
 ## Testes
 

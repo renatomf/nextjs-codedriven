@@ -2,11 +2,11 @@
 
 Ingestão assíncrona. Início: fechamento da Fase 4 (2026-10-02, commit
 `100050d`, PR #85). Fim: **2026-10-04**, commit da `main` `1ef39e7` (PR #116).
-Mesmas regras do [baseline.md](baseline.md): cada número tem data e método;
+Mesmas regras do [baseline.md](../baseline.md): cada número tem data e método;
 o que não foi medido aparece como **não medido**. Decisões:
-[ADR-005](decisions/005-job-runner.md) (Vercel Workflows),
-[ADR-011](decisions/011-zip-upload-storage.md) (upload de ZIP),
-[ADR-006](decisions/006-embeddings-runtime.md) (embeddings).
+[ADR-005](../decisions/005-job-runner.md) (Vercel Workflows),
+[ADR-011](../decisions/011-zip-upload-storage.md) (upload de ZIP),
+[ADR-006](../decisions/006-embeddings-runtime.md) (embeddings).
 
 ## O que mudou no comportamento
 

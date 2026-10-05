@@ -73,6 +73,6 @@ números vêm das constantes do código.
   e o teste de varredura a cobre. Todo novo dado externo entra na ordem
   acima, antes do banco.
 - **Não medido ainda:** a primeira remoção real em produção só acontece 90
-  dias depois da migração 0010 ([resultados da Fase 6](../results-phase-6.md)).
+  dias depois da migração 0010 ([resultados da Fase 6](../results/phase-6.md)).
 - **Revisão:** um pedido legal ou de usuário por outro prazo, ou planos com
   retenção diferente.

@@ -12,7 +12,7 @@ como **provisória** ([modules.md](../modules.md)) até haver mais de um
 módulo com regra de negócio de verdade. A Fase 3 migrou seis: billing
 (piloto), projects, ingestion, analysis, chat e identity. Com isso dá para
 ver o que se repetiu e o que foi exceção
-([results-phase-3.md](../results-phase-3.md)).
+([results/phase-3.md](../results/phase-3.md)).
 
 ## Problema
 

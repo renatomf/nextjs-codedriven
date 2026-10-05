@@ -2,11 +2,11 @@
 
 Retrato de **como o sistema é hoje** (fim da Fase 3 do
 [roadmap-v2.md](roadmap-v2.md), com o que as Fases 7, 4, 5 e 6 acrescentaram;
-a Fase 5 em [results-phase-5.md](results-phase-5.md), a 6 em
-[results-phase-6.md](results-phase-6.md)): um monólito modular com Clean Architecture
+a Fase 5 em [results/phase-5.md](results/phase-5.md), a 6 em
+[results/phase-6.md](results/phase-6.md)): um monólito modular com Clean Architecture
 e DDD aplicados só onde há regra de negócio ([ADR-001](decisions/001-modular-monolith.md)).
 O "antes" está em [architecture-baseline.md](architecture-baseline.md); a
-comparação medida, em [results-phase-3.md](results-phase-3.md). Convenções
+comparação medida, em [results/phase-3.md](results/phase-3.md). Convenções
 dos módulos em [modules.md](modules.md); linguagem em [glossary.md](glossary.md).
 
 ## C4 — nível 1: contexto
@@ -241,6 +241,8 @@ infraestrutura usada por vários módulos, não regra de negócio de um só
 | `db.ts` | cliente do Postgres (Drizzle + `pg`; TLS: ver TD-38) | todo acesso a dados passa por ele |
 | `auth.config.ts` | provedores e callbacks do NextAuth sem o banco | o `proxy.ts` usa esta parte, que não pode carregar o adapter |
 | `github.ts`, `github-app.ts`, `github-api.ts` | GitHub App (JWT, token de instalação, repositórios, desinstalação), `state` assinado do callback, zipball | integração externa |
+| `github-uninstall.ts` | remove o GitHub App das contas que só este usuário vinculou (desconectar, excluir a conta) | usa o identity e o cliente do App |
+| `account-deletion.ts` | exclusão da conta, nesta ordem: assinatura no Stripe, ZIPs ainda não importados, GitHub App, dados em uma transação | orquestra billing, identity, o storage e o GitHub |
 | `limits.ts` | limites e filtros da importação (pastas excluídas, arquivos sensíveis) e o top-k do RAG | usados pela extração, pela análise e pelo chat |
 | `utils.ts` | `cn()` das classes CSS | os componentes do shadcn importam `@/lib/utils` |
 | `projects.ts` | `cache()` do React sobre o resumo do projeto | cola do Next: o módulo projects não depende do React |
@@ -253,7 +255,7 @@ Os testes de integração na raiz (`chat`, `project-import`,
 que atravessam vários módulos; por isso não estão dentro de um deles.
 
 Arquivos de produção com acesso ao banco ou ao Drizzle: 17 (eram 27), 11
-deles dentro dos módulos ([results-phase-3.md](results-phase-3.md)).
+deles dentro dos módulos ([results/phase-3.md](results/phase-3.md)).
 
 ## Qualidade e entrega
 
