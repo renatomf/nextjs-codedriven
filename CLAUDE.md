@@ -24,4 +24,5 @@
 
 # Pending reminders (tracked in the roadmap)
 - Analysis-quality fixes (score caps, grouping repeated findings, chunk sampling, LLM evidence, heuristic false positives): roadmap Phase 7 and TD-31.
-- Unused `ca-*` classes in `globals.css` and the rename to `nextjs-codedriven` (domain, comments, local folder): roadmap "Encerramento da v2.0".
+- Closing v2.0 (roadmap "Encerramento da v2.0"): the ONNX postmortem (`docs/postmortems/`), video, article and the pending decisions are the author's; then the tag `v2.0.0`, and the local folder rename to `nextjs-codedriven` last.
+- Score calibration (TD-50) and the remaining LLM false positives (TD-51): after v2.0.

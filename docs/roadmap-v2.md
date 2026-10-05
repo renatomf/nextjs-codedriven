@@ -54,17 +54,20 @@ Cada fase tem itens **obrigatórios** (a v2.0 não sai sem eles) e itens
 
 ### Planejamento
 
+Nenhuma fase teve estimativa antes de começar: a coluna fica vazia em vez de
+preenchida depois do fato. "Real" são as datas dos PRs (`git log`).
+
 | Fase | Estimativa (semanas) | Real | Status |
 |---|---|---|---|
-| Marco 0 — Congelar a v1 | | | |
-| 1 — Baseline | | | |
-| 2 — Rede de segurança | | | |
-| 3 — Monólito modular + Clean Architecture | | | |
-| 4 — Observabilidade e custo | | | |
-| 5 — Ingestão assíncrona | | | |
-| 6 — Segurança e dados | | | |
-| 7 — Evals + qualidade da análise | | | |
-| Encerramento v2.0 | | | |
+| Marco 0 — Congelar a v1 | — | 2026-09-28 (tag `v1-tutorial`) a 2026-09-29 (#19) | concluído |
+| 1 — Baseline | — | 2026-09-29 (#18) | concluído |
+| 2 — Rede de segurança | — | 2026-09-28 (#1) a 2026-09-29 (#16) | concluído |
+| 3 — Monólito modular + Clean Architecture | — | 2026-09-29 (#23) a 2026-09-30 (#51) | concluído |
+| 4 — Observabilidade e custo | — | 2026-10-01 (#77 a #84) | concluído |
+| 5 — Ingestão assíncrona | — | 2026-10-02 (#87) a 2026-10-04 (#116) | concluído |
+| 6 — Segurança e dados | — | 2026-10-04 (#118 a #131) | concluído |
+| 7 — Evals + qualidade da análise | — | 2026-09-30 (#55 a #76); ajustes até 2026-10-05 (#132 a #136) | concluído |
+| Encerramento v2.0 | — | desde 2026-10-04 (#137) | em andamento |
 
 **Ordem de execução (decidida em 2026-09-30):** Fase 3 → **Fase 7 (evals e
 prompts)** → Fases 4, 5 e 6. A qualidade do relatório é o que quem avalia
@@ -74,17 +77,23 @@ caracterização da análise em snapshot). As Fases 4 a 6 não dependem da 7.
 
 ### Critérios de saída da v2.0
 
-- [ ] CI verde em todo PR, com testes de IDOR e o E2E do fluxo principal
-- [ ] Zero import de `@/lib/db` / `@/db/schema` em `src/app`
-- [ ] Regras de dependência entre camadas e módulos verificadas no CI
+- [x] CI verde em todo PR, com testes de IDOR e o E2E do fluxo principal
+      (`main` exige lint/typecheck/test/build, integração com
+      `tenant-isolation`, E2E e OSV)
+- [x] Zero import de `@/lib/db` / `@/db/schema` em `src/app` (2026-10-05:
+      nenhum arquivo)
+- [x] Regras de dependência entre camadas e módulos verificadas no CI
+      (`npm run lint:arch` no `ci.yml`; violações conhecidas: 0)
 - [x] Análise rodando em job, com retry e sem projetos travados
 - [x] Relatório sai (só determinístico) mesmo com o LLM fora
-- [ ] Token de GitHub só com leitura (GitHub App)
+- [x] Token de GitHub só com leitura (GitHub App, ADR-007; TD-15 feito em
+      #127 a #130)
 - [x] `npm run eval` com resultado versionado; nenhuma categoria do próprio
       repo zerada por ruído (2026-09-30, `c75ebff`: Code Quality 0 → 67,
       Testing 0 → 16; Testing segue baixo pelo limite do proxy de testes,
       v2.1)
-- [ ] `baseline.md` × números atuais publicados no README
+- [x] `baseline.md` × números atuais publicados no README (tabela "Antes ×
+      Depois (2026-10-04)", #137)
 
 ---
 
@@ -149,7 +158,7 @@ de qualquer achado do LLM):
       variáveis só de preview na Vercel (sem `AUTH_URL`, com `AUTH_SECRET`,
       `ENCRYPTION_KEY` e `GROQ_API_KEY` próprios; OAuth e Stripe só em
       produção).
-- [ ] **Testes de caracterização**, por prioridade de risco:
+- [x] **Testes de caracterização**, por prioridade de risco:
   1. [x] Segurança (código puro): `extract` (zip-slip, zip bomb, symlink,
      limite de entradas, arquivo sensível), `encryption` (ida e volta,
      adulteração, AAD de outro usuário), estado OAuth do GitHub (expirado,
@@ -162,9 +171,9 @@ de qualquer achado do LLM):
 - [x] **Fronteira HTTP** (handler chamado direto, `auth()` mockado): sem
       sessão → 401, input inválido → 400 sem detalhes internos, rate limit →
       429.
-- [ ] **Webhook do Stripe (TD-37):** rota com verificação de assinatura
+- [x] **Webhook do Stripe (TD-37):** rota com verificação de assinatura
       (`constructEvent`) que sincroniza cancelamento, falha de pagamento e
-      expiração; teste de assinatura inválida → 400.
+      expiração; teste de assinatura inválida → 400 (#13).
 - [x] **Testes de integração de IDOR:** o usuário B nunca lê, altera ou apaga
       um projeto, arquivo, relatório ou chat do usuário A. Também cobrem o
       limite de projetos sob concorrência e a exclusão em cascata.
@@ -848,11 +857,15 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 - [x] Relatório de demonstração publicado pelo **link público** (Fase 3) e
       linkado no README: quem avalia não precisa criar conta, conectar o
       GitHub nem esperar uma análise.
-- [ ] **Postmortems** dos incidentes reais, escritos pelo autor, em
-      `docs/postmortems/` (linha do tempo, causa raiz, impacto, correção, o
-      que mudou para não repetir): análise quebrada em produção desde o
-      primeiro deploy (ONNX na Vercel), variáveis de produção apagadas ao
-      separar ambientes (TD-36), cancelamento que mantinha o premium (TD-37).
+- [ ] **Postmortem** do incidente de maior impacto, escrito pelo autor
+      (linha do tempo, causa raiz, impacto, correção, o que mudou para não
+      repetir): análise quebrada em produção desde o primeiro deploy (ONNX na
+      Vercel), em
+      [docs/postmortems/2026-09-29-onnx-on-vercel.md](postmortems/2026-09-29-onnx-on-vercel.md)
+      (os fatos já estão lá). Decidido em 2026-10-05: um só. Os outros dois
+      incidentes ficam documentados nos TDs, que já têm causa, impacto e
+      correção: variáveis de produção apagadas ao separar ambientes (TD-36) e
+      cancelamento que mantinha o premium (TD-37).
 - [ ] Vídeo de 2 a 3 minutos do fluxo principal.
 - [ ] Artigo técnico (ex.: "por que o meu analisador deu 0 para o próprio
       código").
