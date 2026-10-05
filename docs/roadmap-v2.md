@@ -1002,8 +1002,11 @@ nota boa.
       saudável acima de 75).
 - [ ] **Performance** sai da nota geral (sem sinal medido); os achados ficam
       no relatório.
-- [ ] **Architecture:** ciclos de import e fan-in/fan-out pelo grafo de
-      imports; limiares numa ADR.
+- [x] **Architecture:** ciclos de import e fan-in/fan-out pelo grafo de
+      imports; limiares numa ADR (2026-10-05,
+      [ADR-013](decisions/013-architecture-import-graph.md)): base 100 − 4 ×
+      % em ciclos − 4 × % de hubs; este repositório 100, NodeGoat 100, Juice
+      Shop 73 (determinístico).
 - [ ] Nota geral só com categorias calibradas; o relatório separa a parte
       determinística da parte do LLM.
 - [ ] TD-51: os dois falsos positivos do LLM neste repositório.
@@ -1068,6 +1071,7 @@ Mudam o roadmap a partir da v2.2.
 | 009 | [Estratégia de evals e gate no CI](decisions/009-evals.md) — aceita (registro retroativo) | 7 |
 | 010 | [Fórmula do score (penalidade com teto)](decisions/010-score-formula.md) — aceita; revisões de Testing e Code Quality | 7, v2.1 |
 | 011 | [Onde o ZIP enviado fica até o job processá-lo](decisions/011-zip-upload-storage.md) (TD-45) — aceita | 5 |
+| 013 | [Nota de Architecture pelo grafo de imports](decisions/013-architecture-import-graph.md) (TD-50) — aceita | v2.1 |
 
 Formato: contexto, problema, opções (inclusive as rejeitadas), decisão,
 trade-offs, consequências.

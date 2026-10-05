@@ -65,6 +65,21 @@ async function eslintLongFunctionPercent(files: SourceFile[]): Promise<number> {
 
 const round1 = (value: number) => Math.round(value * 10) / 10;
 
+/** The deterministic Architecture score from the import graph (ADR-013). */
+function architecture(metrics: DeterministicMetrics) {
+  const { categoryScores } = diminishingPenaltyPolicy({
+    measures: metrics,
+    findings: buildReportFindings(metrics.issues, []),
+  });
+  return {
+    score: categoryScores.architecture,
+    modules: metrics.moduleCount,
+    modulesInCycles: metrics.importCycles.reduce((sum, cycle) => sum + cycle.length, 0),
+    cycles: metrics.importCycles.length,
+    hubs: metrics.highFanOutModules.map((hub) => `${hub.filePath} (${hub.fanOut})`),
+  };
+}
+
 /** The deterministic Code Quality score next to its reference (TD-50). */
 async function codeQuality(files: SourceFile[], metrics: DeterministicMetrics) {
   const { categoryScores } = diminishingPenaltyPolicy({
@@ -127,6 +142,7 @@ async function realRepository(repoCase: RepoCase) {
     expectedTotal: expected.length,
     expected,
     codeQuality: await codeQuality(files, metrics),
+    architecture: architecture(metrics),
     issues: metrics.issues.map(({ title, severity, category, filePath }) => ({
       title,
       severity,
@@ -176,6 +192,7 @@ async function thisRepository() {
     // LLM in the product, so here they stay at their base score. `v1` is the
     // linear policy, kept for comparison.
     codeQuality: await codeQuality(files, metrics),
+    architecture: architecture(metrics),
     deterministicCategoryScores: current.categoryScores,
     deterministicHealthScore: current.healthScore,
     v1DeterministicCategoryScores: v1.categoryScores,
@@ -242,10 +259,10 @@ it("measures the deterministic analysis", async () => {
           `${c.falsePositives.length} false positive(s), ${c.missed.length} missed`,
       ),
       `  total: precision ${result.analysis.totals.precision.toFixed(2)}, recall ${result.analysis.totals.recall.toFixed(2)}`,
-      `  this repository: ${result.analysis.thisRepository.findings} findings in ${result.analysis.thisRepository.reportFindings} report lines, deterministic health ${result.analysis.thisRepository.deterministicHealthScore} (v1: ${result.analysis.thisRepository.v1DeterministicHealthScore}), ${codeQualityLine(result.analysis.thisRepository.codeQuality)}`,
+      `  this repository: ${result.analysis.thisRepository.findings} findings in ${result.analysis.thisRepository.reportFindings} report lines, deterministic health ${result.analysis.thisRepository.deterministicHealthScore} (v1: ${result.analysis.thisRepository.v1DeterministicHealthScore}), ${codeQualityLine(result.analysis.thisRepository.codeQuality)}, ${architectureLine(result.analysis.thisRepository.architecture)}`,
       ...result.analysis.realRepositories.map(
         (r) =>
-          `  ${r.name}: ${r.sourceFiles} files, ${r.chunks} chunks, ${r.findings} findings; annotated lines in the review sample: ${r.expectedInSample}/${r.expectedTotal}; ${codeQualityLine(r.codeQuality)}`,
+          `  ${r.name}: ${r.sourceFiles} files, ${r.chunks} chunks, ${r.findings} findings; annotated lines in the review sample: ${r.expectedInSample}/${r.expectedTotal}; ${codeQualityLine(r.codeQuality)}; ${architectureLine(r.architecture)}`,
       ),
       `  review sample: ${result.analysis.thisRepository.reviewSample.chunks} chunks from ${result.analysis.thisRepository.reviewSample.files} files in ${result.analysis.thisRepository.reviewSample.directories} directories (${result.analysis.thisRepository.reviewSample.testFiles} test files)`,
     ].join("\n"),
@@ -270,6 +287,12 @@ it("measures the deterministic analysis", async () => {
   ]) {
     expect(tokens, `${name}: estimated review request tokens`).toBeLessThanOrEqual(REVIEW_MAX_REQUEST_TOKENS);
   }
+  // ADR-013: Juice Shop (import cycles, a server.ts importing 91 modules)
+  // scores below this repository on deterministic Architecture.
+  const juice = result.analysis.realRepositories.find((r) => r.name === "juice-shop");
+  expect(juice?.architecture.score, "Architecture: Juice Shop vs this repository").toBeLessThan(
+    result.analysis.thisRepository.architecture.score,
+  );
   // TD-50: Code Quality ranks the repositories as ESLint's long-function
   // share does (fewer long functions, higher score).
   const ranked = [
@@ -298,6 +321,9 @@ type CodeQuality = { score: number; longFunctionPercent: number; eslintLongFunct
 
 const codeQualityLine = (c: CodeQuality) =>
   `Code Quality ${c.score} (${c.longFunctionPercent}% of functions over ${LONG_FUNCTION_LINES} lines; ESLint ${c.eslintLongFunctionPercent}%)`;
+
+const architectureLine = (a: { score: number; modules: number; modulesInCycles: number; hubs: string[] }) =>
+  `Architecture ${a.score} (${a.modulesInCycles} of ${a.modules} modules in import cycles, ${a.hubs.length} hub(s))`;
 
 type EvalResult = {
   commit: string;

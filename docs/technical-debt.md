@@ -511,6 +511,10 @@ maintainability) · **Low** (cleanup).
   5. Architecture: import cycles and files with high fan-in and fan-out,
      from the import graph the Testing estimate already follows; thresholds
      in an ADR. Plausible here: 80-90 (`lint:arch` reports 0 violations).
+     Done (2026-10-05, ADR-013): base 100 − 4 × % of modules in cycles − 4
+     × % of hubs (importing over 20 modules, re-exporting facades left
+     out); cycles match dependency-cruiser on Juice Shop (21 modules).
+     Deterministic: this repository 100, NodeGoat 100, Juice Shop 73.
   6. The health score averages only calibrated categories; the report
      shows the deterministic part apart from the LLM part.
 - **Phase:** v2.1 (roadmap "v2.1 — Calibração das notas"). Until it closes

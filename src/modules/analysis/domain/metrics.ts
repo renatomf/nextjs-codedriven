@@ -1,4 +1,5 @@
 import type { Finding } from "./finding";
+import { analyzeImportGraph, type ImportNode } from "./import-graph";
 import { isTestFile, pathWords } from "./paths";
 import { DETERMINISTIC_RULES, type ProjectMeasures } from "./rules";
 
@@ -71,6 +72,8 @@ function guessSourceFromTest(testPath: string): string {
 // not one), plus `import("x")` and `require("x")` (not vi.mock strings).
 const IMPORT_SPECIFIER =
   /(?:^[ \t]*(?:import|export)\b[^;'"`]*?\bfrom\s*|^[ \t]*import\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["']([^"']+)["']/gm;
+// `export … from "x"`: re-exported, not used by the file itself.
+const RE_EXPORT_SPECIFIER = /^[ \t]*export\b[^;'"`]*?\bfrom\s*["'][^"']+["']/gm;
 // `vi.mock("x")` / `jest.mock("x")`: the module is replaced, its code never runs.
 const MOCK_SPECIFIER = /\b(?:vi|jest)\.mock\s*\(\s*["']([^"']+)["']/g;
 
@@ -207,14 +210,23 @@ export function computeDeterministicMetrics(
 
   // What each source file imports, by module key (`server.ts` and
   // `index.ts` of one folder answer to different keys).
-  const importsOf = new Map<string, { facade: boolean; targets: string[] }>();
+  const importsOf = new Map<string, ImportNode>();
   for (const file of sourceFiles) {
     const targets: string[] = [];
     for (const [, specifier] of file.content.matchAll(IMPORT_SPECIFIER)) {
       const resolved = resolveImport(file.relativePath, specifier);
       if (resolved) targets.push(moduleKey(resolved));
     }
-    importsOf.set(moduleKey(file.relativePath), { facade: isFacade(file.relativePath), targets });
+    // A facade by content: most of what it imports, it re-exports (a module's
+    // public API). Juice Shop's server.ts is named like this repository's
+    // facades but imports 91 modules to use them (ADR-013).
+    const reExports = [...file.content.matchAll(RE_EXPORT_SPECIFIER)].length;
+    importsOf.set(moduleKey(file.relativePath), {
+      filePath: file.relativePath,
+      facade: isFacade(file.relativePath),
+      reExportsMostly: targets.length > 0 && reExports * 2 >= targets.length,
+      targets,
+    });
   }
   // Files reached from the tests by following imports: through every file,
   // or only through module facades (index.ts / server.ts).
@@ -299,6 +311,7 @@ export function computeDeterministicMetrics(
     testedSourceApproxPercent,
     untestedCriticalPaths,
     secretHits,
+    ...analyzeImportGraph(importsOf),
   };
   const issues = DETERMINISTIC_RULES.flatMap((rule) =>
     rule.findings(measures).map((finding) => ({ ...finding, rule: rule.id })),

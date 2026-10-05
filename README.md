@@ -324,7 +324,7 @@ O [`.env.example`](.env.example) documenta cada variável e diz quais são opcio
 O [registro de dívida técnica](docs/technical-debt.md) tem a lista completa, com gravidade e destino. As que mais afetam a leitura das notas:
 
 - **A IA vê uma amostra**, não o projeto inteiro: até 16 mil caracteres, espalhados por pastas.
-- **Nem todas as bases das categorias são calibradas** (TD-50). Testing é medida contra a cobertura real, e qualidade de código contra o ESLint `max-lines-per-function`, pela fatia de funções longas. Arquitetura, segurança e performance partem de um valor fixo menos os achados: arquitetura, por exemplo, não passa de 88 nem sem achados. O plano de calibração, com metas medidas, está no TD-50.
+- **Nem todas as bases das categorias são calibradas** (TD-50). Testing é medida contra a cobertura real, e qualidade de código contra o ESLint `max-lines-per-function`, pela fatia de funções longas. Arquitetura é medida pelo grafo de imports (ciclos e arquivos que importam demais, ADR-013). Segurança e performance partem de um valor fixo menos os achados. O plano de calibração, com metas medidas, está no TD-50.
 - **"Função complexa" é contada em linhas** (pela AST), não em complexidade ciclomática.
 - **CSP em `Report-Only`** até os relatórios do Sentry ficarem limpos (TD-34).
 - **Camada gratuita:** Vercel Hobby (funções de até 300 s, no máximo 1.000 arquivos por projeto) e Groq gratuito (limite diário de tokens).
