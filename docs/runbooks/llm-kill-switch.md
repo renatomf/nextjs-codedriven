@@ -12,11 +12,11 @@ serve: a Vercel congela as variáveis por deploy (ver TD-36).
 - Desligado:
   - **chat** e **explicação** respondem 503 com "temporarily unavailable",
     antes do rate limit (o usuário não perde mensagens da cota por hora);
-  - **relatório**: a análise ainda monta a base de conhecimento (o chat
-    continua funcionando), e o passo do relatório falha com "The AI review
-    is temporarily unavailable". Depois de religar, o usuário gera o
-    relatório de novo pela página do projeto. A análise conta na cota do
-    dia, como qualquer outra falha do LLM.
+  - **relatório**: a análise termina normalmente, com o relatório só das
+    verificações automáticas. O relatório grava `aiReviewSkipped:
+    "disabled"`, e a página avisa "Automated checks only". Depois de
+    religar, o usuário gera a revisão de novo pela página do projeto
+    ([ADR-004](../decisions/004-llm-cost-limits.md)).
 
 ## Desligar / religar
 

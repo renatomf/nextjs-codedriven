@@ -838,9 +838,13 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 
 ## Encerramento da v2.0
 
-- [ ] Remover as classes `ca-*` sem uso do `globals.css`.
-- [ ] README como estudo de caso: problema, arquitetura (C4), antes × depois
-      medido, gráfico do dogfooding, links para as ADRs.
+- [x] Remover as classes `ca-*` sem uso do `globals.css`: medido em
+      2026-10-04, nenhuma sem uso (59 definidas, todas referenciadas em
+      `src/`).
+- [x] README como estudo de caso: problema, arquitetura (C4), antes × depois
+      medido, gráfico do dogfooding, links para as ADRs (2026-10-04, sem
+      lista de variáveis de ambiente: o `.env.example` e os runbooks
+      documentam).
 - [x] Relatório de demonstração publicado pelo **link público** (Fase 3) e
       linkado no README: quem avalia não precisa criar conta, conectar o
       GitHub nem esperar uma análise.
@@ -1000,13 +1004,13 @@ Mudam o roadmap a partir da v2.2.
 | 001 | [Monólito modular + Clean Architecture seletiva](decisions/001-modular-monolith.md) — aceita | 3 |
 | 002 | [Convenção dos módulos e regras de arquitetura no CI](decisions/002-module-convention.md) (`dependency-cruiser`) — aceita | 3 |
 | 003 | [Regras da cota](decisions/003-quota.md), inclusive falha do sistema × erro do usuário (TD-12) — proposta | 3 |
-| 004 | Limites de custo do LLM e kill switch | 4 |
+| 004 | [Limites de custo do LLM e kill switch](decisions/004-llm-cost-limits.md) — aceita (registro retroativo) | 4 |
 | 005 | [Job runner da ingestão + outbox](decisions/005-job-runner.md) — aceita | 5 |
 | 006 | [Embeddings em runtime serverless](decisions/006-embeddings-runtime.md) (TD-05, TD-46) — aceita | 5 |
 | 007 | [GitHub App no lugar do OAuth App](decisions/007-github-app.md) (TD-15, TD-16) — aceita | 6 |
-| 008 | Retenção e exclusão de dados | 6 |
-| 009 | Estratégia de evals e gate no CI | 7 |
-| 010 | Fórmula do score (penalidade com teto) | 7 |
+| 008 | [Retenção e exclusão de dados](decisions/008-data-retention.md) — aceita (registro retroativo) | 6 |
+| 009 | [Estratégia de evals e gate no CI](decisions/009-evals.md) — aceita (registro retroativo) | 7 |
+| 010 | [Fórmula do score (penalidade com teto)](decisions/010-score-formula.md) — aceita | 7 |
 | 011 | [Onde o ZIP enviado fica até o job processá-lo](decisions/011-zip-upload-storage.md) (TD-45) — aceita | 5 |
 
 Formato: contexto, problema, opções (inclusive as rejeitadas), decisão,
