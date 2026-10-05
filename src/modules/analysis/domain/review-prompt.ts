@@ -1,4 +1,7 @@
-import { dataRules } from "@/shared/prompt-data";
+import { dataBlock, dataRules } from "@/shared/prompt-data";
+
+import type { ReviewedChunk } from "./evidence";
+import { CUT_MARK, REVIEW_BUDGET } from "./sampling";
 import { promptVersion } from "@/shared/prompt-version";
 
 /**
@@ -34,3 +37,70 @@ export const REVIEW_PROMPT_VERSION = promptVersion(REVIEW_PROMPT);
 export function reviewInstructions(boundary: string): string {
   return [...REVIEW_PROMPT, ...dataRules(boundary)].join("\n");
 }
+
+type ReviewSnippet = ReviewedChunk & { endLine: number | null };
+
+/** The code is untrusted (TD-28): one data block per chunk. */
+function reviewSnippets(chunks: ReviewSnippet[], boundary: string): string {
+  return chunks
+    .map((chunk, index) => {
+      const lines =
+        chunk.startLine && chunk.endLine
+          ? `L${chunk.startLine}-L${chunk.endLine}`
+          : "lines unknown";
+      // Chunks are cut by size, sometimes mid-statement (TD-48): say so, so a
+      // cut is not taken for broken code.
+      const cut = chunk.content.length > REVIEW_BUDGET.chunkChars;
+      return dataBlock(
+        boundary,
+        `Chunk ${index + 1}. File: ${chunk.filePath} (${lines}, an excerpt: the file goes on before and after it)`,
+        cut
+          ? `${chunk.content.slice(0, REVIEW_BUDGET.chunkChars)}\n${CUT_MARK}`
+          : chunk.content,
+      );
+    })
+    .join("\n\n");
+}
+
+const MAX_PROJECT_NAME_CHARS = 100;
+
+/**
+ * Everything the review model receives for a sample (`sampleForReview`):
+ * instructions and prompt. `boundary` comes from `newDataBoundary()`.
+ */
+export function reviewRequest(
+  project: { projectName: string; framework: string | null },
+  sampled: ReviewSnippet[],
+  boundary: string,
+): { instructions: string; prompt: string } {
+  return {
+    instructions: reviewInstructions(boundary),
+    prompt: [
+      // Untrusted (a repository or ZIP name) and outside the data blocks:
+      // capped, which also keeps it inside the request's token budget.
+      `Project: ${project.projectName.slice(0, MAX_PROJECT_NAME_CHARS)}`,
+      `Framework: ${project.framework ?? "Unknown"}`,
+      "",
+      "Code snippets:",
+      reviewSnippets(sampled, boundary),
+    ].join("\n"),
+  };
+}
+
+/**
+ * Tokens of a request, estimated on the safe side. Measured against Groq's
+ * own count on 2026-10-05 (the "Requested" of its rate-limit answer, which
+ * matched the billed input within 3%): 3.3-3.8 characters per token for
+ * review requests, about 3.1 for small ones (TD-50 item 2).
+ */
+export function estimateRequestTokens(request: { instructions: string; prompt: string }): number {
+  return Math.ceil((request.instructions.length + request.prompt.length) / 3);
+}
+
+/**
+ * Most tokens one review request may take. Groq's free tier rejects any
+ * request above 8000 tokens per minute ("Request too large") and does not
+ * count the output limit in it (measured 2026-10-05); the margin covers
+ * the estimate's error.
+ */
+export const REVIEW_MAX_REQUEST_TOKENS = 7_500;

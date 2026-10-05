@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 
-import { dataBlock, newDataBoundary } from "@/shared/prompt-data";
+import { newDataBoundary } from "@/shared/prompt-data";
 
 import { getStructuredLanguageModel, structuredLanguageModelId } from "@/lib/ai/llm";
 import type { ReportIssue } from "@/lib/analysis/report-types";
 import {
   REVIEW_BUDGET,
   REVIEW_PROMPT_VERSION,
-  reviewInstructions,
+  reviewRequest,
   sampleForReview,
   verifyEvidence,
 } from "@/modules/analysis";
@@ -17,8 +17,8 @@ import { z } from "zod";
 // A slow provider must not hold the analysis request (TD-29).
 const LLM_TIMEOUT_MS = 120_000;
 // Per-analysis ceiling (roadmap Phase 4): about 3x the longest review in the
-// evals of 2026-09-30 (2.9k output tokens). The input is already bounded by
-// REVIEW_BUDGET.
+// evals of 2026-09-30 (2.9k output tokens). Groq does not count it in its
+// per-minute limit; the input is bounded by REVIEW_BUDGET.
 const MAX_OUTPUT_TOKENS = 8_000;
 // The prompt asks for at most 10; the server enforces it (stored in reports).
 const MAX_ISSUES = 10;
@@ -53,36 +53,6 @@ const reportSchema = z.object({
     }),
   ),
 });
-
-/** The code is untrusted (TD-28): one data block per chunk. */
-function formatChunks(
-  chunks: Array<{
-    filePath: string;
-    content: string;
-    startLine: number | null;
-    endLine: number | null;
-  }>,
-  boundary: string,
-): string {
-  return chunks
-    .map((chunk, index) => {
-      const lines =
-        chunk.startLine && chunk.endLine
-          ? `L${chunk.startLine}-L${chunk.endLine}`
-          : "lines unknown";
-      // Chunks are cut by size, sometimes mid-statement (TD-48): say so, so a
-      // cut is not taken for broken code.
-      const cut = chunk.content.length > REVIEW_BUDGET.chunkChars;
-      return dataBlock(
-        boundary,
-        `Chunk ${index + 1}. File: ${chunk.filePath} (${lines}, an excerpt: the file goes on before and after it)`,
-        cut
-          ? `${chunk.content.slice(0, REVIEW_BUDGET.chunkChars)}\n… [excerpt cut here]`
-          : chunk.content,
-      );
-    })
-    .join("\n\n");
-}
 
 export type LlmReportResult = {
   architectureSummary: string;
@@ -131,28 +101,30 @@ export function reviewInputHash(options: ReviewInput): string {
   return createHash("sha256").update(JSON.stringify(input)).digest("hex");
 }
 
+/**
+ * The text the review model receives: instructions and prompt, with a fresh
+ * data boundary. `sampled` defaults to the project's review sample.
+ */
+export function buildReviewRequest(
+  options: ReviewInput,
+  sampled = sampleForReview(options.chunks),
+): { instructions: string; prompt: string } {
+  return reviewRequest(options, sampled, newDataBoundary());
+}
+
 export async function runLlmHealthReview(options: ReviewInput): Promise<LlmReportResult> {
   const sampled = sampleForReview(options.chunks);
 
-  const review = () => {
-    const boundary = newDataBoundary();
-    return generateText({
+  const review = () =>
+    generateText({
       model: getStructuredLanguageModel(),
       output: Output.object({ schema: reportSchema }),
       // Same code, same review: needed for a stable report and a fair eval.
       temperature: 0,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
       abortSignal: AbortSignal.timeout(LLM_TIMEOUT_MS),
-      instructions: reviewInstructions(boundary),
-      prompt: [
-        `Project: ${options.projectName}`,
-        `Framework: ${options.framework ?? "Unknown"}`,
-        "",
-        "Code snippets:",
-        formatChunks(sampled, boundary),
-      ].join("\n"),
+      ...buildReviewRequest(options, sampled),
     });
-  };
 
   // One retry, only for invalid JSON; other errors (auth, quota) fail fast.
   const { output: object, usage } = await review().catch((error: unknown) => {

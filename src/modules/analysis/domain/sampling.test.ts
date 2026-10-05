@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { riskScore, sampleForReview, type ReviewBudget } from "./sampling";
+import { riskScore, sampleForReview, snippetChars, type ReviewBudget } from "./sampling";
 
 const chunk = (filePath: string, startLine = 1, size = 100) => ({
   filePath,
@@ -151,17 +151,17 @@ describe("sampleForReview", () => {
   });
 
   it("stays within the character budget, skipping chunks that do not fit", () => {
-    const sample = sampleForReview(
-      [chunk("src/api/a.ts", 1, 900), chunk("src/lib/b.ts", 1, 300), chunk("src/lib/c.ts", 1, 100)],
-      budget(10, 1_000),
-    );
+    const [a, b, c] = [chunk("src/api/a.ts", 1, 900), chunk("src/lib/b.ts", 1, 300), chunk("src/lib/c.ts", 1, 100)];
+    const sample = sampleForReview([a, b, c], budget(10, snippetChars(a) + snippetChars(c)));
 
     expect(files(sample)).toEqual(["src/api/a.ts", "src/lib/c.ts"]);
   });
 
   it("counts a long chunk only up to the part that is sent", () => {
-    const sample = sampleForReview([chunk("src/a.ts", 1, 10_000), chunk("src/b.ts", 1, 10_000)], budget(10, 5_000));
+    const [a, b] = [chunk("src/a.ts", 1, 10_000), chunk("src/b.ts", 1, 10_000)];
+    const sample = sampleForReview([a, b], budget(10, snippetChars(a) + snippetChars(b)));
 
+    expect(snippetChars(a)).toBeLessThan(3_000);
     expect(sample).toHaveLength(2);
   });
 

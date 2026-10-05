@@ -4,20 +4,44 @@ import { dirname, isTestFile, pathWords } from "./paths";
 export type ReviewBudget = {
   /** Most chunks sent to the reviewer. */
   maxChunks: number;
-  /** Most characters of code sent (the prompt's token budget). */
+  /**
+   * Most characters of the snippet blocks sent: code, file path and the
+   * block's markers (`snippetChars`), the request's token budget.
+   */
   maxChars: number;
   /** Characters of one chunk that are sent (longer chunks are cut). */
   chunkChars: number;
 };
 
-// Groq's free tier allows 8000 tokens/minute per model, and a single request
-// above that always fails: prompt + answer must stay well under it (~3.5
-// characters per code token).
+// Groq's free tier rejects any request above 8000 tokens per minute. The
+// whole request must stay under REVIEW_MAX_REQUEST_TOKENS (review-prompt.ts):
+// 7500 × 3 characters, minus the instructions and header (~2.7k) and room
+// for the project name. Until 2026-10-05 only the code counted here (16k),
+// so 24 snippets with their headers could reach ~8k tokens (TD-50 item 2).
 export const REVIEW_BUDGET: ReviewBudget = {
   maxChunks: 24,
-  maxChars: 16_000,
+  maxChars: 19_000,
   chunkChars: 2_500,
 };
+
+/** Appended to a chunk cut at `chunkChars`. */
+export const CUT_MARK = "… [excerpt cut here]";
+
+// One snippet block besides its path and code: data markers, "Chunk N.
+// File: … (Lx-Ly, an excerpt…)" and separators. Measured 134 on
+// 2026-10-05; the test in review-prompt.test.ts keeps it an upper bound.
+const SNIPPET_OVERHEAD_CHARS = 150;
+
+/** Characters one chunk takes in the review request. */
+export function snippetChars(chunk: Pick<ReviewedChunk, "filePath" | "content">, budget = REVIEW_BUDGET): number {
+  const cut = chunk.content.length > budget.chunkChars;
+  return (
+    Math.min(chunk.content.length, budget.chunkChars) +
+    (cut ? CUT_MARK.length + 1 : 0) +
+    chunk.filePath.length +
+    SNIPPET_OVERHEAD_CHARS
+  );
+}
 
 // Where the review categories (security, performance, architecture) usually
 // live: code that receives input, talks to the database or guards access.
@@ -166,7 +190,7 @@ export function sampleForReview<T extends ReviewedChunk>(
   let usedChars = 0;
   for (const chunk of queue) {
     if (sampled.length === budget.maxChunks) break;
-    const size = Math.min(chunk.content.length, budget.chunkChars);
+    const size = snippetChars(chunk, budget);
     if (usedChars + size > budget.maxChars) continue; // a smaller one may fit
     sampled.push(chunk);
     usedChars += size;

@@ -987,13 +987,16 @@ nota boa.
       linhas` (padrão do ESLint), no lugar do degrau 85/72. Gate no eval: a
       ordem bate com a do ESLint `max-lines-per-function` neste repositório,
       no NodeGoat e no Juice Shop (2026-10-05, ADR-010 revisão).
-- [ ] TD-44 e o orçamento de tokens da revisão (pedidos acima de 8000
+- [x] TD-44 e o orçamento de tokens da revisão (pedidos acima de 8000
       tokens/min do Groq): pré-requisito de qualquer gate de Security.
   - [x] TD-44 (2026-10-05): gate pela variação de uma execução (NodeGoat
         ≥ 5, Juice Shop ≥ 1), "não medido" (limite do Groq) separado de
         "piorou", e o workflow só roda quando muda o que o modelo recebe.
-  - [ ] Orçamento de tokens: nenhum pedido acima do limite por minuto
-        ("Request too large", NodeGoat em `a1db0d5`), medido antes.
+  - [x] Orçamento de tokens (2026-10-05): o Groq não conta a saída máxima
+        no limite e estima a entrada com até 3% de erro (medido com pedidos
+        recusados, sem gastar cota); o orçamento da amostra passou a contar
+        o pedido inteiro (código, caminho e marcadores de cada trecho), com
+        teste de pior caso e gate no eval (≤ 7500 tokens estimados).
 - [ ] **Security:** vulnerabilidades de dependências pelo lockfile (OSV);
       gate em 3 execuções (NodeGoat e Juice Shop abaixo de 40, repositório
       saudável acima de 75).

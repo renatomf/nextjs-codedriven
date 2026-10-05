@@ -25,7 +25,14 @@ export {
   type FunctionSize,
   type SourceFile,
 } from "./domain/metrics";
-export { REVIEW_PROMPT, REVIEW_PROMPT_VERSION, reviewInstructions } from "./domain/review-prompt";
+export {
+  estimateRequestTokens,
+  REVIEW_MAX_REQUEST_TOKENS,
+  REVIEW_PROMPT,
+  REVIEW_PROMPT_VERSION,
+  reviewInstructions,
+  reviewRequest,
+} from "./domain/review-prompt";
 export {
   REVIEW_BUDGET,
   sampleForReview,

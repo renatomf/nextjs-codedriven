@@ -124,6 +124,9 @@ and the run fails if a change makes the analysis worse (`GATE` in
   Shop: 2 of 8);
 - Code Quality ranks this repository, NodeGoat and Juice Shop as ESLint's
   `max-lines-per-function` does (share of functions over 50 lines; TD-50);
+- every repository's review request stays at or under
+  `REVIEW_MAX_REQUEST_TOKENS` (7500 estimated): one request above Groq's
+  8000 tokens per minute always fails;
 - chat retrieval: at least as many questions answered in the top k
   (`GATE` in [retrieval/retrieval.eval.ts](retrieval/retrieval.eval.ts)).
 
