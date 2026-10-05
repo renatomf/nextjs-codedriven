@@ -857,19 +857,21 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 - [x] Relatório de demonstração publicado pelo **link público** (Fase 3) e
       linkado no README: quem avalia não precisa criar conta, conectar o
       GitHub nem esperar uma análise.
-- [ ] **Postmortem** do incidente de maior impacto, escrito pelo autor
-      (linha do tempo, causa raiz, impacto, correção, o que mudou para não
-      repetir): análise quebrada em produção desde o primeiro deploy (ONNX na
-      Vercel), em
-      [docs/postmortems/2026-09-29-onnx-on-vercel.md](postmortems/2026-09-29-onnx-on-vercel.md)
-      (os fatos já estão lá). Decidido em 2026-10-05: um só. Os outros dois
-      incidentes ficam documentados nos TDs, que já têm causa, impacto e
-      correção: variáveis de produção apagadas ao separar ambientes (TD-36) e
-      cancelamento que mantinha o premium (TD-37).
-- [ ] Vídeo de 2 a 3 minutos do fluxo principal.
-- [ ] Artigo técnico (ex.: "por que o meu analisador deu 0 para o próprio
-      código").
-- [ ] Decisões pendentes respondidas (ver abaixo).
+- [x] **Postmortem** do incidente de maior impacto (linha do tempo, causa
+      raiz, impacto, correção, o que mudou para não repetir): análise
+      quebrada em produção desde o primeiro deploy (ONNX na Vercel), em
+      [docs/postmortems/2026-09-29-onnx-on-vercel.md](postmortems/2026-09-29-onnx-on-vercel.md).
+      Decidido em 2026-10-05: um só. Os outros dois incidentes ficam
+      documentados nos TDs, que já têm causa, impacto e correção: variáveis
+      de produção apagadas ao separar ambientes (TD-36) e cancelamento que
+      mantinha o premium (TD-37).
+- [x] Retros das Fases 3 a 7 respondidas (`docs/retros/`).
+- ~~Vídeo de 2 a 3 minutos do fluxo principal.~~ Removido em 2026-10-05:
+  os prints do app no README cumprem o papel.
+- [x] Artigo técnico:
+      [docs/articles/2026-10-o-analisador-deu-30-para-o-proprio-codigo.md](articles/2026-10-o-analisador-deu-30-para-o-proprio-codigo.md).
+      Publicar fora do repositório (blog, LinkedIn) é do autor.
+- [x] Decisões pendentes respondidas (ver abaixo, 2026-10-05).
 - [ ] Tag `v2.0.0`.
 
 ### Renomear para `nextjs-codedriven`
@@ -997,16 +999,16 @@ os evals.
 
 ---
 
-## Decisões pendentes (prazo: fim da v2.0)
+## Decisões (respondidas em 2026-10-05)
 
 Mudam o roadmap a partir da v2.2.
 
-| Pergunta | Impacto |
-|---|---|
-| Portfólio, produto ou os dois? | Quanto investir em billing, onboarding e suporte |
-| Open source (CLI) + SaaS, ou só SaaS? | Licença do repo e ferramentas que podem ser integradas |
-| Due diligence técnica é o nicho? Com quem conversar primeiro? | Quais análises priorizar na v2.2 |
-| Quantas horas por semana? | Estimativas de cada fase |
+| Pergunta | Decisão | Impacto |
+|---|---|---|
+| Portfólio, produto ou os dois? | **Portfólio** | Billing fica como está; o investimento vai para a qualidade da análise e a documentação, não para onboarding e suporte |
+| Open source (CLI) + SaaS, ou só SaaS? | **Só SaaS por ora**; o repositório segue público como portfólio | Sem CLI nem escolha de licença até a decisão mudar |
+| Due diligence técnica é o nicho? Com quem conversar primeiro? | **Nenhum nicho por ora**: decide-se quando a nota for confiável (TD-50) | A v2.1 é a calibração das notas, não análises novas |
+| Quantas horas por semana? | **Mais de 20 h** | Ritmo parecido com o da v2.0 |
 
 ---
 
