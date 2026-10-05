@@ -122,7 +122,7 @@ describe("generateProjectReport (characterization)", () => {
 
     const report = await generateProjectReport(owner, projectId);
 
-    // Today's formula, pinned (Phase 7 changes it on purpose).
+    // Today's formula, pinned (ADR-010 and its reviews change it on purpose).
     expect({ healthScore: report.healthScore, categoryScores: report.categoryScores }).toMatchSnapshot();
     expect(report.issues.map((issue) => `${issue.severity} ${issue.category} ${issue.title}`)).toMatchSnapshot();
     expect(report.roadmap).toEqual(report.issues.slice(0, 10));

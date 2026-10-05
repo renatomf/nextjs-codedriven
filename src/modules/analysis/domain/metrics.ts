@@ -9,6 +9,13 @@ export type SourceFile = {
   content: string;
 };
 
+/** One function of the project and its length in lines. */
+export type FunctionSize = {
+  filePath: string;
+  name: string;
+  lines: number;
+};
+
 export type DeterministicMetrics = ProjectMeasures & {
   issues: Finding[];
   summaries: {
@@ -19,7 +26,10 @@ export type DeterministicMetrics = ProjectMeasures & {
 };
 
 const LARGE_FILE_LINES = 400;
+/** Reported one by one as "complex function" findings. */
 const COMPLEX_FUNCTION_LINES = 80;
+/** Counted in the Code Quality score: ESLint's `max-lines-per-function` default (TD-50). */
+export const LONG_FUNCTION_LINES = 50;
 
 const SECRET_PATTERNS: Array<{ hint: string; regex: RegExp }> = [
   {
@@ -54,31 +64,6 @@ function guessSourceFromTest(testPath: string): string {
     .replace(/\.spec$/i, "")
     .replace(/\/__tests__\//, "/")
     .replace(/\/tests?\//, "/");
-}
-
-const ARROW_LOOKAHEAD_LINES = 20;
-
-function isArrowFunctionStart(lines: string[], start: number): boolean {
-  const text = lines.slice(start, start + ARROW_LOOKAHEAD_LINES).join("\n");
-  const arrow = text.indexOf("=>");
-  const semicolon = text.indexOf(";");
-  return arrow !== -1 && (semicolon === -1 || arrow < semicolon);
-}
-
-/** A React component: PascalCase function in a .jsx/.tsx file. */
-function isComponent(filePath: string, name: string): boolean {
-  return /\.[jt]sx$/i.test(filePath) && /^[A-Z]/.test(name);
-}
-
-/**
- * A component is sized by its logic (hooks, handlers) up to its last JSX
- * `return`, not by its markup: 100 lines of JSX are not complexity.
- */
-function componentLogicLines(lines: string[], start: number, end: number): number {
-  for (let k = end; k > start; k -= 1) {
-    if (/^\s*return\s*[(<]/.test(lines[k] ?? "")) return k - start + 1;
-  }
-  return end - start + 1;
 }
 
 // Static `import … from "x"` / `export … from "x"` / `import "x"` only where a
@@ -175,64 +160,14 @@ function hasLogic(content: string): boolean {
   );
 }
 
-function findComplexFunctions(
-  filePath: string,
-  content: string,
-): Array<{ name: string; lines: number }> {
-  const results: Array<{ name: string; lines: number }> = [];
-  const lines = content.split("\n");
-
-  const startRegex =
-    /^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z0-9_]+)|^\s*(?:export\s+)?const\s+([A-Za-z0-9_]+)\s*=\s*(?:async\s*)?\(/;
-
-  let i = 0;
-  while (i < lines.length) {
-    const match = lines[i]?.match(startRegex);
-    if (!match) {
-      i += 1;
-      continue;
-    }
-
-    // `const x = (` is only a function when `=>` comes before the first `;`
-    // (not `const x = (a ?? b) as T;`, TD-31).
-    if (match[2] && !isArrowFunctionStart(lines, i)) {
-      i += 1;
-      continue;
-    }
-
-    const name = match[1] || match[2] || "anonymous";
-    let depth = 0;
-    let started = false;
-    let j = i;
-
-    for (; j < lines.length; j += 1) {
-      const line = lines[j] ?? "";
-      for (const char of line) {
-        if (char === "{") {
-          depth += 1;
-          started = true;
-        } else if (char === "}") {
-          depth -= 1;
-        }
-      }
-      if (started && depth <= 0) break;
-    }
-
-    const fnLines = isComponent(filePath, name)
-      ? componentLogicLines(lines, i, j)
-      : j - i + 1;
-    if (fnLines >= COMPLEX_FUNCTION_LINES) {
-      results.push({ name, lines: fnLines });
-    }
-    i = Math.max(i + 1, j);
-  }
-
-  return results;
-}
-
-/** Compute code-quality, testing, and simple security signals without an LLM. */
+/**
+ * Compute code-quality, testing, and simple security signals without an LLM.
+ * `functions` are the sizes measured on the syntax tree (`measureFunctions`
+ * in src/lib/analysis): parsing needs a native parser, the domain stays pure.
+ */
 export function computeDeterministicMetrics(
   files: SourceFile[],
+  functions: FunctionSize[],
 ): DeterministicMetrics {
   const sourceFiles = files.filter((file) => !isTestFile(file.relativePath));
   const testFiles = files.filter((file) => isTestFile(file.relativePath));
@@ -245,16 +180,12 @@ export function computeDeterministicMetrics(
     .filter((file) => file.lines >= LARGE_FILE_LINES)
     .sort((a, b) => b.lines - a.lines);
 
-  const complexFunctions: DeterministicMetrics["complexFunctions"] = [];
-  for (const file of sourceFiles) {
-    for (const fn of findComplexFunctions(file.relativePath, file.content)) {
-      complexFunctions.push({
-        filePath: file.relativePath,
-        name: fn.name,
-        lines: fn.lines,
-      });
-    }
-  }
+  const sourceFunctions = functions.filter((fn) => !isTestFile(fn.filePath));
+  const longFunctionCount = sourceFunctions.filter((fn) => fn.lines > LONG_FUNCTION_LINES).length;
+  // The longest first: the rule reports a capped number of them.
+  const complexFunctions = sourceFunctions
+    .filter((fn) => fn.lines >= COMPLEX_FUNCTION_LINES)
+    .sort((a, b) => b.lines - a.lines);
 
   const testedBases = new Set(
     testFiles.map((file) => guessSourceFromTest(file.relativePath)),
@@ -361,6 +292,8 @@ export function computeDeterministicMetrics(
   const measures: ProjectMeasures = {
     largeFiles,
     complexFunctions,
+    functionCount: sourceFunctions.length,
+    longFunctionCount,
     testFileCount: testFiles.length,
     sourceFileCount: sourceFiles.length,
     testedSourceApproxPercent,
@@ -375,7 +308,7 @@ export function computeDeterministicMetrics(
     ...measures,
     issues,
     summaries: {
-      codeQuality: `Found ${largeFiles.length} large file(s) and ${complexFunctions.length} complex function(s) using static heuristics.`,
+      codeQuality: `${longFunctionCount} of ${sourceFunctions.length} function(s) have more than ${LONG_FUNCTION_LINES} lines (${complexFunctions.length} with ${COMPLEX_FUNCTION_LINES}+); ${largeFiles.length} large file(s).`,
       testing: `Matched test files for roughly ${testedSourceApproxPercent}% of source files (${testFiles.length} test files found).`,
       security: `Pattern scan found ${secretHits.length} potential hardcoded secret hit(s).`,
     },

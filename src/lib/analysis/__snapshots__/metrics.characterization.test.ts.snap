@@ -1,12 +1,17 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`computeDeterministicMetrics (characterization) > produces the same metrics, issues and summaries 1`] = `
+exports[`computeProjectMetrics (characterization) > produces the same metrics, issues and summaries 1`] = `
 {
   "complexFunctions": [
     {
       "filePath": "src/complex.ts",
       "lines": 162,
       "name": "veryLong",
+    },
+    {
+      "filePath": "src/app/page.tsx",
+      "lines": 92,
+      "name": "render",
     },
     {
       "filePath": "src/complex.ts",
@@ -68,12 +73,8 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
       "lines": 87,
       "name": "long11",
     },
-    {
-      "filePath": "src/app/page.tsx",
-      "lines": 92,
-      "name": "render",
-    },
   ],
+  "functionCount": 24,
   "issues": [
     {
       "category": "codeQuality",
@@ -166,6 +167,14 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
     {
       "category": "codeQuality",
       "description": "Function appears long and may have high complexity. Consider extracting helpers.",
+      "filePath": "src/app/page.tsx",
+      "rule": "complex-function",
+      "severity": "medium",
+      "title": "Complex function render (92 lines)",
+    },
+    {
+      "category": "codeQuality",
+      "description": "Function appears long and may have high complexity. Consider extracting helpers.",
       "filePath": "src/complex.ts",
       "rule": "complex-function",
       "severity": "medium",
@@ -242,14 +251,6 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
       "rule": "complex-function",
       "severity": "medium",
       "title": "Complex function long9 (87 lines)",
-    },
-    {
-      "category": "codeQuality",
-      "description": "Function appears long and may have high complexity. Consider extracting helpers.",
-      "filePath": "src/complex.ts",
-      "rule": "complex-function",
-      "severity": "medium",
-      "title": "Complex function long10 (87 lines)",
     },
     {
       "category": "testing",
@@ -454,6 +455,7 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
       "lines": 420,
     },
   ],
+  "longFunctionCount": 14,
   "secretHits": [
     {
       "filePath": "src/config.ts",
@@ -513,7 +515,7 @@ exports[`computeDeterministicMetrics (characterization) > produces the same metr
   ],
   "sourceFileCount": 25,
   "summaries": {
-    "codeQuality": "Found 12 large file(s) and 14 complex function(s) using static heuristics.",
+    "codeQuality": "14 of 24 function(s) have more than 50 lines (14 with 80+); 12 large file(s).",
     "security": "Pattern scan found 11 potential hardcoded secret hit(s).",
     "testing": "Matched test files for roughly 8% of source files (3 test files found).",
   },

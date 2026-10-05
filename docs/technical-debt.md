@@ -311,6 +311,12 @@ maintainability) · **Low** (cleanup).
   metrics from the same AST (real function bounds, cyclomatic complexity);
   calibrate the heuristics against evals.
 - **Phase:** Evals + analysis quality (fix) → Code Intelligence (AST).
+- **Done (v2.1, 2026-10-05):** function length comes from the tree-sitter
+  syntax tree (`measureFunctions`), not from counting braces: methods,
+  nested and anonymous functions are found, strings and comments no longer
+  skew it, and `generateProjectReport` / `extractFromZipBuffer` are now
+  reported. Components keep the logic-only sizing. Still open: cyclomatic
+  complexity, and test coverage by file matching.
 - **Done (Phase 3, objective fixes):** `const x = (` counts as a function
   only when `=>` comes before the first `;` (real arrow functions, even with
   multi-line parameters, are still found); `test/` and `tests/` folders at
@@ -507,8 +513,18 @@ maintainability) · **Low** (cleanup).
      in an ADR. Plausible here: 80-90 (`lint:arch` reports 0 violations).
   6. The health score averages only calibrated categories; the report
      shows the deterministic part apart from the LLM part.
-- **Phase:** after v2.0 (outside the roadmap's closed scope). Until then
-  the README says that only Testing is calibrated.
+- **Phase:** v2.1 (roadmap "v2.1 — Calibração das notas"). Until it closes
+  the README says which categories are calibrated.
+- **Done, item 1 (2026-10-05, ADR-010 review):** function sizes from the
+  tree-sitter syntax tree (they match ESLint's in every file ESLint parses);
+  Code Quality base `100 − 4 × % of functions over 50 lines`; deterministic
+  Code Quality findings no longer charged twice. Eval `2026-10-05-1597cd1`:
+  Juice Shop 28 → 92, this repository 45 → 88, NodeGoat 67 → 36 (the old
+  ranking was the reverse of ESLint's: 2.1%, 5.2%, 16% of long functions);
+  the eval now gates that ranking. Noted: `evals/*.eval.ts` count as source
+  (`isTestFile` does not know `.eval.ts`), so their long `it` callbacks are
+  reported; reclassifying them changes Testing, left for the Testing
+  review.
 
 ### TD-51 — The LLM review still reports two false positives on this repository · Low
 - **Where:** [review-prompt.ts](../src/modules/analysis/domain/review-prompt.ts),

@@ -975,19 +975,46 @@ Qualquer biblioteca nova de estado exige ADR.
 
 ---
 
+## v2.1 — Calibração das notas
+
+Escopo fechado (decisão de 2026-10-05): calibrar as notas contra
+referências, não acrescentar análises. Ordem e metas no TD-50; cada item com
+o antes × depois do eval. Calibrar **nunca** para este repositório tirar
+nota boa.
+
+- [x] **Code Quality** pela AST (TD-31): tamanho das funções pelo
+      tree-sitter e base contínua `100 − 4 × % de funções com mais de 50
+      linhas` (padrão do ESLint), no lugar do degrau 85/72. Gate no eval: a
+      ordem bate com a do ESLint `max-lines-per-function` neste repositório,
+      no NodeGoat e no Juice Shop (2026-10-05, ADR-010 revisão).
+- [ ] TD-44 e o orçamento de tokens da revisão (pedidos acima de 8000
+      tokens/min do Groq): pré-requisito de qualquer gate de Security.
+- [ ] **Security:** vulnerabilidades de dependências pelo lockfile (OSV);
+      gate em 3 execuções (NodeGoat e Juice Shop abaixo de 40, repositório
+      saudável acima de 75).
+- [ ] **Performance** sai da nota geral (sem sinal medido); os achados ficam
+      no relatório.
+- [ ] **Architecture:** ciclos de import e fan-in/fan-out pelo grafo de
+      imports; limiares numa ADR.
+- [ ] Nota geral só com categorias calibradas; o relatório separa a parte
+      determinística da parte do LLM.
+- [ ] TD-51: os dois falsos positivos do LLM neste repositório.
+- [ ] Ao fechar: nova análise deste repositório; o link público e os prints
+      voltam ao README.
+
 ## Backlog v2.x / v3
 
 Fora do escopo da v2.0. A ordem pode mudar conforme as decisões pendentes e
 os evals.
 
-- **v2.1 — Code Intelligence:** AST do repositório inteiro (símbolos,
-  imports/exports, grafo de dependências; TD-07), métricas pela AST (TD-31),
+- **v2.x — Code Intelligence:** AST do repositório inteiro (símbolos,
+  imports/exports, grafo de dependências; TD-07), métricas pela AST (TD-31;
+  o tamanho das funções já entrou na v2.1),
   ferramentas determinísticas com licença verificada (`dependency-cruiser`,
   `jscpd`, `knip`, `gitleaks`, `osv-scanner`; **não** usar regras do Semgrep
   Registry nem CodeQL num SaaS sem checar a licença), LLM explicando
   evidências (arquivo + linha), busca híbrida e citações se o eval mostrar
-  ganho. Ao fechar: nova análise deste repositório, e o link público e os
-  prints (claro/escuro) voltam ao README.
+  ganho.
 - **v2.2 — Primeiras análises + modo local:** violações de camada e ciclos,
   hotspots (churn × complexidade), autorização e multi-tenancy, segurança de
   IA, qualidade dos testes, cada uma com eval. CLI via `npx` com Ollama,
@@ -1031,7 +1058,7 @@ Mudam o roadmap a partir da v2.2.
 | 007 | [GitHub App no lugar do OAuth App](decisions/007-github-app.md) (TD-15, TD-16) — aceita | 6 |
 | 008 | [Retenção e exclusão de dados](decisions/008-data-retention.md) — aceita (registro retroativo) | 6 |
 | 009 | [Estratégia de evals e gate no CI](decisions/009-evals.md) — aceita (registro retroativo) | 7 |
-| 010 | [Fórmula do score (penalidade com teto)](decisions/010-score-formula.md) — aceita | 7 |
+| 010 | [Fórmula do score (penalidade com teto)](decisions/010-score-formula.md) — aceita; revisões de Testing e Code Quality | 7, v2.1 |
 | 011 | [Onde o ZIP enviado fica até o job processá-lo](decisions/011-zip-upload-storage.md) (TD-45) — aceita | 5 |
 
 Formato: contexto, problema, opções (inclusive as rejeitadas), decisão,
@@ -1047,7 +1074,8 @@ trade-offs, consequências.
 | 5 — Ingestão assíncrona | TD-01, TD-03 (hash), TD-05, TD-09, TD-10, TD-11 |
 | 6 — Segurança | TD-15, TD-34 · se sobrar: TD-17, TD-18, TD-19, TD-21 |
 | 7 — Evals + qualidade | TD-28, TD-29, TD-30, TD-31 · se sobrar: TD-02, TD-03, TD-08, TD-22 |
-| v2.1 — Code Intelligence | TD-07, TD-31 (AST) |
+| v2.1 — Calibração das notas | TD-50, TD-51, TD-44, TD-31 (tamanho das funções) |
+| v2.x — Code Intelligence | TD-07, TD-31 (resto da AST) |
 | v3+ — Produção | TD-06, TD-13, TD-23 |
 
 ## Diferenças em relação ao roadmap original de 18 fases

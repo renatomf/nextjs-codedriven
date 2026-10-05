@@ -5,6 +5,7 @@ import { and, asc, eq } from "drizzle-orm";
 
 import { codeChunks, projects, reports, type StoredLlmReview } from "@/db/schema";
 import { structuredLanguageModelId } from "@/lib/ai/llm";
+import { computeProjectMetrics } from "@/lib/analysis/metrics";
 import { loadProjectSourceFiles } from "@/lib/analysis/project-files";
 import { reviewInputHash, runLlmHealthReview } from "@/lib/analysis/report-llm";
 import type {
@@ -14,11 +15,7 @@ import type {
   ReportIssue,
 } from "@/lib/analysis/report-types";
 import { db } from "@/lib/db";
-import {
-  buildReportFindings,
-  computeDeterministicMetrics,
-  diminishingPenaltyPolicy,
-} from "@/modules/analysis";
+import { buildReportFindings, diminishingPenaltyPolicy } from "@/modules/analysis";
 import { BillingLimitError, LlmUnavailableError } from "@/modules/billing";
 import { assertLlmBudget, assertLlmEnabled, recordLlmCall } from "@/modules/billing/server";
 import { setProjectStatus } from "@/modules/projects/server";
@@ -132,7 +129,7 @@ export async function generateProjectReport(
   try {
     const files = await loadProjectSourceFiles(userId, projectId);
     const metrics = await traced("report.metrics", { files: files.length }, async () =>
-      computeDeterministicMetrics(files),
+      computeProjectMetrics(files),
     );
 
     const chunks = await db

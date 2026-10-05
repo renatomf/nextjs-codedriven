@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeDeterministicMetrics } from "@/lib/analysis/metrics";
+import { computeProjectMetrics } from "@/lib/analysis/metrics";
 import { analysisFixtureFiles } from "@/test/fixtures/analysis-project";
 
 // Pins the complete output of today's deterministic analysis (every
@@ -9,8 +9,8 @@ import { analysisFixtureFiles } from "@/test/fixtures/analysis-project";
 // an intended fix (TD-31, `src/test/`, secrets in fixtures) updates it, and
 // the snapshot diff shows exactly what changed.
 
-describe("computeDeterministicMetrics (characterization)", () => {
+describe("computeProjectMetrics (characterization)", () => {
   it("produces the same metrics, issues and summaries", () => {
-    expect(computeDeterministicMetrics(analysisFixtureFiles())).toMatchSnapshot();
+    expect(computeProjectMetrics(analysisFixtureFiles())).toMatchSnapshot();
   });
 });

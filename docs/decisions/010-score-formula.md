@@ -131,3 +131,54 @@ fachadas. Dois ajustes achados na calibração: um import dentro de uma string
 deste repositório **51 → 57** (eval `2026-10-04-436f928`); casos anotados
 1,00 / 1,00. O que falta para chegar perto de 100 é real: testar essas 4 áreas
 e as telas (`.tsx`), hoje cobertas só pelo E2E.
+
+## Revisão — base de Code Quality (2026-10-05, TD-50 item 1)
+
+**Contexto.** A base era 85, ou 72 acima de 8 arquivos grandes mais funções
+longas, e cada função longa ainda descontava como achado. Duas falhas:
+
+1. O **detector** contava chaves linha a linha (regex): errava funções com
+   chaves em strings, não via métodos de classe e deixou de fora
+   `generateProjectReport` (140 linhas) e `extractFromZipBuffer` (128) deste
+   repositório (TD-31).
+2. A **nota dependia do tamanho do repositório**, não da proporção. Medido no
+   eval com a fórmula antiga: Juice Shop **28**, este repositório **45**,
+   NodeGoat **67**. Pela referência (a fatia de funções que o ESLint
+   `max-lines-per-function` aponta acima de 50 linhas), a ordem é a inversa:
+   Juice Shop 2,1%, este 5,3%, NodeGoat 16%.
+
+**Medição do detector** (2026-10-05, script temporário sobre os três
+repositórios): o tamanho das funções pelo tree-sitter (que o chunking já
+usa) bate com o do ESLint em todos os arquivos que o ESLint conseguiu ler,
+e lê 39 arquivos do Juice Shop que o ESLint não lê. A fatia de **linhas** em
+funções longas foi descartada como métrica: pesa demais funções que
+embrulham outras (construtores do NodeGoat, componentes).
+
+**Decisão.**
+
+- Tamanho das funções pela AST (`measureFunctions`, infraestrutura; o domínio
+  recebe os tamanhos e continua puro). Componentes React seguem medidos pela
+  lógica até o `return` do JSX (TD-31): é o único ponto em que diverge do
+  ESLint (este repositório: 3,0% contra 5,2%).
+- Base contínua: **`100 − 4 × % das funções com mais de 50 linhas`**. 50 é o
+  padrão do ESLint; com peso 4, um quarto das funções longas leva a 0. Não
+  depende do número de arquivos.
+- Os achados determinísticos de Code Quality (função complexa, arquivo
+  grande) continuam no relatório, mas **não descontam de novo**: o tamanho já
+  está na base. Achados do LLM em Code Quality continuam descontando.
+- O eval passa a exigir que a nota ordene os três repositórios como o ESLint.
+
+**Resultado medido** (eval `2026-10-05-1597cd1`): Code Quality Juice Shop
+28 → **92**, este repositório 45 → **88**, NodeGoat 67 → **36**; nota
+determinística deste repositório 78 → 86; casos anotados 1,00 / 1,00.
+
+**Trade-offs.**
+
+- Este repositório ficou acima da faixa "plausível" que o TD-50 estimava
+  (70–80). Não se ajustou o peso para cair nela: a calibração é contra a
+  referência, e a diferença vem da regra de componentes.
+- Três repositórios são uma referência pequena; o peso 4 é uma escolha
+  explicada, não estimada. Revisar com mais repositórios de referência.
+- Arquivo grande deixou de pesar na nota: um arquivo com muitas funções
+  curtas não é, por si, um problema. Continua listado.
+- `@typescript-eslint/parser` virou devDependency explícita (só no eval).

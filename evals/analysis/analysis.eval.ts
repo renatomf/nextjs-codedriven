@@ -2,17 +2,21 @@ import { execFileSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import tsParser from "@typescript-eslint/parser";
+import { ESLint } from "eslint";
 import { expect, it } from "vitest";
 
 import { chunkProjectFiles } from "@/lib/analysis/chunking";
+import { computeProjectMetrics, type DeterministicMetrics, type SourceFile } from "@/lib/analysis/metrics";
 import {
   buildReportFindings,
-  computeDeterministicMetrics,
   diminishingPenaltyPolicy,
   linearPenaltyPolicy,
+  LONG_FUNCTION_LINES,
   REVIEW_BUDGET,
   sampleForReview,
 } from "@/modules/analysis";
+import { isTestFile } from "@/modules/analysis/domain/paths";
 
 import { loadRepo, loadThisRepository, REPO_CASES, type RepoCase } from "../repos/repos";
 import { ANALYSIS_CASES } from "./cases";
@@ -26,6 +30,52 @@ import { scoreCase } from "./score";
 
 const git = (...args: string[]) => execFileSync("git", args, { maxBuffer: 256 * 1024 * 1024 });
 
+// ESLint's `max-lines-per-function` with max 0 reports every function with
+// its length: the reference the Code Quality score is calibrated against
+// (TD-50). Files ESLint cannot parse are left out of its count.
+const eslint = new ESLint({
+  overrideConfigFile: true,
+  overrideConfig: [
+    {
+      files: ["**/*.{js,jsx,ts,tsx}"],
+      languageOptions: { parser: tsParser, parserOptions: { ecmaFeatures: { jsx: true } } },
+      rules: { "max-lines-per-function": ["error", { max: 0, IIFEs: true }] },
+    },
+  ],
+});
+
+async function eslintLongFunctionPercent(files: SourceFile[]): Promise<number> {
+  let functions = 0;
+  let long = 0;
+  for (const file of files.filter((f) => !isTestFile(f.relativePath))) {
+    const [result] = await eslint.lintText(file.content, { filePath: file.relativePath });
+    if (result.messages.some((m) => m.fatal)) continue;
+    for (const message of result.messages) {
+      const lines = Number(message.message.match(/too many lines \((\d+)\)/)?.[1]);
+      if (!lines) continue;
+      functions += 1;
+      if (lines > LONG_FUNCTION_LINES) long += 1;
+    }
+  }
+  return functions === 0 ? 0 : round1((100 * long) / functions);
+}
+
+const round1 = (value: number) => Math.round(value * 10) / 10;
+
+/** The deterministic Code Quality score next to its reference (TD-50). */
+async function codeQuality(files: SourceFile[], metrics: DeterministicMetrics) {
+  const { categoryScores } = diminishingPenaltyPolicy({
+    measures: metrics,
+    findings: buildReportFindings(metrics.issues, []),
+  });
+  return {
+    score: categoryScores.codeQuality,
+    functions: metrics.functionCount,
+    longFunctionPercent: metrics.functionCount === 0 ? 0 : round1((100 * metrics.longFunctionCount) / metrics.functionCount),
+    eslintLongFunctionPercent: await eslintLongFunctionPercent(files),
+  };
+}
+
 /**
  * A real repository with annotated problems, read like a GitHub import:
  * what the deterministic analysis finds and which annotated lines reach the
@@ -33,7 +83,7 @@ const git = (...args: string[]) => execFileSync("git", args, { maxBuffer: 256 * 
  */
 async function realRepository(repoCase: RepoCase) {
   const files = await loadRepo(repoCase);
-  const metrics = computeDeterministicMetrics(files);
+  const metrics = computeProjectMetrics(files);
   const chunks = chunkProjectFiles(files).sort(
     (a, b) => a.filePath.localeCompare(b.filePath) || (a.startLine ?? 0) - (b.startLine ?? 0),
   );
@@ -68,6 +118,7 @@ async function realRepository(repoCase: RepoCase) {
     expectedInSample: expected.filter((e) => e.inSample).length,
     expectedTotal: expected.length,
     expected,
+    codeQuality: await codeQuality(files, metrics),
     issues: metrics.issues.map(({ title, severity, category, filePath }) => ({
       title,
       severity,
@@ -80,7 +131,7 @@ async function realRepository(repoCase: RepoCase) {
 async function thisRepository() {
   const files = await loadThisRepository();
 
-  const metrics = computeDeterministicMetrics(files);
+  const metrics = computeProjectMetrics(files);
   // As the report shows them: grouped (ADR-010).
   const findings = buildReportFindings(metrics.issues, []);
   const current = diminishingPenaltyPolicy({ measures: metrics, findings });
@@ -115,6 +166,7 @@ async function thisRepository() {
     // Deterministic part only: architecture and performance come from the
     // LLM in the product, so here they stay at their base score. `v1` is the
     // linear policy, kept for comparison.
+    codeQuality: await codeQuality(files, metrics),
     deterministicCategoryScores: current.categoryScores,
     deterministicHealthScore: current.healthScore,
     v1DeterministicCategoryScores: v1.categoryScores,
@@ -130,7 +182,7 @@ async function thisRepository() {
 
 it("measures the deterministic analysis", async () => {
   const cases = ANALYSIS_CASES.map((evalCase) => {
-    const findings = buildReportFindings(computeDeterministicMetrics(evalCase.files).issues, []);
+    const findings = buildReportFindings(computeProjectMetrics(evalCase.files).issues, []);
     const score = scoreCase(findings, evalCase.expected);
     return {
       name: evalCase.name,
@@ -181,10 +233,10 @@ it("measures the deterministic analysis", async () => {
           `${c.falsePositives.length} false positive(s), ${c.missed.length} missed`,
       ),
       `  total: precision ${result.analysis.totals.precision.toFixed(2)}, recall ${result.analysis.totals.recall.toFixed(2)}`,
-      `  this repository: ${result.analysis.thisRepository.findings} findings in ${result.analysis.thisRepository.reportFindings} report lines, deterministic health ${result.analysis.thisRepository.deterministicHealthScore} (v1: ${result.analysis.thisRepository.v1DeterministicHealthScore})`,
+      `  this repository: ${result.analysis.thisRepository.findings} findings in ${result.analysis.thisRepository.reportFindings} report lines, deterministic health ${result.analysis.thisRepository.deterministicHealthScore} (v1: ${result.analysis.thisRepository.v1DeterministicHealthScore}), ${codeQualityLine(result.analysis.thisRepository.codeQuality)}`,
       ...result.analysis.realRepositories.map(
         (r) =>
-          `  ${r.name}: ${r.sourceFiles} files, ${r.chunks} chunks, ${r.findings} findings; annotated lines in the review sample: ${r.expectedInSample}/${r.expectedTotal}`,
+          `  ${r.name}: ${r.sourceFiles} files, ${r.chunks} chunks, ${r.findings} findings; annotated lines in the review sample: ${r.expectedInSample}/${r.expectedTotal}; ${codeQualityLine(r.codeQuality)}`,
       ),
       `  review sample: ${result.analysis.thisRepository.reviewSample.chunks} chunks from ${result.analysis.thisRepository.reviewSample.files} files in ${result.analysis.thisRepository.reviewSample.directories} directories (${result.analysis.thisRepository.reviewSample.testFiles} test files)`,
     ].join("\n"),
@@ -202,6 +254,17 @@ it("measures the deterministic analysis", async () => {
       GATE.minExpectedInSample[repo.name] ?? 0,
     );
   }
+  // TD-50: Code Quality ranks the repositories as ESLint's long-function
+  // share does (fewer long functions, higher score).
+  const ranked = [
+    { name: "this repository", ...result.analysis.thisRepository.codeQuality },
+    ...result.analysis.realRepositories.map((r) => ({ name: r.name, ...r.codeQuality })),
+  ].sort((a, b) => a.eslintLongFunctionPercent - b.eslintLongFunctionPercent);
+  for (let i = 1; i < ranked.length; i += 1) {
+    expect(ranked[i].score, `Code Quality: ${ranked[i - 1].name} vs ${ranked[i].name}`).toBeLessThan(
+      ranked[i - 1].score,
+    );
+  }
 }, 120_000);
 
 /**
@@ -215,6 +278,11 @@ const GATE = {
   minExpectedInSample: { nodegoat: 5, "juice-shop": 2 } as Record<string, number>,
 };
 
+type CodeQuality = { score: number; longFunctionPercent: number; eslintLongFunctionPercent: number };
+
+const codeQualityLine = (c: CodeQuality) =>
+  `Code Quality ${c.score} (${c.longFunctionPercent}% of functions over ${LONG_FUNCTION_LINES} lines; ESLint ${c.eslintLongFunctionPercent}%)`;
+
 type EvalResult = {
   commit: string;
   analysis: {
@@ -224,9 +292,16 @@ type EvalResult = {
       findings: number;
       reportFindings: number;
       deterministicHealthScore: number;
+      codeQuality: CodeQuality;
       reviewSample: { files: number; directories: number; testFiles: number };
     };
-    realRepositories: Array<{ name: string; findings: number; expectedInSample: number; expectedTotal: number }>;
+    realRepositories: Array<{
+      name: string;
+      findings: number;
+      expectedInSample: number;
+      expectedTotal: number;
+      codeQuality: CodeQuality;
+    }>;
   };
 };
 
@@ -244,19 +319,19 @@ function markdownSummary(result: EvalResult): string {
     ),
     `| **Total** | **${pct(totals.precision)}** | **${pct(totals.recall)}** | | |`,
     "",
-    "| Repository | Findings | Vulnerable lines in the LLM sample |",
-    "|---|---|---|",
+    "| Repository | Findings | Vulnerable lines in the LLM sample | Code Quality (long functions; ESLint) |",
+    "|---|---|---|---|",
     ...realRepositories.map(
       (r) =>
-        `| ${r.name} | ${r.findings} | ${r.expectedInSample}/${r.expectedTotal} (gate ≥ ${GATE.minExpectedInSample[r.name] ?? 0}) |`,
+        `| ${r.name} | ${r.findings} | ${r.expectedInSample}/${r.expectedTotal} (gate ≥ ${GATE.minExpectedInSample[r.name] ?? 0}) | ${r.codeQuality.score} (${r.codeQuality.longFunctionPercent}%; ${r.codeQuality.eslintLongFunctionPercent}%) |`,
     ),
     "",
     `**This repository (dogfooding):** deterministic health ${thisRepository.deterministicHealthScore}, ` +
       `${thisRepository.findings} findings in ${thisRepository.reportFindings} report lines; ` +
       `review sample of ${thisRepository.reviewSample.files} files in ${thisRepository.reviewSample.directories} directories ` +
-      `(${thisRepository.reviewSample.testFiles} tests).`,
+      `(${thisRepository.reviewSample.testFiles} tests); ${codeQualityLine(thisRepository.codeQuality)}.`,
     "",
-    `Gate: precision ≥ ${GATE.minPrecision}, recall ≥ ${GATE.minRecall}. No LLM runs in CI (no cost, no quota).`,
+    `Gate: precision ≥ ${GATE.minPrecision}, recall ≥ ${GATE.minRecall}; Code Quality ranks the repositories as ESLint does. No LLM runs in CI (no cost, no quota).`,
     "",
   ].join("\n");
 }
