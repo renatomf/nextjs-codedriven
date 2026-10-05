@@ -469,14 +469,62 @@ maintainability) · **Low** (cleanup).
   Code Quality (85/72) are bases kept from v1 minus penalties. Even with no
   finding, Architecture stops at 88. Nobody checked yet that a vulnerable
   repository scores clearly below a sound one.
+- **Measured (2026-10-05):** production report of this repository after
+  #135: Architecture 76, Security 90, Performance 80, Code Quality 45,
+  Testing 80.
+  - Code Quality: the base drops from 85 to 72 above 8 large files plus
+    long functions (this repository has 10), which alone costs 13 points;
+    the 8 long functions together cost about 12 (diminishing penalty). The
+    regex detector misses `generateProjectReport` (140 lines) and
+    `extractFromZipBuffer` (128). Of 575 functions in `src`, the median has
+    12 lines and 90% have at most 47.
+  - Security, from the LLM eval's findings with today's formula: NodeGoat
+    0-24 and Juice Shop 0-26 over 5 runs, the synthetic vulnerable case
+    62-70. It ranks them, but 4 critical findings reach 0, the same code
+    moves up to 26 points between runs, and the 90 here only means no
+    detector fired (RLS, revocable sessions and CSP are TD-21, TD-18 and
+    TD-34).
+  - Architecture and Performance: fixed base minus LLM findings only.
+  - The health score averages one calibrated category with four that are
+    not.
 - **Direction:** calibrate only against a reference, never to make this
-  repository score well:
-  1. Security against the annotated vulnerable repositories (NodeGoat,
-     Juice Shop) and a sound one: the scores must rank them.
-  2. Code Quality against a complexity tool.
-  3. Architecture and Performance have no reference: they first need
-     measured signals (import cycles, layer violations), in an ADR.
-- **Phase:** after v2.0 (outside the roadmap's closed scope).
+  repository score well. In this order:
+  1. Code Quality: detector on the AST (TD-31), and a continuous score from
+     the share of long functions instead of the 85/72 step. Check: the
+     ranking matches ESLint `max-lines-per-function` on this repository,
+     NodeGoat and Juice Shop. Deterministic, no LLM quota. Plausible here:
+     70-80.
+  2. TD-44 and the review's token budget (requests above Groq's 8000
+     tokens per minute): without them no Security gate is reliable.
+  3. Security: dependency vulnerabilities from the lockfile (OSV) as an
+     objective signal; diminishing penalty as in ADR-010. Gate over 3
+     runs: NodeGoat and Juice Shop below 40, a sound repository above 75.
+     Plausible here: 75-85.
+  4. Performance: no measured signal, so it leaves the health score; its
+     findings stay in the report without a number.
+  5. Architecture: import cycles and files with high fan-in and fan-out,
+     from the import graph the Testing estimate already follows; thresholds
+     in an ADR. Plausible here: 80-90 (`lint:arch` reports 0 violations).
+  6. The health score averages only calibrated categories; the report
+     shows the deterministic part apart from the LLM part.
+- **Phase:** after v2.0 (outside the roadmap's closed scope). Until then
+  the README says that only Testing is calibrated.
+
+### TD-51 — The LLM review still reports two false positives on this repository · Low
+- **Where:** [review-prompt.ts](../src/modules/analysis/domain/review-prompt.ts),
+  [evals/llm/cases.ts](../evals/llm/cases.ts) (`design-choices-not-defects`)
+- **Problem:** after TD-49 (`2026-10-05-9b603ee-llm.json`):
+  - "Possible path-traversal in file explorer endpoint" (high, −12
+    Security): the file comes from the database by exact path, after
+    `isSafeRelativePath` and scoped by the project's owner
+    ([storage.ts](../src/lib/files/storage.ts), `readProjectFile`); no
+    filesystem access;
+  - the run status check, reworded as "Duplicated handling of running
+    state" (low), which the case's forbidden pattern does not match.
+- **Direction:** forbidden rules for both in the eval case first (measure
+  the before), then a general prompt rule only if they persist. Each LLM
+  eval run costs about 48k of the eval account's 200k daily tokens.
+- **Phase:** with TD-50, after v2.0.
 
 ---
 
