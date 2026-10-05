@@ -768,8 +768,8 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       repositório muda a análise, o prompt, o modelo ou o eval, roda a
       revisão com o modelo real (secret `GROQ_EVAL_API_KEY`, conta separada:
       o eval nunca usa a chave de produção) e falha abaixo do baseline
-      (sintéticos todos, NodeGoat 6 de 9, Juice Shop 1 de 8) ou com citação
-      de arquivo não recebido.
+      (sintéticos todos, NodeGoat 6 de 9, Juice Shop 1 de 8; NodeGoat
+      revisto para 5 no TD-44, v2.1) ou com citação de arquivo não recebido.
 - [x] **Dogfooding:** o analisador roda no próprio repo a cada PR e publica
       score e achados; gráfico do score ao longo das fases no README.
       Progresso: job `eval` no CI (parte determinística, sem LLM, sem custo
@@ -989,6 +989,11 @@ nota boa.
       no NodeGoat e no Juice Shop (2026-10-05, ADR-010 revisão).
 - [ ] TD-44 e o orçamento de tokens da revisão (pedidos acima de 8000
       tokens/min do Groq): pré-requisito de qualquer gate de Security.
+  - [x] TD-44 (2026-10-05): gate pela variação de uma execução (NodeGoat
+        ≥ 5, Juice Shop ≥ 1), "não medido" (limite do Groq) separado de
+        "piorou", e o workflow só roda quando muda o que o modelo recebe.
+  - [ ] Orçamento de tokens: nenhum pedido acima do limite por minuto
+        ("Request too large", NodeGoat em `a1db0d5`), medido antes.
 - [ ] **Security:** vulnerabilidades de dependências pelo lockfile (OSV);
       gate em 3 execuções (NodeGoat e Juice Shop abaixo de 40, repositório
       saudável acima de 75).
