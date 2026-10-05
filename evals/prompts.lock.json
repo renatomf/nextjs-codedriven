@@ -1,8 +1,8 @@
 {
   "review": {
-    "version": "4682f33b",
-    "measuredBy": "evals/results/2026-10-04-d565f70-llm.json",
-    "note": "TD-48: assumes the code compiles, no syntax findings. chunk-cut-mid-statement (this repo auth.ts) with no forbidden finding (before: \"stray character causing syntax error\"); synthetic cases all found, NodeGoat 7 of 9, Juice Shop 2 of 8 (1 run)."
+    "version": "f3ebfa75",
+    "measuredBy": "evals/results/2026-10-05-9b603ee-llm.json",
+    "note": "TD-49: design choices are not defects (no missing-limit claims without evidence, follow the quoted code, exploitable security only, per-handler session checks and per-environment settings are fine). design-choices-not-defects: 3 forbidden findings before, 0 after (one rewording of the run status check still appears); synthetic cases all found, NodeGoat 6 of 9, Juice Shop 1 of 8 (1 run)."
   },
   "chat": {
     "version": "86e19fe0",

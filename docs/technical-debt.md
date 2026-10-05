@@ -449,6 +449,16 @@ maintainability) · **Low** (cleanup).
   The LLM eval gained the case `design-choices-not-defects` (this
   repository's own routes, a forbidden finding per false positive); a
   forbidden rule without a file matches project-wide issues too.
+- **Done (measured, 1 run per case):** before, the old prompt reproduced 3
+  of them in the new case (JSON parse, run status, cookie `secure`;
+  `2026-10-05-a1db0d5-llm.json`). After: no forbidden finding in any case,
+  synthetic cases all found, NodeGoat 6 of 9, Juice Shop 1 of 8
+  (`2026-10-05-9b603ee-llm.json`). Still open: the run status check came
+  back as "Duplicated handling of running state" (low), which the forbidden
+  pattern does not match. The baseline run also showed one-run noise
+  (TD-44): `chunk-cut-mid-statement` reported a forbidden finding with the
+  old prompt, and NodeGoat failed once with a request of 8374 tokens, over
+  the free tier's 8000 per minute.
 - **Phase:** Evals + analysis quality (Phase 7 follow-up).
 
 ### TD-50 — Category bases are fixed, not calibrated · Medium
