@@ -1000,6 +1000,12 @@ nota boa.
 - [ ] **Security:** vulnerabilidades de dependências pelo lockfile (OSV);
       gate em 3 execuções (NodeGoat e Juice Shop abaixo de 40, repositório
       saudável acima de 75).
+  - [x] Domínio, cliente do OSV e medição no eval (2026-10-05,
+        [ADR-012](decisions/012-dependency-vulnerabilities.md)): este
+        repositório 81, NodeGoat 58, Juice Shop sem lockfile.
+  - [ ] Tabela `project_dependencies`, extração na ingestão (GitHub e ZIP),
+        relatório e página `/data`.
+  - [ ] Gate em 3 execuções com o LLM (precisa de cota do Groq).
 - [ ] **Performance** sai da nota geral (sem sinal medido); os achados ficam
       no relatório.
 - [ ] **Architecture:** ciclos de import e fan-in/fan-out pelo grafo de
@@ -1068,6 +1074,7 @@ Mudam o roadmap a partir da v2.2.
 | 009 | [Estratégia de evals e gate no CI](decisions/009-evals.md) — aceita (registro retroativo) | 7 |
 | 010 | [Fórmula do score (penalidade com teto)](decisions/010-score-formula.md) — aceita; revisões de Testing e Code Quality | 7, v2.1 |
 | 011 | [Onde o ZIP enviado fica até o job processá-lo](decisions/011-zip-upload-storage.md) (TD-45) — aceita | 5 |
+| 012 | [Vulnerabilidades de dependências na nota de Security](decisions/012-dependency-vulnerabilities.md) (TD-50) — aceita | v2.1 |
 
 Formato: contexto, problema, opções (inclusive as rejeitadas), decisão,
 trade-offs, consequências.

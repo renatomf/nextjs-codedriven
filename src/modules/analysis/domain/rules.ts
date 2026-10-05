@@ -1,4 +1,5 @@
-import type { Finding } from "./finding";
+import { dependencySeverity, type DependencyScan } from "./dependencies";
+import { SEVERITY_ORDER, type Finding } from "./finding";
 
 /** What the deterministic scan measured in a project (see `measureProject`). */
 export type ProjectMeasures = {
@@ -12,6 +13,7 @@ export type ProjectMeasures = {
   testedSourceApproxPercent: number;
   untestedCriticalPaths: string[];
   secretHits: Array<{ filePath: string; line: number; hint: string }>;
+  dependencyScan: DependencyScan;
 };
 
 /**
@@ -109,6 +111,32 @@ export const hardcodedSecretRule: Rule = {
     })),
 };
 
+export const vulnerableDependencyRule: Rule = {
+  id: "vulnerable-dependency",
+  group: {
+    title: "Vulnerable dependencies",
+    description:
+      "Production dependencies with known advisories (OSV). Transitive ones weigh one level lower. Upgrade or replace them.",
+  },
+  findings: ({ dependencyScan }) => {
+    if (dependencyScan.status !== "scanned") return [];
+    return dependencyScan.vulnerable
+      .map((dependency) => ({ dependency, severity: dependencySeverity(dependency) }))
+      .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
+      .slice(0, 15)
+      .map(({ dependency, severity }) => ({
+        title: `Vulnerable dependency ${dependency.name}@${dependency.version}`,
+        description: `${dependency.advisories.length} known advisor${dependency.advisories.length === 1 ? "y" : "ies"} (${dependency.advisories
+          .slice(0, 5)
+          .map((a) => a.id)
+          .join(", ")}); ${dependency.direct ? "declared by the project" : "transitive, weighed one level lower"}.`,
+        severity,
+        category: "security",
+        filePath: "package-lock.json",
+      }));
+  },
+};
+
 /** In report order. */
 export const DETERMINISTIC_RULES: Rule[] = [
   largeFileRule,
@@ -116,4 +144,5 @@ export const DETERMINISTIC_RULES: Rule[] = [
   lowTestCoverageRule,
   untestedCriticalPathRule,
   hardcodedSecretRule,
+  vulnerableDependencyRule,
 ];

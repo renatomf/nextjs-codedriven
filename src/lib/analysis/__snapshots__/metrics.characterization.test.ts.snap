@@ -74,6 +74,9 @@ exports[`computeProjectMetrics (characterization) > produces the same metrics, i
       "name": "long11",
     },
   ],
+  "dependencyScan": {
+    "status": "not-scanned",
+  },
   "functionCount": 24,
   "issues": [
     {

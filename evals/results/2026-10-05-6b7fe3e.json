@@ -1,0 +1,797 @@
+{
+  "date": "2026-10-05T19:31:04.342Z",
+  "commit": "6b7fe3e",
+  "analysis": {
+    "cases": [
+      {
+        "name": "well-tested-lib",
+        "expected": 0,
+        "found": 0,
+        "truePositives": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositives": [],
+        "missed": []
+      },
+      {
+        "name": "planted-problems",
+        "expected": 8,
+        "found": 5,
+        "truePositives": 8,
+        "precision": 1,
+        "recall": 1,
+        "falsePositives": [],
+        "missed": []
+      },
+      {
+        "name": "false-positive-traps",
+        "expected": 0,
+        "found": 0,
+        "truePositives": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositives": [],
+        "missed": []
+      },
+      {
+        "name": "tests-in-separate-folder",
+        "expected": 0,
+        "found": 0,
+        "truePositives": 0,
+        "precision": 1,
+        "recall": 1,
+        "falsePositives": [],
+        "missed": []
+      },
+      {
+        "name": "tested-through-module-api",
+        "expected": 1,
+        "found": 1,
+        "truePositives": 1,
+        "precision": 1,
+        "recall": 1,
+        "falsePositives": [],
+        "missed": []
+      }
+    ],
+    "totals": {
+      "truePositives": 9,
+      "falsePositives": 0,
+      "missed": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    "thisRepository": {
+      "sourceFiles": 312,
+      "reviewSample": {
+        "chunks": 15,
+        "chars": 15992,
+        "files": 15,
+        "directories": 12,
+        "testFiles": 0,
+        "filePaths": [
+          "src/app/api/auth/[...nextauth]/route.ts",
+          "src/app/api/chat/route.ts",
+          "src/app/api/cron/reap-stuck-projects/route.ts",
+          "src/app/api/explorer/explain/route.ts",
+          "src/app/api/explorer/file/route.ts",
+          "src/app/api/github/app/callback/route.ts",
+          "src/app/api/github/app/install/route.ts",
+          "src/app/api/projects/[id]/analyze/route.ts",
+          "src/app/api/projects/[id]/status/route.ts",
+          "src/instrumentation-client.ts",
+          "src/lib/actions/account.ts",
+          "src/lib/auth.ts",
+          "src/lib/db.ts",
+          "src/lib/utils.ts",
+          "src/proxy.ts"
+        ]
+      },
+      "findings": 16,
+      "reportFindings": 3,
+      "findingsByRule": {
+        "Large file": 2,
+        "Complex function": 12,
+        "Vulnerable dependency braces@3.0.3": 1,
+        "Vulnerable dependency http-cache-semantics@4.2.0": 1
+      },
+      "codeQuality": {
+        "score": 88,
+        "functions": 1200,
+        "longFunctionPercent": 2.9,
+        "eslintLongFunctionPercent": 5
+      },
+      "security": {
+        "score": 81,
+        "dependencyScan": "scanned",
+        "dependencies": 996,
+        "vulnerableDependencies": [
+          "braces@3.0.3 (transitive): GHSA-vfj7-8cjw-p6xm high",
+          "http-cache-semantics@4.2.0 (transitive): GHSA-ch52-4w7c-c8xp high"
+        ]
+      },
+      "deterministicCategoryScores": {
+        "architecture": 88,
+        "security": 81,
+        "performance": 86,
+        "codeQuality": 88,
+        "testing": 81
+      },
+      "deterministicHealthScore": 85,
+      "v1DeterministicCategoryScores": {
+        "architecture": 88,
+        "security": 78,
+        "performance": 86,
+        "codeQuality": 0,
+        "testing": 68
+      },
+      "v1DeterministicHealthScore": 64,
+      "issues": [
+        {
+          "title": "Large file (482 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/app/page.tsx"
+        },
+        {
+          "title": "Large file (407 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/modules/projects/infrastructure/import-archive.ts"
+        },
+        {
+          "title": "Complex function anonymous (222 lines)",
+          "severity": "high",
+          "category": "codeQuality",
+          "filePath": "evals/llm/llm.eval.ts"
+        },
+        {
+          "title": "Complex function ProjectChat (189 lines)",
+          "severity": "high",
+          "category": "codeQuality",
+          "filePath": "src/components/projects/project-chat.tsx"
+        },
+        {
+          "title": "Complex function computeDeterministicMetrics (151 lines)",
+          "severity": "high",
+          "category": "codeQuality",
+          "filePath": "src/modules/analysis/domain/metrics.ts"
+        },
+        {
+          "title": "Complex function generateProjectReport (140 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/lib/analysis/report.ts"
+        },
+        {
+          "title": "Complex function extractFromZipBuffer (128 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/lib/files/extract.ts"
+        },
+        {
+          "title": "Complex function anonymous (121 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "evals/chat/chat.eval.ts"
+        },
+        {
+          "title": "Complex function POST (121 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/app/api/chat/route.ts"
+        },
+        {
+          "title": "Complex function POST (120 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/app/api/projects/[id]/analyze/route.ts"
+        },
+        {
+          "title": "Complex function useAnalysisProgress (119 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/components/projects/use-analysis-progress.ts"
+        },
+        {
+          "title": "Complex function anonymous (100 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "evals/retrieval/retrieval.eval.ts"
+        },
+        {
+          "title": "Complex function HeroSilk (99 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/components/shared/hero-silk.tsx"
+        },
+        {
+          "title": "Complex function anonymous (94 lines)",
+          "severity": "medium",
+          "category": "codeQuality",
+          "filePath": "src/components/shared/hero-silk.tsx"
+        },
+        {
+          "title": "Vulnerable dependency braces@3.0.3",
+          "severity": "medium",
+          "category": "security",
+          "filePath": "package-lock.json"
+        },
+        {
+          "title": "Vulnerable dependency http-cache-semantics@4.2.0",
+          "severity": "medium",
+          "category": "security",
+          "filePath": "package-lock.json"
+        }
+      ]
+    },
+    "realRepositories": [
+      {
+        "name": "nodegoat",
+        "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+        "sourceFiles": 44,
+        "chunks": 93,
+        "findings": 25,
+        "findingsByRule": {
+          "Complex function": 9,
+          "Low test file coverage signal": 1,
+          "Vulnerable dependency underscore@1.9.1": 1,
+          "Vulnerable dependency body-parser@1.18.3": 1,
+          "Vulnerable dependency bson@1.0.9": 1,
+          "Vulnerable dependency fsevents@1.2.9": 1,
+          "Vulnerable dependency minimist@0.0.8": 1,
+          "Vulnerable dependency minimist@1.2.0": 1,
+          "Vulnerable dependency tar@4.4.8": 1,
+          "Vulnerable dependency marked@0.3.5": 1,
+          "Vulnerable dependency minimist@0.0.10": 1,
+          "Vulnerable dependency mixin-deep@1.3.1": 1,
+          "Vulnerable dependency mongodb@2.2.36": 1,
+          "Vulnerable dependency minimist@1.2.5": 1,
+          "Vulnerable dependency set-value@2.0.0": 1,
+          "Vulnerable dependency swig@1.4.2": 1,
+          "Vulnerable dependency set-value@0.4.3": 1
+        },
+        "reviewSample": {
+          "chunks": 15,
+          "files": 14,
+          "filePaths": [
+            "app/data/allocations-dao.js",
+            "app/data/contributions-dao.js",
+            "app/data/user-dao.js",
+            "app/routes/allocations.js",
+            "app/routes/benefits.js",
+            "app/routes/contributions.js",
+            "app/routes/index.js",
+            "app/routes/memos.js",
+            "app/routes/profile.js",
+            "app/routes/research.js",
+            "app/routes/session.js",
+            "artifacts/db-reset.js",
+            "Gruntfile.js",
+            "server.js"
+          ]
+        },
+        "expectedInSample": 5,
+        "expectedTotal": 9,
+        "expected": [
+          {
+            "filePath": "app/routes/contributions.js",
+            "lines": [
+              32
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "app/data/allocations-dao.js",
+            "lines": [
+              78
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "app/routes/allocations.js",
+            "lines": [
+              18
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "app/routes/index.js",
+            "lines": [
+              72
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "app/routes/research.js",
+            "lines": [
+              15
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "app/data/user-dao.js",
+            "lines": [
+              25
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "app/data/profile-dao.js",
+            "lines": [
+              62
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "app/routes/profile.js",
+            "lines": [
+              59
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "server.js",
+            "lines": [
+              137
+            ],
+            "inSample": false
+          }
+        ],
+        "codeQuality": {
+          "score": 36,
+          "functions": 119,
+          "longFunctionPercent": 16,
+          "eslintLongFunctionPercent": 16
+        },
+        "security": {
+          "score": 58,
+          "dependencyScan": "scanned",
+          "dependencies": 380,
+          "vulnerableDependencies": [
+            "kind-of@6.0.2 (transitive): GHSA-6c8f-qphg-qjgp high",
+            "body-parser@1.18.3: GHSA-qwcr-r2fm-qrc7 high, GHSA-v422-hmwv-36x6 low",
+            "brace-expansion@1.1.11 (transitive): GHSA-3jxr-9vmj-r5cp high, GHSA-6j4f-fj2g-mc7p high, GHSA-f886-m6hf-6m8v medium, GHSA-mh99-v99m-4gvg high, GHSA-q2hr-2g5m-vwhr medium, GHSA-qhr7-859c-m2p7 high, GHSA-rgw5-rvv9-x895 high, GHSA-v6h2-p8h4-qcjw low",
+            "braces@2.3.2 (transitive): GHSA-grv7-fg5c-xmjg high, GHSA-vfj7-8cjw-p6xm high",
+            "nconf@0.6.9 (transitive): GHSA-6xwr-q98w-rvg7 high",
+            "bson@1.0.9 (transitive): GHSA-4jwp-vfvf-657p medium, GHSA-v8w9-2789-6hhr critical",
+            "debug@2.2.0 (transitive): GHSA-9vvw-cc9w-f27h high, GHSA-gxpj-cx7g-858c low",
+            "ms@0.7.1 (transitive): GHSA-w9mr-4mfr-499f medium",
+            "cookie@0.3.1 (transitive): GHSA-pxg6-pf52-xh8x low",
+            "decode-uri-component@0.2.0 (transitive): GHSA-vcc3-ghjq-m6fr medium, GHSA-w573-4hg7-7wgq high",
+            "express@4.16.4: GHSA-qw6h-vgh9-j6wx low, GHSA-rv95-896h-c2vc medium",
+            "fsevents@1.2.9 (transitive): GHSA-8r6j-v8pm-fqw3 critical, MAL-2023-462 low",
+            "debug@4.1.1 (transitive): GHSA-gxpj-cx7g-858c low",
+            "ini@1.3.5 (transitive): GHSA-qqgx-2p2h-9c37 high",
+            "minimatch@3.0.4 (transitive): GHSA-23c5-xmqv-rm74 high, GHSA-3ppc-4f35-3m26 high, GHSA-7r86-cg39-jmmj high, GHSA-f8q6-p94x-37v3 high",
+            "minimist@0.0.8 (transitive): GHSA-vh95-rmgr-6w4m medium, GHSA-xvch-5gv4-984h critical",
+            "minimist@1.2.0 (transitive): GHSA-vh95-rmgr-6w4m medium, GHSA-xvch-5gv4-984h critical",
+            "semver@5.7.0 (transitive): GHSA-c2qf-rxjj-qqgw high",
+            "tar@4.4.8 (transitive): GHSA-23hp-3jrh-7fpw critical, GHSA-34x7-hfp2-rc4v high, GHSA-3jfq-g458-7qm9 high, GHSA-5955-9wpr-37jh high, GHSA-83g3-92jg-28cx high, GHSA-8qq5-rm4j-mr97 high, GHSA-8x88-c5mf-7j5w high, GHSA-9ppj-qmqm-q256 high, GHSA-9r2w-394v-53qc high, GHSA-f5x3-32g6-xq36 medium, GHSA-gvwx-54wh-qm9j medium, GHSA-qffp-2rhf-9h96 high, GHSA-qq89-hq3f-393p high, GHSA-r292-9mhp-454m high, GHSA-r628-mhmh-qjhw high, GHSA-r6q2-hw4h-h46w high, GHSA-vmf3-w455-68vh medium, GHSA-w8wr-v893-vjvp medium",
+            "helmet-csp@1.2.2 (transitive): GHSA-c3m8-x3cg-qm2c medium",
+            "i@0.3.6 (transitive): GHSA-x55w-vjjp-222r high",
+            "marked@0.3.5: GHSA-5v2h-r2cx-5xgj high, GHSA-7px7-7xjx-hxm8 medium, GHSA-p9wx-2529-fp83 medium, GHSA-rrrm-qjm4-v8hf high, GHSA-vfvf-mqq8-rwqc medium, GHSA-x5pg-88wf-qq4p high",
+            "micromatch@3.1.10 (transitive): GHSA-952p-6rrq-rcjv medium",
+            "minimist@0.0.10 (transitive): GHSA-vh95-rmgr-6w4m medium, GHSA-xvch-5gv4-984h critical",
+            "mixin-deep@1.3.1 (transitive): GHSA-fhjf-83wg-r2j9 critical",
+            "mongodb@2.2.36: GHSA-mh5c-679w-hh4r high",
+            "nconf@0.10.0 (transitive): GHSA-6xwr-q98w-rvg7 high",
+            "on-headers@1.0.1 (transitive): GHSA-76c9-3jph-rj3q low",
+            "path-to-regexp@0.1.7 (transitive): GHSA-37ch-88jc-xwx2 high, GHSA-9wv6-86v2-598j high, GHSA-rhx6-c78j-4q9w high",
+            "minimist@1.2.5 (transitive): GHSA-xvch-5gv4-984h critical",
+            "qs@6.5.2 (transitive): GHSA-4mjr-xmp4-gh2g medium, GHSA-6rw7-vpxm-498p medium, GHSA-hrpp-h998-j3pp high",
+            "semver@5.6.0 (transitive): GHSA-c2qf-rxjj-qqgw high",
+            "send@0.16.2 (transitive): GHSA-m6fv-jmcg-4jfg low",
+            "serve-static@1.13.2 (transitive): GHSA-cm22-4g7w-348p low",
+            "set-value@2.0.0 (transitive): GHSA-4g88-fppr-53pp critical, GHSA-4jqc-8m5r-9rpr high",
+            "swig@1.4.2: GHSA-2rq5-699j-x7p6 high",
+            "uglify-js@2.4.24 (transitive): GHSA-c9f4-xj24-8jqx high",
+            "underscore@1.9.1: GHSA-cf4h-3jhx-xvhq critical, GHSA-qpx9-hpmf-5gmw high",
+            "set-value@0.4.3 (transitive): GHSA-4g88-fppr-53pp critical, GHSA-4jqc-8m5r-9rpr high",
+            "y18n@3.2.1 (transitive): GHSA-c4w7-xm78-47vh high"
+          ]
+        },
+        "issues": [
+          {
+            "title": "Complex function SessionHandler (268 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "app/routes/session.js"
+          },
+          {
+            "title": "Complex function module.exports (181 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "Gruntfile.js"
+          },
+          {
+            "title": "Complex function anonymous (128 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "server.js"
+          },
+          {
+            "title": "Complex function anonymous (119 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "app/assets/js/chart/chart-data-morris.js"
+          },
+          {
+            "title": "Complex function UserDAO (118 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "app/data/user-dao.js"
+          },
+          {
+            "title": "Complex function ProfileDAO (110 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "app/data/profile-dao.js"
+          },
+          {
+            "title": "Complex function AllocationsDAO (109 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "app/data/allocations-dao.js"
+          },
+          {
+            "title": "Complex function ProfileHandler (102 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "app/routes/profile.js"
+          },
+          {
+            "title": "Complex function ContributionsDAO (81 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "app/data/contributions-dao.js"
+          },
+          {
+            "title": "Low test file coverage signal",
+            "severity": "high",
+            "category": "testing",
+            "filePath": null
+          },
+          {
+            "title": "Vulnerable dependency underscore@1.9.1",
+            "severity": "critical",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency body-parser@1.18.3",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency bson@1.0.9",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency fsevents@1.2.9",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency minimist@0.0.8",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency minimist@1.2.0",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency tar@4.4.8",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency marked@0.3.5",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency minimist@0.0.10",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency mixin-deep@1.3.1",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency mongodb@2.2.36",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency minimist@1.2.5",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency set-value@2.0.0",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency swig@1.4.2",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          },
+          {
+            "title": "Vulnerable dependency set-value@0.4.3",
+            "severity": "high",
+            "category": "security",
+            "filePath": "package-lock.json"
+          }
+        ]
+      },
+      {
+        "name": "juice-shop",
+        "commit": "1618a611b173b4bf114028e6e02549950606e29d",
+        "sourceFiles": 633,
+        "chunks": 2031,
+        "findings": 22,
+        "findingsByRule": {
+          "Large file": 4,
+          "Complex function": 12,
+          "Critical area may lack tests": 6
+        },
+        "reviewSample": {
+          "chunks": 13,
+          "files": 13,
+          "filePaths": [
+            "frontend/src/app/app.component.ts",
+            "lib/webhook.ts",
+            "routes/2fa.ts",
+            "routes/currentUser.ts",
+            "routes/dataErasure.ts",
+            "routes/deluxe.ts",
+            "routes/login.ts",
+            "routes/orderHistory.ts",
+            "routes/profileImageFileUpload.ts",
+            "routes/profileImageUrlUpload.ts",
+            "routes/updateUserProfile.ts",
+            "routes/userProfile.ts",
+            "server.ts"
+          ]
+        },
+        "expectedInSample": 2,
+        "expectedTotal": 8,
+        "expected": [
+          {
+            "filePath": "routes/search.ts",
+            "lines": [
+              23
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "routes/login.ts",
+            "lines": [
+              34
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "routes/updateProductReviews.ts",
+            "lines": [
+              16,
+              18,
+              20
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "lib/insecurity.ts",
+            "lines": [
+              136
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "models/user.ts",
+            "lines": [
+              73
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "frontend/src/app/search-result/search-result.component.ts",
+            "lines": [
+              111,
+              144
+            ],
+            "inSample": false
+          },
+          {
+            "filePath": "server.ts",
+            "lines": [
+              288,
+              289,
+              300,
+              302,
+              365,
+              389,
+              530,
+              750
+            ],
+            "inSample": true
+          },
+          {
+            "filePath": "routes/chat.ts",
+            "lines": [
+              179,
+              184
+            ],
+            "inSample": false
+          }
+        ],
+        "codeQuality": {
+          "score": 92,
+          "functions": 2432,
+          "longFunctionPercent": 2,
+          "eslintLongFunctionPercent": 2.1
+        },
+        "security": {
+          "score": 90,
+          "dependencyScan": "no-lockfile",
+          "dependencies": null,
+          "vulnerableDependencies": []
+        },
+        "issues": [
+          {
+            "title": "Large file (1214 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "frontend/src/assets/public/ContractABIs.ts"
+          },
+          {
+            "title": "Large file (814 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "server.ts"
+          },
+          {
+            "title": "Large file (804 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "data/datacreator.ts"
+          },
+          {
+            "title": "Large file (570 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "data/static/contractABIs.ts"
+          },
+          {
+            "title": "Complex function configureApp (533 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "server.ts"
+          },
+          {
+            "title": "Complex function chat (160 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "routes/chat.ts"
+          },
+          {
+            "title": "Complex function anonymous (158 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "routes/chat.ts"
+          },
+          {
+            "title": "Complex function placeOrder (157 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "routes/order.ts"
+          },
+          {
+            "title": "Complex function anonymous (155 lines)",
+            "severity": "high",
+            "category": "codeQuality",
+            "filePath": "routes/order.ts"
+          },
+          {
+            "title": "Complex function anonymous (149 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "routes/order.ts"
+          },
+          {
+            "title": "Complex function addToBasket (142 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "frontend/src/app/product/product.component.ts"
+          },
+          {
+            "title": "Complex function observeMetrics (134 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "routes/metrics.ts"
+          },
+          {
+            "title": "Complex function relationsInit (127 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "models/relations.ts"
+          },
+          {
+            "title": "Complex function createChallenges (117 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "data/datacreator.ts"
+          },
+          {
+            "title": "Complex function next (103 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "frontend/src/app/product/product.component.ts"
+          },
+          {
+            "title": "Complex function UserModelInit (103 lines)",
+            "severity": "medium",
+            "category": "codeQuality",
+            "filePath": "models/user.ts"
+          },
+          {
+            "title": "Critical area may lack tests",
+            "severity": "high",
+            "category": "testing",
+            "filePath": "data/static/codefixes/resetPasswordMortyChallenge_1.ts"
+          },
+          {
+            "title": "Critical area may lack tests",
+            "severity": "high",
+            "category": "testing",
+            "filePath": "data/static/codefixes/resetPasswordMortyChallenge_2.ts"
+          },
+          {
+            "title": "Critical area may lack tests",
+            "severity": "high",
+            "category": "testing",
+            "filePath": "data/static/codefixes/resetPasswordMortyChallenge_3.ts"
+          },
+          {
+            "title": "Critical area may lack tests",
+            "severity": "high",
+            "category": "testing",
+            "filePath": "data/static/codefixes/tokenSaleChallenge_1.ts"
+          },
+          {
+            "title": "Critical area may lack tests",
+            "severity": "high",
+            "category": "testing",
+            "filePath": "data/static/codefixes/tokenSaleChallenge_2.ts"
+          },
+          {
+            "title": "Critical area may lack tests",
+            "severity": "high",
+            "category": "testing",
+            "filePath": "data/static/codefixes/tokenSaleChallenge_3_correct.ts"
+          }
+        ]
+      }
+    ]
+  }
+}

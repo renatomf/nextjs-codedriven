@@ -17,6 +17,14 @@ export {
   type ClaimedIssue,
   type ReviewedChunk,
 } from "./domain/evidence";
+export {
+  dependencySeverity,
+  parseNpmLockfile,
+  type Advisory,
+  type Dependency,
+  type DependencyScan,
+  type VulnerableDependency,
+} from "./domain/dependencies";
 export { buildReportFindings, groupFindings } from "./domain/grouping";
 export {
   computeDeterministicMetrics,

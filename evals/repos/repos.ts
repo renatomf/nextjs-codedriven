@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import JSZip from "jszip";
+
 import { extractFromZipBuffer } from "@/lib/files/extract";
 import { isSourceFile } from "@/lib/files/filters";
 import type { IssueCategory } from "@/modules/analysis";
@@ -220,4 +222,26 @@ export async function loadRepo(repoCase: RepoCase) {
       relativePath,
       content: strip ? content.replace(strip, "") : content,
     }));
+}
+
+/**
+ * The root npm lockfile and manifest (ADR-012), read straight from the
+ * cached archive: the analysis' extractor keeps only source files and
+ * package.json. Undefined when the repository has none.
+ */
+export async function loadLockfile(repoCase: RepoCase): Promise<{ lockfile?: string; manifest?: string }> {
+  await loadRepo(repoCase); // downloads the archive when missing
+  const zip = await JSZip.loadAsync(readFileSync(join(CACHE_DIR, `${repoCase.repo}-${repoCase.commit}.zip`)));
+  const rootFile = (name: string) =>
+    Object.values(zip.files).find((f) => !f.dir && f.name.split("/").length === 2 && f.name.endsWith(`/${name}`));
+  return {
+    lockfile: await rootFile("package-lock.json")?.async("string"),
+    manifest: await rootFile("package.json")?.async("string"),
+  };
+}
+
+/** This repository's committed lockfile and manifest. */
+export function loadThisRepositoryLockfile(): { lockfile: string; manifest: string } {
+  const show = (path: string) => execFileSync("git", ["show", `HEAD:${path}`], { maxBuffer: 64 * 1024 * 1024 }).toString();
+  return { lockfile: show("package-lock.json"), manifest: show("package.json") };
 }
