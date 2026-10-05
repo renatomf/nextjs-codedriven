@@ -858,7 +858,9 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       documentam).
 - [x] Relatório de demonstração publicado pelo **link público** (Fase 3) e
       linkado no README: quem avalia não precisa criar conta, conectar o
-      GitHub nem esperar uma análise.
+      GitHub nem esperar uma análise. Em 2026-10-05 o link e os prints
+      saíram do README até a v2.1: as notas ainda não estão calibradas
+      (TD-50), e depois dela o relatório será refeito.
 - [x] **Postmortem** do incidente de maior impacto (linha do tempo, causa
       raiz, impacto, correção, o que mudou para não repetir): análise
       quebrada em produção desde o primeiro deploy (ONNX na Vercel), em
@@ -869,7 +871,8 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       mantinha o premium (TD-37).
 - [x] Retros das Fases 3 a 7 respondidas (`docs/retros/`).
 - ~~Vídeo de 2 a 3 minutos do fluxo principal.~~ Removido em 2026-10-05:
-  os prints do app no README cumprem o papel.
+  os prints do app no README cumpririam o papel (eles também saíram até a
+  v2.1, ver o item do relatório acima).
 - [x] Artigo técnico:
       [docs/articles/2026-10-o-analisador-deu-30-para-o-proprio-codigo.md](articles/2026-10-o-analisador-deu-30-para-o-proprio-codigo.md).
       Publicar fora do repositório (blog, LinkedIn) é do autor.
@@ -983,7 +986,8 @@ os evals.
   `jscpd`, `knip`, `gitleaks`, `osv-scanner`; **não** usar regras do Semgrep
   Registry nem CodeQL num SaaS sem checar a licença), LLM explicando
   evidências (arquivo + linha), busca híbrida e citações se o eval mostrar
-  ganho.
+  ganho. Ao fechar: nova análise deste repositório, e o link público e os
+  prints (claro/escuro) voltam ao README.
 - **v2.2 — Primeiras análises + modo local:** violações de camada e ciclos,
   hotspots (churn × complexidade), autorização e multi-tenancy, segurança de
   IA, qualidade dos testes, cada uma com eval. CLI via `npx` com Ollama,
