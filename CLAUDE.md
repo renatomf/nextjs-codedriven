@@ -24,5 +24,4 @@
 
 # Pending reminders (tracked in the roadmap)
 - Analysis-quality fixes (score caps, grouping repeated findings, chunk sampling, LLM evidence, heuristic false positives): roadmap Phase 7 and TD-31.
-- Closing v2.0: tagged `v2.0.0`; only the local folder rename to `nextjs-codedriven` is left (roadmap "Renomear para `nextjs-codedriven`", item 3).
 - Score calibration (TD-50) and the remaining LLM false positives (TD-51): after v2.0.
