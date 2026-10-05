@@ -1,7 +1,14 @@
 import type { Finding, IssueCategory, IssueSeverity } from "./finding";
 import type { ProjectMeasures } from "./rules";
 
-export type CategoryScores = Record<IssueCategory, number>;
+/**
+ * Categories with a score (TD-50 item 4). Performance has no measured
+ * signal: its findings stay in the report, without a score, and it is left
+ * out of the health score. Reports stored before 2026-10-05 still carry one.
+ */
+export const SCORED_CATEGORIES = ["architecture", "security", "codeQuality", "testing"] as const;
+export type ScoredCategory = (typeof SCORED_CATEGORIES)[number];
+export type CategoryScores = Record<ScoredCategory, number> & { performance?: number };
 export type CategorySummaries = Record<IssueCategory, string>;
 
 /**
@@ -78,13 +85,12 @@ const LONG_FUNCTION_WEIGHT = 4;
  * default, so a quarter of them reaches 0. The other bases are unchanged
  * since v1.
  */
-function categoryBases(measures: ProjectMeasures): CategoryScores {
+function categoryBases(measures: ProjectMeasures): Record<ScoredCategory, number> {
   const longFunctionPercent =
     measures.functionCount === 0 ? 0 : (100 * measures.longFunctionCount) / measures.functionCount;
   return {
     architecture: 88,
     security: measures.secretHits.length > 0 ? 70 : 90,
-    performance: 86,
     codeQuality: 100 - LONG_FUNCTION_WEIGHT * longFunctionPercent,
     testing: measures.testFileCount === 0 ? 0 : 40 + 0.6 * measures.testedSourceApproxPercent,
   };
@@ -99,27 +105,24 @@ function isCharged(finding: Finding): boolean {
   return !(finding.category === "codeQuality" && finding.rule);
 }
 
+/** The plain average of the scored categories. */
 function healthOf(categoryScores: CategoryScores): number {
   return clampScore(
-    (categoryScores.architecture +
-      categoryScores.security +
-      categoryScores.performance +
-      categoryScores.codeQuality +
-      categoryScores.testing) /
-      5,
+    SCORED_CATEGORIES.reduce((sum, category) => sum + categoryScores[category], 0) / SCORED_CATEGORIES.length,
   );
 }
 
 /**
  * ADR-010 (current): the category bases minus `findingPenalty` per charged
- * finding; the health score is the plain average. Expects grouped findings
+ * finding; the health score is the average of the scored categories
+ * (Performance has none since TD-50 item 4). Expects grouped findings
  * (`buildReportFindings`).
  */
 export const diminishingPenaltyPolicy: ScoringPolicy = ({ measures, findings: all }) => {
   const bases = categoryBases(measures);
   const findings = all.filter(isCharged);
   const categoryScores = Object.fromEntries(
-    (Object.keys(bases) as IssueCategory[]).map((category) => [
+    SCORED_CATEGORIES.map((category) => [
       category,
       scoreWith(findingPenalty, bases[category], findings, category),
     ]),
@@ -133,6 +136,7 @@ export const diminishingPenaltyPolicy: ScoringPolicy = ({ measures, findings: al
  * category).
  */
 export const linearPenaltyPolicy: ScoringPolicy = ({ measures, findings }) => {
+  const performance = scoreFromIssues(86, findings, "performance");
   const categoryScores: CategoryScores = {
     architecture: scoreFromIssues(88, findings, "architecture"),
     security: scoreFromIssues(
@@ -140,7 +144,7 @@ export const linearPenaltyPolicy: ScoringPolicy = ({ measures, findings }) => {
       findings,
       "security",
     ),
-    performance: scoreFromIssues(86, findings, "performance"),
+    performance,
     codeQuality: scoreFromIssues(
       measures.largeFiles.length + measures.complexFunctions.length > 8 ? 72 : 85,
       findings,
@@ -156,7 +160,7 @@ export const linearPenaltyPolicy: ScoringPolicy = ({ measures, findings }) => {
   const healthScore = clampScore(
     (categoryScores.architecture +
       categoryScores.security +
-      categoryScores.performance +
+      performance +
       categoryScores.codeQuality +
       categoryScores.testing) /
       5,

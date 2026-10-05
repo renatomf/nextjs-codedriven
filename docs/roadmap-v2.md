@@ -1000,8 +1000,9 @@ nota boa.
 - [ ] **Security:** vulnerabilidades de dependências pelo lockfile (OSV);
       gate em 3 execuções (NodeGoat e Juice Shop abaixo de 40, repositório
       saudável acima de 75).
-- [ ] **Performance** sai da nota geral (sem sinal medido); os achados ficam
-      no relatório.
+- [x] **Performance** sai da nota geral (sem sinal medido); os achados ficam
+      no relatório (2026-10-05, revisão da ADR-010): a nota geral é a média
+      de Architecture, Security, Code Quality e Testing.
 - [ ] **Architecture:** ciclos de import e fan-in/fan-out pelo grafo de
       imports; limiares numa ADR.
 - [ ] Nota geral só com categorias calibradas; o relatório separa a parte

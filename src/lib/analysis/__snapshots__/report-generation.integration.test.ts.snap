@@ -5,11 +5,10 @@ exports[`generateProjectReport (characterization) > scores the project and store
   "categoryScores": {
     "architecture": 76,
     "codeQuality": 0,
-    "performance": 84,
     "security": 24,
     "testing": 9,
   },
-  "healthScore": 39,
+  "healthScore": 27,
 }
 `;
 

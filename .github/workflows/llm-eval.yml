@@ -4,8 +4,9 @@ name: LLM eval
 # eval against the real model and fail if its quality drops (evals/README.md).
 # Only on what changes the model's input or how its answer is read: every run
 # spends about a quarter of the eval account's daily Groq tokens (TD-44).
-# Left out: the deterministic metrics, rules, scoring and grouping, which the
-# model never sees (they still trigger the analysis eval in ci.yml).
+# Left out: the deterministic metrics, rules, scoring, grouping and dependency
+# scan, which the model never sees (they still trigger the analysis eval in
+# ci.yml).
 on:
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - "!src/modules/analysis/domain/rules.ts"
       - "!src/modules/analysis/domain/scoring.ts"
       - "!src/modules/analysis/domain/grouping.ts"
+      - "!src/modules/analysis/domain/dependencies.ts"
       - "!src/modules/analysis/**/*.test.ts"
       # The chunks the review sample is drawn from, and how repositories are read.
       - "src/lib/analysis/chunking.ts"

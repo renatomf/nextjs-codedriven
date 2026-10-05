@@ -50,7 +50,9 @@ export {
   linearPenaltyPolicy,
   scoreFromIssues,
   type AiReviewSkip,
+  SCORED_CATEGORIES,
   type CategoryScores,
+  type ScoredCategory,
   type CategorySummaries,
   type ScoringPolicy,
 } from "./domain/scoring";
