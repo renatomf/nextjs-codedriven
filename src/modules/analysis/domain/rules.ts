@@ -4,6 +4,9 @@ import type { Finding } from "./finding";
 export type ProjectMeasures = {
   largeFiles: Array<{ filePath: string; lines: number }>;
   complexFunctions: Array<{ filePath: string; name: string; lines: number }>;
+  /** Functions measured outside tests, and how many pass `LONG_FUNCTION_LINES`. */
+  functionCount: number;
+  longFunctionCount: number;
   testFileCount: number;
   sourceFileCount: number;
   testedSourceApproxPercent: number;

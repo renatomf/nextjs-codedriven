@@ -67,20 +67,36 @@ function scoreWith(
   return clampScore(base - total);
 }
 
+/** Code Quality points per percentage point of functions over `LONG_FUNCTION_LINES` (ADR-010, TD-50). */
+const LONG_FUNCTION_WEIGHT = 4;
+
 /**
  * Base per category, adjusted by a few measures. Testing (ADR-010 review,
  * 2026-10-04): no test file at all → 0; otherwise 40 + 0.6 × the share of
- * logic files with tests, so every point of coverage counts. The other
- * bases are unchanged since v1.
+ * logic files with tests, so every point of coverage counts. Code Quality
+ * (2026-10-05): 100 − 4 × the share of functions longer than ESLint's
+ * default, so a quarter of them reaches 0. The other bases are unchanged
+ * since v1.
  */
 function categoryBases(measures: ProjectMeasures): CategoryScores {
+  const longFunctionPercent =
+    measures.functionCount === 0 ? 0 : (100 * measures.longFunctionCount) / measures.functionCount;
   return {
     architecture: 88,
     security: measures.secretHits.length > 0 ? 70 : 90,
     performance: 86,
-    codeQuality: measures.largeFiles.length + measures.complexFunctions.length > 8 ? 72 : 85,
+    codeQuality: 100 - LONG_FUNCTION_WEIGHT * longFunctionPercent,
     testing: measures.testFileCount === 0 ? 0 : 40 + 0.6 * measures.testedSourceApproxPercent,
   };
+}
+
+/**
+ * Deterministic Code Quality findings (long functions, large files) stay in
+ * the report but are not charged again: the Code Quality base already
+ * measures function length (TD-50). LLM findings are always charged.
+ */
+function isCharged(finding: Finding): boolean {
+  return !(finding.category === "codeQuality" && finding.rule);
 }
 
 function healthOf(categoryScores: CategoryScores): number {
@@ -95,12 +111,13 @@ function healthOf(categoryScores: CategoryScores): number {
 }
 
 /**
- * ADR-010 (current): the category bases minus `findingPenalty` per finding;
- * the health score is the plain average. Expects grouped findings
+ * ADR-010 (current): the category bases minus `findingPenalty` per charged
+ * finding; the health score is the plain average. Expects grouped findings
  * (`buildReportFindings`).
  */
-export const diminishingPenaltyPolicy: ScoringPolicy = ({ measures, findings }) => {
+export const diminishingPenaltyPolicy: ScoringPolicy = ({ measures, findings: all }) => {
   const bases = categoryBases(measures);
+  const findings = all.filter(isCharged);
   const categoryScores = Object.fromEntries(
     (Object.keys(bases) as IssueCategory[]).map((category) => [
       category,

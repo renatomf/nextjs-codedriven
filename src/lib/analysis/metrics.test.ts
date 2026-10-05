@@ -1,9 +1,9 @@
-import { computeDeterministicMetrics } from "@/lib/analysis/metrics";
+import { computeProjectMetrics } from "@/lib/analysis/metrics";
 import { describe, expect, it } from "vitest";
 
-describe("computeDeterministicMetrics", () => {
+describe("computeProjectMetrics", () => {
   it("detects hardcoded secrets", () => {
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       {
         relativePath: "src/config.ts",
         content: ` const apiKey = "example-not-a-real-key-value";\n`,
@@ -19,7 +19,7 @@ describe("computeDeterministicMetrics", () => {
       { length: 450 },
       (_, i) => `const x${i} = ${i};`,
     ).join("\n");
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       { relativePath: "src/huge.ts", content },
     ]);
 
@@ -28,7 +28,7 @@ describe("computeDeterministicMetrics", () => {
   });
 
   it("computes approximate test coverage signal", () => {
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       {
         relativePath: "src/auth.ts",
         content: "export const login = () => {};\n",
@@ -61,7 +61,7 @@ describe("computeDeterministicMetrics", () => {
       "}",
     ].join("\n");
 
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       { relativePath: "src/app/page.tsx", content },
     ]);
 
@@ -75,13 +75,13 @@ describe("computeDeterministicMetrics", () => {
       "\n",
     );
 
-    const metrics = computeDeterministicMetrics([{ relativePath: "src/api.ts", content }]);
+    const metrics = computeProjectMetrics([{ relativePath: "src/api.ts", content }]);
 
     expect(metrics.complexFunctions.map((fn) => fn.name)).toEqual(["handler"]);
   });
 
   it("treats test/ and tests/ folders, at the root or nested, as tests", () => {
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       { relativePath: "src/test/helpers.ts", content: "export const h = 1;\n" },
       { relativePath: "test/setup.ts", content: "export const s = 1;\n" },
       { relativePath: "src/tests/a.ts", content: "export const a = 1;\n" },
@@ -94,7 +94,7 @@ describe("computeDeterministicMetrics", () => {
 
   it("does not flag fake secrets in fixtures and mocks", () => {
     const fake = ["password", " = ", '"', "fixture-value-123", '"'].join("");
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       { relativePath: "src/lib/__fixtures__/creds.ts", content: `${fake}\n` },
       { relativePath: "e2e/fixtures/user.ts", content: `${fake}\n` },
       { relativePath: "src/__mocks__/db.ts", content: `${fake}\n` },
@@ -105,7 +105,7 @@ describe("computeDeterministicMetrics", () => {
   });
 
   it("flags untested critical paths", () => {
-    const metrics = computeDeterministicMetrics([
+    const metrics = computeProjectMetrics([
       {
         relativePath: "src/lib/payment.ts",
         content: "export function charge() {}\n",
@@ -126,10 +126,10 @@ describe("computeDeterministicMetrics", () => {
       Array.from({ length: n }, (_, i) => line(i)).join("\n");
 
     it("sizes a React component by its logic, not its markup", () => {
-      const markupOnly = ["export function Page() {", "  return (", body(110, (i) => `    <p>${i}</p>`), "  );", "}"].join("\n");
+      const markupOnly = ["export function Page() {", "  return (", "    <>", body(110, (i) => `    <p>${i}</p>`), "    </>", "  );", "}"].join("\n");
       const logicHeavy = ["export function Form() {", body(90, (i) => `  const s${i} = useS(${i});`), "  return <form />;", "}"].join("\n");
 
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         { relativePath: "src/Page.tsx", content: markupOnly },
         { relativePath: "src/Form.tsx", content: logicHeavy },
       ]);
@@ -138,7 +138,7 @@ describe("computeDeterministicMetrics", () => {
     });
 
     it("counts a file imported by a test as tested (relative and @/ imports)", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         { relativePath: "src/lib/auth/session.ts", content: "export function s() {\n  return 1;\n}\n" },
         { relativePath: "src/lib/billing/index.ts", content: "export function b() {\n  return 1;\n}\n" },
         {
@@ -152,7 +152,7 @@ describe("computeDeterministicMetrics", () => {
     });
 
     it("matches critical areas on whole words of logic files only", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         { relativePath: "src/lib/oauth-client.ts", content: "export function o() {\n  return 1;\n}\n" },
         { relativePath: "src/components/auth/login-form.tsx", content: "export function f() {\n  return 1;\n}\n" },
         { relativePath: "src/lib/authTokens.ts", content: "export function t() {\n  return 1;\n}\n" },
@@ -163,7 +163,7 @@ describe("computeDeterministicMetrics", () => {
 
     it("does not take prose with spaces for a secret", () => {
       const quote = (text: string) => ['"', text, '"'].join("");
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         { relativePath: "src/copy.ts", content: `const copy = { token: ${quote("Paste your token here")} };\n` },
         { relativePath: "src/keys.ts", content: `const token = ${quote("abcd1234efgh5678")};\n` },
       ]);
@@ -175,7 +175,7 @@ describe("computeDeterministicMetrics", () => {
     // server.ts, the facades): what a facade imports or re-exports is
     // exercised too.
     it("counts code a test reaches through a module facade as tested", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         {
           relativePath: "src/modules/billing/application/quota.ts",
           content: ["export function createQuota() {", "  return 1;", "}", ""].join("\n"),
@@ -214,7 +214,7 @@ describe("computeDeterministicMetrics", () => {
     });
 
     it("does not count an import written inside a string (a test fixture)", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         {
           relativePath: "src/lib/auth.ts",
           content: ["export function auth() {", "  return null;", "}", ""].join("\n"),
@@ -233,7 +233,7 @@ describe("computeDeterministicMetrics", () => {
     });
 
     it("does not count a module the test mocks (its code never runs)", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         {
           relativePath: "src/lib/auth.ts",
           content: ["export function auth() {", "  return null;", "}", ""].join("\n"),
@@ -253,7 +253,7 @@ describe("computeDeterministicMetrics", () => {
     });
 
     it("does not follow imports of ordinary files (only facades)", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         {
           relativePath: "src/lib/payments/charge.ts",
           content: [
@@ -278,7 +278,7 @@ describe("computeDeterministicMetrics", () => {
     });
 
     it("asks no tests of files without logic (types, re-exports, constant wiring)", () => {
-      const metrics = computeDeterministicMetrics([
+      const metrics = computeProjectMetrics([
         {
           relativePath: "src/modules/billing/application/ports.ts",
           content: [

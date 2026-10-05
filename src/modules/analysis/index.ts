@@ -20,7 +20,9 @@ export {
 export { buildReportFindings, groupFindings } from "./domain/grouping";
 export {
   computeDeterministicMetrics,
+  LONG_FUNCTION_LINES,
   type DeterministicMetrics,
+  type FunctionSize,
   type SourceFile,
 } from "./domain/metrics";
 export { REVIEW_PROMPT, REVIEW_PROMPT_VERSION, reviewInstructions } from "./domain/review-prompt";

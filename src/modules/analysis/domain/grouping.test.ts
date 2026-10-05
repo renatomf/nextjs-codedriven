@@ -90,6 +90,8 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
   const measures: ProjectMeasures = {
     largeFiles: [],
     complexFunctions: [],
+    functionCount: 0,
+    longFunctionCount: 0,
     testFileCount: 1,
     sourceFileCount: 10,
     testedSourceApproxPercent: 0,
@@ -105,11 +107,13 @@ describe("diminishingPenaltyPolicy vs linearPenaltyPolicy", () => {
     ).toBe(16);
   });
 
-  it("keeps the v1 scores when nothing repeats", () => {
+  it("keeps the v1 scores when nothing repeats (except Code Quality, measured since TD-50)", () => {
     const findings = [untested("src/a.ts"), finding({ category: "security", severity: "critical" })];
+    const withoutCodeQuality = (scores: Record<string, number>) =>
+      Object.fromEntries(Object.entries(scores).filter(([category]) => category !== "codeQuality"));
 
-    expect(diminishingPenaltyPolicy({ measures, findings })).toEqual(
-      linearPenaltyPolicy({ measures, findings }),
+    expect(withoutCodeQuality(diminishingPenaltyPolicy({ measures, findings }).categoryScores)).toEqual(
+      withoutCodeQuality(linearPenaltyPolicy({ measures, findings }).categoryScores),
     );
   });
 });
@@ -124,6 +128,8 @@ describe("Testing base", () => {
       measures: {
         largeFiles: [],
         complexFunctions: [],
+        functionCount: 0,
+        longFunctionCount: 0,
         testFileCount,
         sourceFileCount: 10,
         testedSourceApproxPercent,
@@ -146,5 +152,45 @@ describe("Testing base", () => {
   it("rewards every point of coverage (no flat floor)", () => {
     expect(testingFor(20)).toBeGreaterThan(testingFor(0));
     expect(testingFor(43)).toBeGreaterThan(testingFor(20));
+  });
+});
+
+// ADR-010 review (2026-10-05, TD-50): Code Quality was 85, or 72 above 8 large
+// files plus long functions, so it fell with the size of the repository. Now:
+// 100 − 4 × the share of functions longer than 50 lines (ESLint's default).
+describe("Code Quality base", () => {
+  const codeQualityFor = (longFunctionCount: number, functionCount: number, findings: Finding[] = []) =>
+    diminishingPenaltyPolicy({
+      measures: {
+        largeFiles: [],
+        complexFunctions: [],
+        functionCount,
+        longFunctionCount,
+        testFileCount: 1,
+        sourceFileCount: 10,
+        testedSourceApproxPercent: 0,
+        untestedCriticalPaths: [],
+        secretHits: [],
+      },
+      findings,
+    }).categoryScores.codeQuality;
+
+  it("is 100 with no long function and loses 4 points per percent of long functions", () => {
+    expect(codeQualityFor(0, 200)).toBe(100);
+    expect(codeQualityFor(0, 0)).toBe(100);
+    expect(codeQualityFor(10, 200)).toBe(80);
+    expect(codeQualityFor(50, 200)).toBe(0);
+  });
+
+  it("depends on the share, not on the size of the repository", () => {
+    expect(codeQualityFor(3, 100)).toBe(codeQualityFor(30, 1000));
+  });
+
+  it("does not charge deterministic long-function findings again, but charges the LLM's", () => {
+    const longFunction = finding({ category: "codeQuality", rule: "complex-function", severity: "high" });
+    const llm = finding({ category: "codeQuality", severity: "medium" });
+
+    expect(codeQualityFor(10, 200, [longFunction])).toBe(80);
+    expect(codeQualityFor(10, 200, [llm])).toBe(74);
   });
 });

@@ -1,7 +1,6 @@
-import path from "path";
-import Parser from "tree-sitter";
-import JavaScript from "tree-sitter-javascript";
-import TypeScript from "tree-sitter-typescript";
+import type Parser from "tree-sitter";
+
+import { parseSource } from "./syntax-tree";
 
 export type CodeChunkDraft = {
   filePath: string;
@@ -31,13 +30,6 @@ const CHUNK_NODE_TYPES = new Set([
 
 function estimateTokens(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
-}
-
-function getLanguage(filePath: string) {
-  const ext = path.extname(filePath).toLowerCase();
-  if (ext === ".tsx") return TypeScript.tsx;
-  if (ext === ".ts") return TypeScript.typescript;
-  return JavaScript;
 }
 
 function splitOversized(
@@ -146,9 +138,7 @@ export function chunkSourceFile(
 ): CodeChunkDraft[] {
   if (!source.trim()) return [];
 
-  const parser = new Parser();
-  parser.setLanguage(getLanguage(filePath));
-  const tree = parser.parse(source);
+  const tree = parseSource(filePath, source);
   const nodes = dedupeNodes(collectNodes(tree.rootNode));
 
   if (nodes.length === 0) {
