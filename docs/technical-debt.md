@@ -989,6 +989,21 @@ maintainability) · **Low** (cleanup).
   measured in the baseline (minimum − 1 per real repository) while the
   synthetic cases keep "all found". Record the choice next to `LLM_GATE`.
 - **Phase:** Evals (Phase 7 follow-up), before the next prompt change.
+- **Done (v2.1, 2026-10-05):** the gate allows the spread one run shows:
+  NodeGoat ≥ 5 (the baseline's 6 minus 1, the lowest single run seen, on
+  #97), Juice Shop ≥ 1 (never below in 8 single runs); the recorded runs are
+  listed next to `LLM_GATE`. Three runs per PR were rejected: about 150k of
+  the account's 200k daily tokens, one PR a day. Two more ways the gate
+  failed for nothing, seen on #149: the eval account's **daily** quota was
+  spent (every case failed with "Rate limit reached … tokens per day"), and
+  the workflow ran although the PR changed only deterministic scoring,
+  which the model never sees. Now a rate-limited case fails as **not
+  measured**, apart from the quality checks, and the eval stops calling
+  once the daily quota is spent; the workflow skips metrics, rules, scoring
+  and grouping, and runs on chunking and repository reading, which change
+  the review sample. Still open in roadmap v2.1 item 2: "Request too large"
+  (one request above 8000 tokens per minute, NodeGoat on `a1db0d5`), the
+  review's token budget.
 
 ### TD-52 — Three Dependabot alerts with no fix, in tooling only · Low
 - **Where:** `package-lock.json`, transitive dependencies (2026-10-05):

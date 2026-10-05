@@ -2,11 +2,24 @@ name: LLM eval
 
 # The review prompt, the analysis or the LLM eval changed: run the LLM review
 # eval against the real model and fail if its quality drops (evals/README.md).
-# Only on these paths: every run spends the eval account's daily Groq quota.
+# Only on what changes the model's input or how its answer is read: every run
+# spends about a quarter of the eval account's daily Groq tokens (TD-44).
+# Left out: the deterministic metrics, rules, scoring and grouping, which the
+# model never sees (they still trigger the analysis eval in ci.yml).
 on:
   pull_request:
     paths:
       - "src/modules/analysis/**"
+      - "!src/modules/analysis/domain/metrics.ts"
+      - "!src/modules/analysis/domain/rules.ts"
+      - "!src/modules/analysis/domain/scoring.ts"
+      - "!src/modules/analysis/domain/grouping.ts"
+      - "!src/modules/analysis/**/*.test.ts"
+      # The chunks the review sample is drawn from, and how repositories are read.
+      - "src/lib/analysis/chunking.ts"
+      - "src/lib/analysis/syntax-tree.ts"
+      - "src/lib/files/extract.ts"
+      - "src/lib/files/filters.ts"
       - "src/lib/analysis/report-llm.ts"
       - "src/lib/ai/**"
       - "src/shared/prompt-data.ts"

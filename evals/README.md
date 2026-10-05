@@ -132,14 +132,19 @@ change pass.
 
 The **LLM eval** workflow runs the LLM review against the real model (one
 run per case, with the `GROQ_EVAL_API_KEY` secret) only when a pull request
-from this repository changes the analysis, the prompt, the model setup or
-the eval. It fails if a case has no successful run, a finding cites a file
-the model never received, fewer expected problems are found than the
-baseline (`LLM_GATE` in [llm/llm.eval.ts](llm/llm.eval.ts): every one in the
-synthetic cases, NodeGoat 6 of 9, Juice Shop 1 of 8), or a **forbidden**
-finding shows up: a known false positive listed in the case, for a file or
-project-wide. The result file is kept as the run's `llm-eval-result`
-artifact. It is not a required check: it does not run on every pull
+from this repository changes what the model receives or how its answer is
+read: the review prompt and sampling, chunking, how repositories are read,
+the model setup or the eval (not the deterministic metrics and scores). It
+fails if a case has no successful run, a finding cites a file the model
+never received, fewer expected problems are found than one run can be
+expected to find (`LLM_GATE` in [llm/llm.eval.ts](llm/llm.eval.ts): every
+one in the synthetic cases, NodeGoat 5 of 9, Juice Shop 1 of 8; the
+recorded single runs are listed there, TD-44), or a **forbidden** finding
+shows up: a known false positive listed in the case, for a file or
+project-wide. A case stopped by the eval account's Groq rate limit fails as
+**not measured**, apart from the quality checks: re-run the job once the
+quota frees up (about 4 full runs fit in a day). The result file is kept as
+the run's `llm-eval-result` artifact. It is not a required check: it does not run on every pull
 request. Strategy: [ADR-009](../docs/decisions/009-evals.md).
 
 ## Prompts
