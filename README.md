@@ -14,35 +14,17 @@
 ![Tests](https://img.shields.io/badge/tests-730-success)
 ![ADRs](https://img.shields.io/badge/ADRs-11-informational)
 
+**Acesse:** [nextjs-codedriven.vercel.app](https://nextjs-codedriven.vercel.app) · [relatório deste repositório](https://nextjs-codedriven.vercel.app/r/ppJZrjkotodAiwr3EJXiDjQ6b7WbtQpz4aFOgxWZj7I) (link público, sem login)
+
+![Relatório de saúde deste repositório no codedriven, modo claro](docs/assets/app-light.png)
+
+![Relatório de saúde deste repositório no codedriven, modo escuro](docs/assets/app-dark.png)
 
 ## Sobre o projeto
 
 **codedriven** é uma aplicação **Next.js 16 (App Router)** que faz o papel de um revisor sênior: importa um repositório, mede o código com regras determinísticas, pede a um LLM uma revisão de arquitetura, segurança e performance, e junta tudo numa nota por categoria com os problemas priorizados.
 
-## Estudo de caso: o analisador deu 30 para o próprio código
-
-A primeira análise deste repositório, feita pelo próprio analisador (2026-09-29), deu **30/100**. Os números eram falsos:
-
-- **Testing 0 com 169 testes no repositório.** A regra comparava nomes de arquivo, e `oauth-icons.tsx` virava "área crítica sem teste" só por conter `auth`.
-- **Code Quality 0**, porque a penalidade linear não tinha teto.
-- **Segurança 16** por um "segredo" que era um texto gerado num arquivo de teste.
-
-O detalhe está em [docs/baseline.md](docs/baseline.md).
-
-Em vez de ajustar a nota até ela ficar bonita, a v2 tratou o analisador como um produto que precisa provar o que diz:
-
-| | Antes | Depois (2026-10-04) | Como foi medido |
-|---|---|---|---|
-| Nota determinística deste repositório | 53 (primeiro eval, 2026-09-30) | **78** | `npm run eval`, resultados versionados em [`evals/results/`](evals/results/) |
-| Testing deste repositório | 0 (relatório de 2026-09-29) | **80** | Heurística calibrada contra a cobertura real do v8 ([ADR-010](docs/decisions/010-score-formula.md)): 66% medido, 63% real |
-| Achados falsos do LLM | sem medição | casos proibidos no eval | O LLM eval roda o modelo real e falha se um falso positivo conhecido voltar |
-| Testes | 43 unitários | **543 unitários, 180 de integração (Postgres real), 7 E2E** | Vitest e Playwright no CI |
-| Onde a análise roda | dentro da request (até 300 s) | Vercel Workflow com retry por etapa | E2E na build de produção ([resultados da Fase 5](docs/results/phase-5.md)) |
-| Função com o runtime ONNX | 247,8 MiB (a 2,2 MiB do limite) | 36,0 MiB | Tamanho da função na Vercel |
-| Embeddings de código sem mudança | todos de novo (~44 s) | reaproveitados por hash | Log de produção: 344 de 344 reaproveitados |
-| Credenciais do usuário guardadas | token OAuth com acesso de escrita a todos os repositórios | **nenhuma**: GitHub App só de leitura, token de 1 h | [ADR-007](docs/decisions/007-github-app.md) |
-
-### Dogfooding
+## Dogfooding
 
 Todo pull request roda a análise sobre este repositório e sobre dois apps propositalmente vulneráveis (**OWASP NodeGoat** e **Juice Shop**, com as vulnerabilidades anotadas). Ele falha se a análise piorar ([evals/README.md](evals/README.md)).
 
