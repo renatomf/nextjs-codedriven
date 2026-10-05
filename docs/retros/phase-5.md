@@ -2,7 +2,7 @@
 
 - **Período:** 2026-10-02 (ADR-005, PR #87) a 2026-10-04 (PR #116)
 - **Estimado × real:** … (a tabela de planejamento do roadmap não tinha estimativa)
-- **Números:** [results-phase-5.md](../results-phase-5.md)
+- **Números:** [results/phase-5.md](../results/phase-5.md)
 
 <!--
 Fatos para ajudar a lembrar (apague depois de escrever):

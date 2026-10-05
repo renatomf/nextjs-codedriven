@@ -6,7 +6,7 @@ não foi medido aparece como **não medido**, nunca como estimativa.
 
 Data: **2026-09-29** · commit da `main`: `185894f` · arquitetura descrita em
 [architecture-baseline.md](architecture-baseline.md). Resultados da Fase 3 em
-[results-phase-3.md](results-phase-3.md).
+[results/phase-3.md](results/phase-3.md).
 
 ## 1. Duração da análise em produção
 

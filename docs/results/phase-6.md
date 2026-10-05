@@ -2,9 +2,9 @@
 
 Segurança e dados. Início: fechamento da Fase 5 (2026-10-04, commit
 `163e67c`, PR #117). Fim: **2026-10-04**, commit da `main` `ab6a523`
-(PR #130). Mesmas regras do [baseline.md](baseline.md): cada número tem data
+(PR #130). Mesmas regras do [baseline.md](../baseline.md): cada número tem data
 e método; o que não foi medido aparece como **não medido**. Decisão:
-[ADR-007](decisions/007-github-app.md) (GitHub App).
+[ADR-007](../decisions/007-github-app.md) (GitHub App).
 
 ## O que mudou no comportamento
 
@@ -51,7 +51,7 @@ e método; o que não foi medido aparece como **não medido**. Decisão:
 Testes no fim (2026-10-04, local): **475 unitários e de componente** (+2
 pulados, opt-in; os 10 da criptografia saíram com ela) e **189 de
 integração** (Postgres real). No início: 436 e 158 (ver
-[results-phase-5.md](results-phase-5.md)). E2E novos: CSP (nonce em todo
+[phase-5.md](phase-5.md)). E2E novos: CSP (nonce em todo
 script, nenhuma violação no fluxo principal) e redirecionamento das páginas
 protegidas.
 

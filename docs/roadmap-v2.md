@@ -296,7 +296,7 @@ medido antes e depois.
 10. **Fechamento:** `architecture.md` do "depois", comparação com o
     baseline, retro. Feito: [architecture.md](architecture.md) (o "antes"
     em [architecture-baseline.md](architecture-baseline.md)),
-    [results-phase-3.md](results-phase-3.md) e
+    [results/phase-3.md](results/phase-3.md) e
     [retros/phase-3.md](retros/phase-3.md) (a escrever pelo autor) e a
     convenção dos módulos definitiva na
     [ADR-002](decisions/002-module-convention.md). Falta medir em produção
@@ -546,7 +546,7 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       uma reentrega depois de um cancelamento devolvia o premium (teste que
       falhava antes da correção). Dedupe por `event.id` barraria a
       duplicata, não a primeira entrega atrasada.
-- [x] Fechamento: [results-phase-5.md](results-phase-5.md) (antes × depois
+- [x] Fechamento: [results/phase-5.md](results/phase-5.md) (antes × depois
       com data e método, tempos de produção, incidentes),
       [architecture.md](architecture.md) e
       [retros/phase-5.md](retros/phase-5.md) (a escrever pelo autor). Não
@@ -593,7 +593,7 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       guardado. Pública em `/data` (link no rodapé e em Settings); os números
       vêm das mesmas constantes do código. Achado: o código vai ao Groq sem
       redação de segredos (TD-47).
-- [x] Fechamento: [results-phase-6.md](results-phase-6.md) (antes × depois
+- [x] Fechamento: [results/phase-6.md](results/phase-6.md) (antes × depois
       com data e método, incidentes), [architecture.md](architecture.md) e
       [retros/phase-6.md](retros/phase-6.md) (a escrever pelo autor). Não
       medido: a primeira execução da retenção em produção, o custo de
