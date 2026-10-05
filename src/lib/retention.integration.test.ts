@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { codeChunks, embeddingCache, projectFiles, projects, reports } from "@/db/schema";
+import { codeChunks, embeddingCache, projectDependencies, projectFiles, projects, reports } from "@/db/schema";
 import { db } from "@/lib/db";
 import { persistProjectFiles } from "@/lib/files/storage";
 import { CODE_RETENTION_DAYS } from "@/modules/projects";
@@ -127,6 +127,20 @@ describe("daily job: idle code removal", () => {
     expect(await stored(id)).toMatchObject({ files: 1, chunks: 1, codeRemovedAt: null });
   });
 
+  it("removes the dependency list with the code (ADR-012)", async () => {
+    const id = await projectUsed(daysAgo(CODE_RETENTION_DAYS + 1));
+    await persistProjectFiles(owner, id, [{ relativePath: "src/a.ts", content: "export {};", sizeBytes: 10 }], [
+      { name: "express", version: "4.17.1", direct: true },
+    ]);
+    await db.update(projects).set({ lastUsedAt: daysAgo(CODE_RETENTION_DAYS + 1) }).where(eq(projects.id, id));
+
+    expect(await removeIdleProjectCode(id, IDLE_SECONDS)).toBe(true);
+
+    expect(await db.select().from(projectDependencies).where(eq(projectDependencies.projectId, id))).toEqual([]);
+    const [project] = await db.select({ lockfileFound: projects.lockfileFound }).from(projects).where(eq(projects.id, id));
+    expect(project.lockfileFound).toBeNull();
+  });
+
   it("removes a project only once", async () => {
     const id = await projectUsed(daysAgo(CODE_RETENTION_DAYS + 1));
     expect(await removeIdleProjectCode(id, IDLE_SECONDS)).toBe(true);
@@ -158,7 +172,7 @@ describe("after the code was removed", () => {
 
     await persistProjectFiles(owner, id, [
       { relativePath: "src/index.ts", content: "export {};", sizeBytes: 10 },
-    ]);
+    ], null);
 
     const after = await stored(id);
     expect(after).toMatchObject({ files: 1, codeRemovedAt: null });

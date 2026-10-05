@@ -1003,8 +1003,10 @@ nota boa.
   - [x] Domínio, cliente do OSV e medição no eval (2026-10-05,
         [ADR-012](decisions/012-dependency-vulnerabilities.md)): este
         repositório 81, NodeGoat 58, Juice Shop sem lockfile.
-  - [ ] Tabela `project_dependencies`, extração na ingestão (GitHub e ZIP),
-        relatório e página `/data`.
+  - [x] Tabela `project_dependencies` (migration 0014), extração do
+        lockfile da raiz na ingestão (GitHub e ZIP, sem guardar o arquivo),
+        varredura do OSV no relatório, remoção pela retenção e página
+        `/data` (2026-10-05).
   - [ ] Gate em 3 execuções com o LLM (precisa de cota do Groq).
 - [ ] **Performance** sai da nota geral (sem sinal medido); os achados ficam
       no relatório.

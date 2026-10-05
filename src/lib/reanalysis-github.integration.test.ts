@@ -89,7 +89,7 @@ async function githubProject(
     .returning({ id: projects.id });
   await persistProjectFiles(userId, project.id, [
     { relativePath: "src/old.ts", content: "export const old = 1;\n", sizeBytes: 22 },
-  ]);
+  ], null);
   return project.id;
 }
 

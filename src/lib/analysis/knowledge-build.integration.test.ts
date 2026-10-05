@@ -63,7 +63,7 @@ async function projectWithFiles(files = SOURCES) {
   await persistProjectFiles(
     owner,
     project.id,
-    files.map((file) => ({ ...file, sizeBytes: file.content.length })),
+    files.map((file) => ({ ...file, sizeBytes: file.content.length })), null,
   );
   return project.id;
 }
@@ -120,7 +120,7 @@ describe("buildProjectKnowledge", () => {
         content: "export const only = () => 1;\n",
         sizeBytes: 30,
       },
-    ]);
+    ], null);
 
     await buildProjectKnowledge(owner, projectId);
 
@@ -196,7 +196,7 @@ describe("buildProjectKnowledge", () => {
     // reuse its vectors and never call the model, TD-03).
     await persistProjectFiles(owner, projectId, [
       { relativePath: "src/changed.ts", content: "export const changed = () => 2;\n", sizeBytes: 32 },
-    ]);
+    ], null);
     mocks.embedTexts.mockRejectedValue(new Error("model download failed: token=hunter2"));
 
     await expect(buildProjectKnowledge(owner, projectId)).rejects.toThrow();

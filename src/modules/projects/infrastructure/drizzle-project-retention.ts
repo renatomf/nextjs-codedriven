@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull, lt, notInArray, sql } from "drizzle-orm";
 
-import { codeChunks, embeddingCache, projectFiles, projects } from "@/db/schema";
+import { codeChunks, embeddingCache, projectDependencies, projectFiles, projects } from "@/db/schema";
 import { db } from "@/lib/db";
 
 import { ACTIVE_STATUSES, LAST_USED_RESOLUTION_SECONDS } from "../domain/project";
@@ -67,12 +67,13 @@ export async function removeIdleProjectCode(
   return db.transaction(async (tx) => {
     const [marked] = await tx
       .update(projects)
-      .set({ codeRemovedAt: sql`now()` })
+      .set({ codeRemovedAt: sql`now()`, lockfileFound: null })
       .where(and(eq(projects.id, projectId), idleWithCode(idleSeconds)))
       .returning({ id: projects.id });
     if (!marked) return false;
 
     await tx.delete(projectFiles).where(eq(projectFiles.projectId, projectId));
+    await tx.delete(projectDependencies).where(eq(projectDependencies.projectId, projectId));
     await tx.delete(codeChunks).where(eq(codeChunks.projectId, projectId));
     await tx.delete(embeddingCache).where(eq(embeddingCache.projectId, projectId));
     return true;
