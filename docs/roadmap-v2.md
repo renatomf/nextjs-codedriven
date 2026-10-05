@@ -874,7 +874,7 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
       [docs/articles/2026-10-o-analisador-deu-30-para-o-proprio-codigo.md](articles/2026-10-o-analisador-deu-30-para-o-proprio-codigo.md).
       Publicar fora do repositório (blog, LinkedIn) é do autor.
 - [x] Decisões pendentes respondidas (ver abaixo, 2026-10-05).
-- [ ] Tag `v2.0.0`.
+- [x] Tag `v2.0.0` (2026-10-05), no commit de merge deste item.
 
 ### Renomear para `nextjs-codedriven`
 
