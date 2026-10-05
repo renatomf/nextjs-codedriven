@@ -24,4 +24,4 @@
 
 # Pending reminders (tracked in the roadmap)
 - Analysis-quality fixes (score caps, grouping repeated findings, chunk sampling, LLM evidence, heuristic false positives): roadmap Phase 7 and TD-31.
-- Score calibration (TD-50) and the remaining LLM false positives (TD-51): after v2.0.
+- v2.1 = score calibration (TD-50) and the remaining LLM false positives (TD-51): roadmap section "v2.1 — Calibração das notas", one item at a time, each with the eval's before × after.

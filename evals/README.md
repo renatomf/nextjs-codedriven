@@ -122,6 +122,8 @@ and the run fails if a change makes the analysis worse (`GATE` in
 - real repositories: at least as many annotated vulnerable lines in the LLM
   review sample as the last improvement reached (NodeGoat: 5 of 9; Juice
   Shop: 2 of 8);
+- Code Quality ranks this repository, NodeGoat and Juice Shop as ESLint's
+  `max-lines-per-function` does (share of functions over 50 lines; TD-50);
 - chat retrieval: at least as many questions answered in the top k
   (`GATE` in [retrieval/retrieval.eval.ts](retrieval/retrieval.eval.ts)).
 
