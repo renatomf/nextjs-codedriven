@@ -896,9 +896,9 @@ projeto na Vercel.
 2. [x] `<title>` da página como **codedriven · AI Codebase Auditor** (a landing mantém "AI Codebase Auditor"), README e User-Agent do GitHub como codedriven, e comentários "Code Analyzer"/"Kudos" removidos em
        `globals.css`, `ui/button.tsx` e `ui/select.tsx`. O `CLAUDE.md` e o
        README mantêm a referência ao tutorial original `AI-Code-Analyzer`.
-3. [ ] **Por último**, a pasta local `nextjs-code-analyzer` →
-       `nextjs-codedriven` (fechar o VS Code antes). O histórico do Claude
-       Code é por caminho de pasta: a pasta nova começa uma sessão nova.
+3. [x] **Por último**, a pasta local `nextjs-code-analyzer` →
+       `nextjs-codedriven` (2026-10-05). O histórico do Claude Code é por
+       caminho de pasta: a pasta nova começou uma sessão nova.
 4. [x] Nome: **codedriven** no título, README e repositório; "AI Codebase Auditor" segue como descrição na landing.
 
 ---
