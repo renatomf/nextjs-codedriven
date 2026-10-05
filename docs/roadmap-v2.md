@@ -857,11 +857,15 @@ Vem antes da ingestão assíncrona: job em segundo plano sem log é caixa preta.
 - [x] Relatório de demonstração publicado pelo **link público** (Fase 3) e
       linkado no README: quem avalia não precisa criar conta, conectar o
       GitHub nem esperar uma análise.
-- [ ] **Postmortems** dos incidentes reais, escritos pelo autor, em
-      `docs/postmortems/` (linha do tempo, causa raiz, impacto, correção, o
-      que mudou para não repetir): análise quebrada em produção desde o
-      primeiro deploy (ONNX na Vercel), variáveis de produção apagadas ao
-      separar ambientes (TD-36), cancelamento que mantinha o premium (TD-37).
+- [ ] **Postmortem** do incidente de maior impacto, escrito pelo autor
+      (linha do tempo, causa raiz, impacto, correção, o que mudou para não
+      repetir): análise quebrada em produção desde o primeiro deploy (ONNX na
+      Vercel), em
+      [docs/postmortems/2026-09-29-onnx-on-vercel.md](postmortems/2026-09-29-onnx-on-vercel.md)
+      (os fatos já estão lá). Decidido em 2026-10-05: um só. Os outros dois
+      incidentes ficam documentados nos TDs, que já têm causa, impacto e
+      correção: variáveis de produção apagadas ao separar ambientes (TD-36) e
+      cancelamento que mantinha o premium (TD-37).
 - [ ] Vídeo de 2 a 3 minutos do fluxo principal.
 - [ ] Artigo técnico (ex.: "por que o meu analisador deu 0 para o próprio
       código").
