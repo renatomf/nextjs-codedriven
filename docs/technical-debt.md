@@ -974,6 +974,28 @@ maintainability) · **Low** (cleanup).
   synthetic cases keep "all found". Record the choice next to `LLM_GATE`.
 - **Phase:** Evals (Phase 7 follow-up), before the next prompt change.
 
+### TD-52 — Three Dependabot alerts with no fix, in tooling only · Low
+- **Where:** `package-lock.json`, transitive dependencies (2026-10-05):
+  - `braces@3.0.3` (GHSA-vfj7-8cjw-p6xm, high, DoS with deeply nested
+    patterns): `shadcn` → `fast-glob` → `micromatch`. `shadcn` is a
+    dependency only for `@import "shadcn/tailwind.css"` in `globals.css`;
+    the glob code runs in its CLI.
+  - `http-cache-semantics@4.2.0` (GHSA-ch52-4w7c-c8xp, high, `max-stale`
+    can serve another user's cached response): `workflow` →
+    `@workflow/nest` → `@swc/cli` → `got`, the CLI's binary downloader. The
+    app never caches HTTP responses with it. 4.3.0 (2026-10-04) does not
+    change the `max-stale` code (tarballs compared).
+  - `esbuild@0.18.20` (GHSA-67mh-4wv8-2f99, moderate, dev server readable
+    by any site): `drizzle-kit` (dev) → `@esbuild-kit/core-utils`, which
+    pins `~0.18.20`; already noted in TD-35.
+- **Problem:** none has a patched version, and none runs in a request or
+  in the build output, so the risk is low. The alerts stay red and hide a
+  new one that does matter. The OSV check in CI passes.
+- **Direction:** alerts dismissed as "tolerable risk" pointing here.
+  Re-check when Dependabot or OSV shows a patched version, or if any of
+  these packages starts being imported from `src/`.
+- **Phase:** Maintenance.
+
 ---
 
 ## Already addressed during the tutorial
