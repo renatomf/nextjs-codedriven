@@ -58,7 +58,7 @@
     "recharts": "^3.10.1",
     "shadcn": "^4.21.0",
     "sonner": "^2.0.8",
-    "stripe": "^22.6.2",
+    "stripe": "^23.0.0",
     "tree-sitter": "^0.25.1",
     "tree-sitter-javascript": "^0.25.0",
     "tree-sitter-typescript": "^0.23.2",
